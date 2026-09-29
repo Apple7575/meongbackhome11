@@ -19,6 +19,25 @@ test("legacy modal is a bottom sheet on phones and closes when dragged down", as
   await page.mouse.up();
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
+test("controls inside legacy sheets follow touch and type rules", async ({ page }, info) => {
+  test.skip(info.project.name !== "mobile", "Phone layout");
+  await ready(page);
+  await openLogin(page);
+  const r = await page.evaluate(() => {
+    const root = document.querySelector("#modal-root");
+    const vis = (el) => { const b = el.getBoundingClientRect(); return b.width > 0 && b.height > 0; };
+    const small = [...root.querySelectorAll("button, a, input, select, textarea")].filter(vis)
+      .filter((el) => { const b = el.getBoundingClientRect(); return b.height < 44 || b.width < 44; })
+      .map((el) => (el.getAttribute("aria-label") || el.textContent || el.name).trim().slice(0, 20));
+    const inputs = [...root.querySelectorAll("input, select, textarea")].filter(vis)
+      .map((el) => parseFloat(getComputedStyle(el).fontSize));
+    const primary = getComputedStyle(root.querySelector(".button.primary")).backgroundColor;
+    return { small, minInput: Math.min(...inputs), primary };
+  });
+  expect(r.small).toEqual([]);
+  expect(r.minInput).toBeGreaterThanOrEqual(16);
+  expect(r.primary).toBe("rgb(232, 128, 95)");
+});
 test("legacy modal is a centered 480px window on desktop", async ({ page }, info) => {
   test.skip(info.project.name !== "desktop", "Desktop layout");
   await ready(page);
