@@ -11,10 +11,20 @@ import Sightings from "../screens/Sightings.jsx";
 import My from "../screens/My.jsx";
 import Settings from "../screens/Settings.jsx";
 import DogDetail from "../screens/DogDetail.jsx";
+import ReportFlow from "../screens/forms/ReportFlow.jsx";
+import SightingFlow from "../screens/forms/SightingFlow.jsx";
 import s from "./Frame.module.css";
 // 새 디자인으로 옮긴 화면. 여기에 없는 경로는 기존 main.js가 #legacy-root에 그린다.
 export const SCREENS = { "/": Home, "/explore": Explore, "/sightings": Sightings, "/my": My, "/my/settings": Settings };
-const PATTERNS = [[/^\/dog\/(?<id>[^/]+)$/, DogDetail]];
+const PATTERNS = [
+  [/^\/dog\/(?<id>[^/]+)$/, DogDetail],
+  [/^\/report\/(?<mode>new)$/, ReportFlow],
+  [/^\/report\/(?<mode>from|edit)\/(?<id>[^/]+)$/, ReportFlow],
+  [/^\/(?<mode>profile)\/new$/, ReportFlow],
+  [/^\/sighting\/new(?:\/(?<dogId>[^/]+))?$/, SightingFlow],
+];
+// 폼을 쓰는 동안에는 하단 메뉴를 숨기고 상단에 닫기만 둔다.
+export const isFlow = (route) => /^\/(report|profile|sighting)\//.test(route);
 export function resolveScreen(route) {
   if (SCREENS[route]) return { Screen: SCREENS[route], params: {} };
   for (const [re, Screen] of PATTERNS) {
@@ -34,7 +44,9 @@ export default function App() {
     addEventListener("open-report", open);
     return () => removeEventListener("open-report", open);
   }, []);
-  useEffect(() => setReportId(null), [route]);
+  useEffect(() => {
+    setReportId(null);
+  }, [route]);
   useEffect(() => {
     document.body.dataset.shell = Screen ? "column" : "legacy";
     if (Screen) return;
@@ -51,7 +63,7 @@ export default function App() {
       <main id="main" className={Screen ? s.main : "container"}>
         {Screen ? <Screen {...params} /> : <div ref={legacyRef} id="legacy-root" />}
       </main>
-      <BottomNav route={route} />
+      {!isFlow(route) && <BottomNav route={route} />}
       {reportId && <ReportSheet id={reportId} onClose={() => setReportId(null)} />}
     </div>
   );

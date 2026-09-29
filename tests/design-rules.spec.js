@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { ready, registerByApi } from "./helpers.js";
-const SCREENS = ["/", "/explore", "/sightings", "/my", "/my/settings", "/dog/demo-bori"];
+const SCREENS = ["/", "/explore", "/sightings", "/my", "/my/settings", "/dog/demo-bori", "/report/new", "/sighting/new"];
 async function audit(page) {
   return page.evaluate(() => {
     const visible = (el) => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return r.width > 0 && r.height > 0 && cs.visibility !== "hidden"; };

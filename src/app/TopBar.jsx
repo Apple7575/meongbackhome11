@@ -8,7 +8,11 @@ export default function TopBar({ route, store }) {
   const goBack = () => (history.length > 1 ? history.back() : (location.hash = "/explore"));
   return (
     <header className={s.top}>
-      {route.startsWith("/dog/") ? (
+      {/^\/(report|profile|sighting)\//.test(route) ? (
+        <button type="button" className={`${s.iconButton} ${s.back}`} onClick={() => (history.length > 1 ? history.back() : (location.hash = "/"))} aria-label="닫기">
+          <Icon name="X" />
+        </button>
+      ) : route.startsWith("/dog/") ? (
         <button type="button" className={`${s.iconButton} ${s.back}`} onClick={goBack} aria-label="뒤로">
           <Icon name="ChevronLeft" />
         </button>

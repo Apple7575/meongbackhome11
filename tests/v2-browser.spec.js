@@ -1,18 +1,8 @@
 import { test, expect } from "@playwright/test";
-import { unique, credentials, ready, registerByApi as account, openLogin } from "./helpers.js";
+import { unique, credentials, ready, registerByApi as account, openLogin, fillReport, fillSighting, nextStep } from "./helpers.js";
 async function submitDog(page, name) {
   await page.getByRole("button", { name: "실종 신고", exact: true }).click();
-  await page
-    .locator("input[name=photo]")
-    .setInputFiles("public/assets/dog-maltese.png");
-  await page.locator("input[name=name]").fill(name);
-  await page.locator("input[name=breed]").fill("말티즈");
-  await page.locator(".wizard-next").click();
-  await page.locator("input[name=location]").fill("서울 송파구 석촌호수");
-  await page
-    .locator("#location-picker")
-    .click({ position: { x: 140, y: 110 } });
-  await page.locator(".wizard-next").click();
+  await fillReport(page, { name });
   await page
     .getByRole("button", { name: "실종 신고 등록하기", exact: true })
     .click();
@@ -84,23 +74,29 @@ test("sighting draft restores location and direction, survives close, then reach
   await page.goto("/#/dog/demo-bori");
   await page.getByRole("button", { name: "이 아이를 봤어요" }).click();
   const place = "복원된 목격" + unique();
+  await expect(page.getByRole("navigation", { name: "하단 메뉴" })).toHaveCount(0);
   await page.locator("input[name=location]").fill(place);
   await page
     .locator("#sighting-picker")
     .click({ position: { x: 130, y: 100 } });
-  await page.locator(".wizard-next").click();
-  await page.getByText("이동했어요", { exact: true }).click();
+  await nextStep(page);
+  await nextStep(page);
+  await page.getByRole("button", { name: /^이동했어요/ }).click();
   await page.locator("#heading-range").fill("90");
   await page.getByRole("button", { name: "닫기", exact: true }).click();
+  await expect(page).toHaveURL(/#\/dog\/demo-bori$/);
   await page.getByRole("button", { name: "이 아이를 봤어요" }).click();
   await expect(page.locator("input[name=location]")).toHaveValue(place);
-  await page.locator(".wizard-next").click();
+  await expect(page.getByText("작성하던 내용을 불러왔어요.")).toBeVisible();
+  await nextStep(page);
+  await nextStep(page);
   await expect(page.locator("#heading-label")).toContainText("동쪽");
-  await page.locator(".wizard-next").click();
+  await nextStep(page);
+  await nextStep(page);
   await page
     .getByRole("button", { name: "목격 소식 남기기", exact: true })
     .click();
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page).toHaveURL(/#\/dog\/demo-bori$/);
   const data = await (await page.request.get("/api/state")).json();
   expect(data.reports.find((r) => r.location === place)?.heading).toBe(90);
   expect(
@@ -122,18 +118,11 @@ test("two browsers share a dog, deliver live notice, private conversation and re
     await ready(witness);
     await witness.goto(`/#/dog/${dogId}`);
     await witness.getByRole("button", { name: "이 아이를 봤어요" }).click();
-    await witness
-      .locator("input[name=location]")
-      .fill("제보자 기기에서 본 장소");
-    await witness
-      .locator("#sighting-picker")
-      .click({ position: { x: 140, y: 100 } });
-    await witness.locator(".wizard-next").click();
-    await witness.locator(".wizard-next").click();
+    await fillSighting(witness, { place: "제보자 기기에서 본 장소" });
     await witness
       .getByRole("button", { name: "목격 소식 남기기", exact: true })
       .click();
-    await expect(witness.getByRole("dialog")).toHaveCount(0);
+    await expect(witness).toHaveURL(new RegExp(`#/dog/${dogId}$`));
     await page.bringToFront();
     await expect(page.getByRole("button", { name: /^알림 [1-9]\d*개$/ })).toBeVisible({ timeout: 20000 });
     await expect(page.locator("[data-sighting-step]")).toHaveCount(1);
@@ -164,17 +153,7 @@ test("guest writes a report first and is asked to sign in only at submit, keepin
   await page.getByRole("button", { name: "실종 신고", exact: true }).click();
   await expect(page.locator("#account-form")).toHaveCount(0);
   const name = "먼저작성" + unique();
-  await page
-    .locator("input[name=photo]")
-    .setInputFiles("public/assets/dog-maltese.png");
-  await page.locator("input[name=name]").fill(name);
-  await page.locator("input[name=breed]").fill("말티즈");
-  await page.locator(".wizard-next").click();
-  await page.locator("input[name=location]").fill("서울 송파구 석촌호수");
-  await page
-    .locator("#location-picker")
-    .click({ position: { x: 140, y: 110 } });
-  await page.locator(".wizard-next").click();
+  await fillReport(page, { name });
   await page
     .getByRole("button", { name: "실종 신고 등록하기", exact: true })
     .click();
@@ -187,8 +166,10 @@ test("guest writes a report first and is asked to sign in only at submit, keepin
   await page.locator("#account-form input[name=password]").fill(c.password);
   await page.locator("#account-form input[name=passwordConfirm]").fill(c.password);
   await page.locator("#account-form button[type=submit]").click();
-  await expect(page.locator("#dog-form input[name=name]")).toHaveValue(name);
-  await expect(page.locator("#dog-form input[name=breed]")).toHaveValue("말티즈");
+  // 가입이 끝나면 작성해 둔 신고가 그대로 등록된다.
+  await expect(page.locator(".success-next")).toBeVisible();
+  await page.getByRole("button", { name: "신고 내용 먼저 확인하기" }).click();
+  await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
 });
 test("saved profile becomes a report and uploaded image can be exported as QR poster", async ({
   page,
@@ -199,13 +180,17 @@ test("saved profile becomes a report and uploaded image can be exported as QR po
   await page
     .locator("input[name=photo]")
     .setInputFiles("public/assets/dog-jindo.png");
+  await expect(page.getByAltText("고른 사진")).toBeVisible();
+  await nextStep(page);
   await page.locator("input[name=name]").fill("프로필" + unique());
   await page.locator("input[name=breed]").fill("진도 믹스");
-  await page.locator(".wizard-next").click();
-  await page.locator(".wizard-next").click();
+  await nextStep(page);
+  await nextStep(page);
+  await nextStep(page);
   await page.getByRole("button", { name: "프로필 저장하기" }).click();
   await expect(page.getByRole("button", { name: "이 정보로 신고" })).toHaveCount(1);
   await page.getByRole("button", { name: "이 정보로 신고" }).click();
+  await nextStep(page);
   await expect(page.locator("input[name=breed]")).toHaveValue("진도 믹스");
   await page.getByRole("button", { name: "닫기", exact: true }).click();
   await page.goto("/#/dog/demo-bori");

@@ -50,8 +50,8 @@ import {
   enablePush,
   api,
 } from "./client-store.js";
-import { enhanceWizard, loadDraft, clearDraft } from "./wizard.js";
 import { formatTime, timeAgo } from "./format.js";
+import { readPhoto } from "./photo.js";
 import { baseMap, marker, drawTimeline, directionPicker } from "./maps.js";
 import "./style.css";
 
@@ -231,28 +231,7 @@ function photoField(image = "") {
 async function photoValue(form, fallback = "") {
   const file = form.elements.photo?.files[0];
   if (!file) return form._photo || fallback;
-  if (file.size > 15 * 1024 * 1024)
-    throw new Error("사진은 15MB 이하로 선택해주세요.");
-  if (!["image/jpeg", "image/png", "image/webp"].includes(file.type))
-    throw new Error("JPG, PNG, WebP 사진을 선택해주세요.");
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = async () => {
-      const canvas = document.createElement("canvas");
-      const scale = Math.min(1, 1000 / Math.max(img.width, img.height));
-      canvas.width = img.width * scale;
-      canvas.height = img.height * scale;
-      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(url);
-      resolve(canvas.toDataURL("image/jpeg", 0.82));
-    };
-    img.onerror = async () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("사진을 읽을 수 없어요. 다른 사진을 선택해주세요."));
-    };
-    img.src = url;
-  });
+  return readPhoto(file);
 }
 function formError(form, message) {
   let el = form.querySelector(".form-error");
@@ -283,362 +262,6 @@ function initPhotoPreview(form) {
   });
 }
 
-function dogForm({ profile, edit, profileOnly = false } = {}) {
-  const d = edit || profile || {};
-  openModal(
-    profileOnly
-      ? "우리 아이 프로필 등록"
-      : edit
-        ? "실종 신고 수정"
-        : "우리 아이를 함께 찾아요",
-    `<p class="modal-intro">${profileOnly ? "소중한 우리 아이의 사진과 특징을 미리 저장해두세요." : "사진과 마지막으로 본 장소부터 알려주세요. 작은 특징도 도움이 돼요."}</p><form id="dog-form">${photoField(d.image)}<div class="form-grid">${field("강아지 이름 *", "name", "text", d.name, 'required maxlength="30" placeholder="예: 보리"')}${field("견종 *", "breed", "text", d.breed, 'required maxlength="40" placeholder="예: 말티즈, 믹스"')}${field("나이", "age", "text", d.age, 'maxlength="20" placeholder="예: 3살, 모름"')}${selectField("성별", "sex", ["모름", "여아", "남아"], d.sex)}${selectField("털 색", "color", ["흰색", "갈색", "검정색", "회색", "혼합"], d.color)}${selectField("크기", "size", ["소형", "중형", "대형"], d.size)}</div>${!profileOnly ? `<div class="form-grid">${selectField("실종 지역", "region", REGIONS.slice(1), d.region || "서울")}${field("실종 시간 *", "time", "datetime-local", d.time ? new Date(new Date(d.time) - new Date(d.time).getTimezoneOffset() * 60000).toISOString().slice(0, 16) : localDate(), "required")}${selectField("착용물", "accessory", ["없음", "목줄", "하네스", "옷"], d.accessory)}</div>${field("마지막으로 본 장소 *", "location", "text", d.location, 'required maxlength="150" placeholder="예: 서울 송파구 석촌호수 동호 입구"')}<div class="picker-heading"><span>지도에서 실제 목격 지점을 눌러주세요 *</span><button class="text-button" type="button" id="locate">${icon("locate-fixed")}현재 위치</button></div><div id="location-picker" class="location-picker"></div><p class="field-hint" id="location-help">${edit ? "저장된 위치를 불러왔어요." : "지역 중심이 표시돼요. 정확한 지점을 선택해주세요."}</p>` : ""}<label class="field"><span>구별되는 특징</span><textarea name="description" rows="3" maxlength="1000" placeholder="털 무늬, 성격, 이름에 대한 반응 등을 적어주세요">${esc(d.description || "")}</textarea></label><p class="local-notice">신고 사진과 목격 장소는 함께 찾는 이웃에게 공개돼요. 연락처는 게시글에 적지 말아주세요.</p><button class="button primary full" type="submit">${profileOnly ? "프로필 저장하기" : edit ? "수정 내용 저장" : "실종 신고 등록하기"}${icon("arrow-right")}</button></form>`,
-    true,
-  );
-  const form = document.querySelector("#dog-form");
-  initPhotoPreview(form);
-  const draftKey = profileOnly
-    ? "profile"
-    : `dog-${edit?.id || profile?.id || "new"}`;
-  const draft = loadDraft(draftKey);
-  let coords = draft?.extra?.coords || d.coords || COORDS[d.region || "서울"];
-  let picked = draft?.extra?.picked || !!edit;
-  if (!profileOnly) {
-    const picker = directionPicker(
-      document.querySelector("#location-picker"),
-      coords,
-      (p) => {
-        coords = p;
-        picked = true;
-        picker.set(coords, null);
-        document.querySelector("#location-help").textContent =
-          "목격 위치가 선택됐어요.";
-      },
-    );
-    modalCleanup = () => picker.map.remove();
-    form.elements.region.addEventListener("change", (e) => {
-      coords = COORDS[e.target.value];
-      picked = false;
-      picker.map.setView(coords, 13);
-      picker.set(coords, null);
-      document.querySelector("#location-help").textContent =
-        "정확한 지점을 지도에서 선택해주세요.";
-    });
-    document.querySelector("#locate").onclick = () =>
-      locate((p) => {
-        coords = p;
-        picked = true;
-        picker.map.setView(coords, 16);
-        picker.set(coords, null);
-        document.querySelector("#location-help").textContent =
-          "현재 위치를 불러왔어요. 실제 목격 지점인지 확인해주세요.";
-      });
-  }
-  const wizard = enhanceWizard(form, {
-    key: draftKey,
-    kind: profileOnly ? "profile" : "dog",
-    extra: () => ({ coords, picked }),
-    validate: (step) => {
-      if (!profileOnly && step === 1 && !picked)
-        throw new Error("지도에서 목격 위치를 선택해주세요.");
-    },
-    onStep: () => window.dispatchEvent(new Event("resize")),
-  });
-  const cleanup = modalCleanup;
-  modalCleanup = () => {
-    wizard.dispose();
-    cleanup();
-  };
-  form.onsubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (!profileOnly && !picked)
-        throw new Error("지도에서 마지막으로 본 지점을 선택해주세요.");
-      const values = Object.fromEntries(new FormData(form));
-      delete values.photo;
-      values.name = values.name.trim();
-      values.breed = values.breed.trim();
-      if (!values.name || !values.breed)
-        throw new Error("이름과 견종을 입력해주세요.");
-      const image = await photoValue(form, d.image);
-      if (!image) throw new Error("강아지 사진을 한 장 올려주세요.");
-      // 작성은 로그인 없이 시작하고, 등록 직전에만 계정을 확인한다. 초안은 closeModal에서 저장된다.
-      if (!profileOnly && !read().user?.registered) {
-        closeModal();
-        accountForm(() => dogForm({ profile, edit, profileOnly }));
-        return;
-      }
-      if (!profileOnly && read().user?.verificationRequired && !read().user?.verified)
-        throw new Error("받은 메일에서 이메일 인증을 마치면 바로 등록할 수 있어요. 작성한 내용은 이 기기에 7일 동안 보관돼요.");
-      if (profileOnly) {
-        read().profiles.push({ ...values, image, id: id("profile") });
-      } else {
-        if (new Date(values.time) > new Date())
-          throw new Error("실종 시간은 현재보다 미래일 수 없어요.");
-        const entry = {
-          ...values,
-          id: edit?.id || id("dog"),
-          coords,
-          image,
-          time: new Date(values.time).toISOString(),
-          status: edit?.status || "missing",
-          demo: false,
-        };
-        if (edit) Object.assign(edit, entry);
-        else {
-          read().dogs.unshift(entry);
-          if (read().areas.includes(entry.region))
-            notify(
-              "관심 지역에 새 실종 소식이 있어요",
-              `${entry.region} · ${entry.name}의 가족을 찾고 있어요.`,
-              entry.id,
-            );
-        }
-        await persist();
-        wizard.complete();
-        closeModal();
-        location.hash = `/dog/${entry.id}`;
-        render();
-        if (!edit) setTimeout(() => registeredNext(entry.id), 80);
-        toast(
-          edit
-            ? "신고를 수정했어요."
-            : "신고가 등록됐어요. 이제 이웃에게 알려주세요.",
-        );
-        return;
-      }
-      await persist();
-      wizard.complete();
-      closeModal();
-      location.hash = "/my";
-      render();
-      toast("우리 아이 프로필을 저장했어요.");
-    } catch (err) {
-      formError(form, err.message);
-    }
-  };
-}
-function locate(success) {
-  const owner = modalRoot.firstElementChild;
-  if (!navigator.geolocation) {
-    toast("이 브라우저에서는 위치를 가져올 수 없어요. 지도에서 선택해주세요.");
-    return;
-  }
-  toast("현재 위치를 확인하고 있어요.");
-  navigator.geolocation.getCurrentPosition(
-    (p) => {
-      if (modalRoot.firstElementChild !== owner) return;
-      success([p.coords.latitude, p.coords.longitude]);
-    },
-    () => toast("위치 권한을 확인하거나 지도에서 직접 선택해주세요."),
-    { enableHighAccuracy: true, timeout: 12000 },
-  );
-}
-function sightingForm(dogId) {
-  const draftKey = `sighting-${dogId || "new"}`,
-    draft = loadDraft(draftKey);
-  const dog = read().dogs.find((d) => d.id === dogId);
-  let coords = draft?.extra?.coords || dog?.coords || COORDS.서울,
-    heading = draft?.extra?.heading ?? null,
-    picked = draft?.extra?.picked || false,
-    sensorHeading = null,
-    orientationListener = null;
-  openModal(
-    dog ? `${esc(dog.name)}의 목격 소식 남기기` : "발견한 강아지의 소식 남기기",
-    `<p class="modal-intro">${dog ? "어디에서, 어느 쪽으로 갔나요? 기억나는 만큼 알려주세요." : "어떤 아이인지 몰라도 괜찮아요. 발견한 장소와 특징을 남겨주세요."}</p><form id="sighting-form"><div class="segmented-options">${["목격", "보호 중", "기관 인계"].map((v, i) => `<label><input type="radio" name="kind" value="${v}" ${i === 0 ? "checked" : ""}/><span>${icon(i === 0 ? "eye" : i === 1 ? "house-heart" : "building-2")}${v}</span></label>`).join("")}</div>${photoField()}<div class="form-grid">${selectField("발견 지역", "region", REGIONS.slice(1), dog?.region || "서울")}${field("목격 시간 *", "time", "datetime-local", localDate(), "required")}</div>${field("목격 장소 *", "location", "text", "", 'required maxlength="150" placeholder="예: 석촌호수 동호 북쪽 산책로"')}<div class="picker-heading"><span>강아지를 본 지점을 눌러주세요 *</span><button class="text-button" type="button" id="locate">${icon("locate-fixed")}현재 위치</button></div><div id="sighting-picker" class="location-picker"></div><p class="field-hint" id="location-help">내 위치가 아닌, 강아지를 실제로 본 지점을 선택해주세요.</p><section class="direction-section"><div class="picker-heading"><strong>${icon("navigation")}어느 쪽으로 이동했나요?</strong><span class="muted">선택</span></div><div class="direction-modes"><label><input type="radio" name="directionMode" value="unknown" checked/>모르겠어요</label><label><input type="radio" name="directionMode" value="moving"/>이동했어요</label><label><input type="radio" name="directionMode" value="still"/>머물러 있었어요</label></div><div id="direction-controls" hidden><div class="compass-row"><div class="compass"><span class="north">N</span><span class="east">E</span><span class="south">S</span><span class="west">W</span><div class="compass-needle" id="compass-needle">↑</div></div><div class="compass-help"><strong id="heading-label">북쪽 · 0°</strong><p>슬라이더로 화살표를 돌리거나,<br>휴대폰 위쪽으로 방향을 가리켜주세요.</p><button class="button white small" id="sensor" type="button">${icon("compass")}휴대폰으로 가리키기</button></div></div><label class="field direction-range"><span>이동 방향 조절</span><input type="range" id="heading-range" min="0" max="359" value="0" aria-label="이동 방향 각도"/></label><p id="sensor-status" class="field-hint">지도 화살표를 확인하고 저장해주세요.</p><button class="button white small" type="button" id="capture-heading" hidden>이 방향으로 갔어요</button></div></section>${!dog ? `<div class="form-grid">${selectField("털 색", "color", ["모름", "흰색", "갈색", "검정색", "회색", "혼합"])}${selectField("크기", "size", ["모름", "소형", "중형", "대형"])}</div>` : ""}<label class="field"><span>추가로 알려주실 내용</span><textarea name="description" rows="3" maxlength="1000" placeholder="강아지의 모습, 이동 상황, 인계한 기관 등을 적어주세요"></textarea></label><p class="local-notice">제보가 등록되면 보호자에게 알림이 전달돼요. 보호 중인 정확한 위치와 대화는 당사자만 볼 수 있어요.</p><button class="button primary full" type="submit">목격 소식 남기기${icon("arrow-right")}</button></form>`,
-    true,
-  );
-  const form = document.querySelector("#sighting-form");
-  initPhotoPreview(form);
-  const picker = directionPicker(
-    document.querySelector("#sighting-picker"),
-    coords,
-    (p) => {
-      coords = p;
-      picked = true;
-      picker.set(coords, heading);
-      document.querySelector("#location-help").textContent =
-        "목격 위치가 선택됐어요.";
-    },
-  );
-  const setHeading = (value) => {
-    heading = Number(value);
-    document.querySelector("#heading-range").value = heading;
-    document.querySelector("#heading-label").textContent =
-      `${headingLabel(heading)} · ${Math.round(heading)}°`;
-    document.querySelector("#compass-needle").style.transform =
-      `rotate(${heading}deg)`;
-    picker.set(coords, heading);
-  };
-  let sensorTimer;
-  const stopSensor = async () => {
-    clearTimeout(sensorTimer);
-    if (orientationListener) {
-      window.removeEventListener(
-        "deviceorientationabsolute",
-        orientationListener,
-      );
-      window.removeEventListener("deviceorientation", orientationListener);
-      orientationListener = null;
-    }
-  };
-  modalCleanup = async () => {
-    stopSensor();
-    picker.map.remove();
-  };
-  form.elements.region.addEventListener("change", (e) => {
-    coords = COORDS[e.target.value];
-    picked = false;
-    picker.map.setView(coords, 13);
-    picker.set(coords, heading);
-    document.querySelector("#location-help").textContent =
-      "정확한 목격 지점을 다시 선택해주세요.";
-  });
-  document.querySelector("#locate").onclick = () =>
-    locate((p) => {
-      coords = p;
-      picked = true;
-      picker.map.setView(coords, 16);
-      picker.set(coords, heading);
-      document.querySelector("#location-help").textContent =
-        "현재 위치예요. 강아지를 본 지점으로 조정해주세요.";
-    });
-  form.querySelectorAll("[name=directionMode]").forEach(
-    (el) =>
-      (el.onchange = async () => {
-        const moving = form.elements.directionMode.value === "moving";
-        document.querySelector("#direction-controls").hidden = !moving;
-        stopSensor();
-        if (moving) setHeading(document.querySelector("#heading-range").value);
-        else {
-          heading = null;
-          picker.set(coords, null);
-        }
-      }),
-  );
-  document.querySelector("#heading-range").oninput = async (e) => {
-    stopSensor();
-    setHeading(e.target.value);
-  };
-  document.querySelector("#sensor").onclick = async () => {
-    const status = document.querySelector("#sensor-status");
-    try {
-      if (!window.isSecureContext)
-        throw new Error(
-          "방향 센서는 HTTPS 연결에서 사용할 수 있어요. 슬라이더로 지정해주세요.",
-        );
-      if (!window.DeviceOrientationEvent)
-        throw new Error(
-          "방향 센서를 지원하지 않아요. 슬라이더로 지정해주세요.",
-        );
-      if (typeof DeviceOrientationEvent.requestPermission === "function") {
-        const permission = await DeviceOrientationEvent.requestPermission();
-        if (permission !== "granted")
-          throw new Error("센서 권한이 없어 수동 방향 선택을 사용해주세요.");
-      }
-      if (!document.contains(status)) return;
-      stopSensor();
-      sensorHeading = null;
-      status.textContent =
-        "휴대폰을 수평으로 잡고 위쪽을 이동 방향으로 향해주세요.";
-      orientationListener = async (e) => {
-        let value;
-        if (
-          typeof e.webkitCompassHeading === "number" &&
-          (e.webkitCompassAccuracy == null || e.webkitCompassAccuracy >= 0)
-        )
-          value = e.webkitCompassHeading;
-        else if (e.absolute && e.alpha != null) value = (360 - e.alpha) % 360;
-        else return;
-        sensorHeading = value;
-        setHeading(value);
-        document.querySelector("#capture-heading").hidden = false;
-        status.textContent =
-          "가리키는 방향을 확인하고 아래 버튼을 눌러 고정해주세요.";
-      };
-      window.addEventListener("deviceorientationabsolute", orientationListener);
-      window.addEventListener("deviceorientation", orientationListener);
-      sensorTimer = setTimeout(() => {
-        if (sensorHeading === null) {
-          stopSensor();
-          status.textContent =
-            "나침반 데이터를 받지 못했어요. 슬라이더로 방향을 지정해주세요.";
-        }
-      }, 6000);
-    } catch (e) {
-      status.textContent = e.message;
-    }
-  };
-  document.querySelector("#capture-heading").onclick = async () => {
-    stopSensor();
-    document.querySelector("#sensor-status").textContent =
-      `${headingLabel(heading)} 방향으로 고정했어요. 지도에서 확인해주세요.`;
-    document.querySelector("#capture-heading").hidden = true;
-  };
-  const wizard = enhanceWizard(form, {
-    key: draftKey,
-    kind: "sighting",
-    extra: () => ({ coords, picked, heading }),
-    validate: (step) => {
-      if (step === 0 && !picked)
-        throw new Error("지도에서 목격 위치를 선택해주세요.");
-    },
-    onStep: () => window.dispatchEvent(new Event("resize")),
-  });
-  if (heading !== null) {
-    document.querySelector("#direction-controls").hidden = false;
-    setHeading(heading);
-  }
-  picker.set(coords, heading);
-  const cleanup = modalCleanup;
-  modalCleanup = () => {
-    wizard.dispose();
-    cleanup();
-  };
-  form.onsubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (!picked) throw new Error("지도에서 강아지를 본 지점을 선택해주세요.");
-      const v = Object.fromEntries(new FormData(form));
-      if (new Date(v.time) > new Date())
-        throw new Error("목격 시간은 현재보다 미래일 수 없어요.");
-      const image = await photoValue(form);
-      const report = {
-        id: id("sighting"),
-        dogId: dog?.id || null,
-        kind: v.kind,
-        region: v.region,
-        coords,
-        heading,
-        stationary: v.directionMode === "still",
-        location: v.location.trim(),
-        time: new Date(v.time).toISOString(),
-        description: v.description.trim(),
-        image,
-        color: v.color || dog?.color,
-        size: v.size || dog?.size,
-        status: "확인 전",
-        messages: [],
-        demo: false,
-      };
-      if (!report.location) throw new Error("목격 장소를 입력해주세요.");
-      read().reports.unshift(report);
-      notify(
-        "새로운 목격 소식이 도착했어요",
-        `${report.location} · ${dog?.name || "발견 제보"}`,
-        dog?.id,
-      );
-      await persist();
-      wizard.complete();
-      closeModal();
-      if (dog) location.hash = `/dog/${dog.id}`;
-      else location.hash = "/sightings";
-      render();
-      toast("소중한 제보가 전달됐어요. 감사합니다.");
-    } catch (err) {
-      formError(form, err.message);
-    }
-  };
-}
 function areaModal() {
   openModal(
     "우리 동네 소식 받아보기",
@@ -949,14 +572,12 @@ document.addEventListener("click", async (e) => {
     await refresh();
     render();
   } else if (a === "close" || a === "close-link") closeModal();
+  // 신고·제보는 React 전체 화면 흐름(src/screens/forms)으로 이동한다.
   else if (a === "report")
-    dogForm({
-      profile: read().profiles.find((p) => p.id === b.dataset.profile),
-    });
-  else if (a === "edit-dog")
-    dogForm({ edit: read().dogs.find((d) => d.id === did) });
-  else if (a === "profile") dogForm({ profileOnly: true });
-  else if (a === "sighting") sightingForm(did);
+    location.hash = b.dataset.profile ? `/report/from/${b.dataset.profile}` : "/report/new";
+  else if (a === "edit-dog") location.hash = `/report/edit/${did}`;
+  else if (a === "profile") location.hash = "/profile/new";
+  else if (a === "sighting") location.hash = did ? `/sighting/new/${did}` : "/sighting/new";
   else if (a === "save") {
     const i = read().saved.indexOf(did);
     if (i >= 0) read().saved.splice(i, 1);
@@ -1068,7 +689,7 @@ function decorateSession() {
     b.hidden = !read().dogs.find((d) => d.id === b.dataset.id)?.canManage;
   });
 }
-function accountForm(after) {
+export function accountForm(after) {
   const user = read().user;
   if (user?.registered && !after) {
     openModal(
@@ -1125,7 +746,7 @@ import {accountPage,bindAccountPage,verificationPanel} from './account-ui.js';
 import {setupWebApp} from './webapp.js';
 setupWebApp({openModal,toast});
 
-function registeredNext(dogId) {
+export function registeredNext(dogId) {
   const d = read().dogs.find((d) => d.id === dogId);
   if (!d) return;
   openModal(

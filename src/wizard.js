@@ -11,6 +11,15 @@ export function loadDraft(key) {
 export function clearDraft(key) {
   localStorage.removeItem(prefix + key);
 }
+// React 폼용: 옛 enhanceWizard와 같은 키·형식으로 저장한다. 저장 공간이 없으면 false.
+export function saveDraft(key, { values, image = "", extra = {} }) {
+  try {
+    localStorage.setItem(prefix + key, JSON.stringify({ values, image, extra, savedAt: Date.now() }));
+    return true;
+  } catch {
+    return false;
+  }
+}
 export function enhanceWizard(
   form,
   { key, kind, extra = () => ({}), validate = () => {}, onStep = () => {} },
