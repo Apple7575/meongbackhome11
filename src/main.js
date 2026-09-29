@@ -67,7 +67,11 @@ import { timelineExperience } from "./timeline.js";
 import { baseMap, marker, drawTimeline, directionPicker } from "./maps.js";
 import "./style.css";
 
-const app = document.querySelector("#app");
+let app = null;
+export function mountLegacy(el) {
+  app = el;
+  if (app) render();
+}
 const modalRoot = document.querySelector("#modal-root");
 const state = {
   region: "전국",
@@ -362,6 +366,7 @@ function admin() {
   }</section>`;
 }
 function render() {
+  if (!app) return;
   timelineCleanup();
   maps.forEach((m) => m.remove());
   maps = [];
@@ -399,6 +404,7 @@ function render() {
     timelineCleanup = timelineExperience(m, reports, reportDetail);
     if (!reports.length) marker(m, d.coords, "♥");
   }
+  window.dispatchEvent(new Event("legacy-render"));
 }
 function closeModal() {
   modalCleanup();
@@ -1338,7 +1344,6 @@ window.addEventListener("hashchange", () => {
   render();
   window.scrollTo({ top: 0 });
 });
-render();
 
 window.addEventListener("store-updated", () => {
   if (!modalRoot.children.length && !route().startsWith('/account/')) render();
