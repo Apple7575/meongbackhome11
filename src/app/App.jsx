@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import ReportSheet from "../screens/ReportSheet.jsx";
 import { mountLegacy } from "../main.js";
 import { useRoute } from "./router.js";
 import { useStore } from "./useStore.js";
@@ -26,6 +27,13 @@ export default function App() {
   const store = useStore();
   const { Screen, params } = resolveScreen(route);
   const legacyRef = useRef(null);
+  const [reportId, setReportId] = useState(null);
+  useEffect(() => {
+    const open = (e) => setReportId(e.detail);
+    addEventListener("open-report", open);
+    return () => removeEventListener("open-report", open);
+  }, []);
+  useEffect(() => setReportId(null), [route]);
   useEffect(() => {
     document.body.dataset.shell = Screen ? "column" : "legacy";
     if (Screen) return;
@@ -43,6 +51,7 @@ export default function App() {
         {Screen ? <Screen {...params} /> : <div ref={legacyRef} id="legacy-root" />}
       </main>
       <BottomNav route={route} />
+      {reportId && <ReportSheet id={reportId} onClose={() => setReportId(null)} />}
     </div>
   );
 }

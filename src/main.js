@@ -1079,7 +1079,8 @@ document.addEventListener("click", async (e) => {
     const n = read().notifications.find((n) => n.id === did);
     closeModal();
     location.hash = n.dogId ? `/dog/${n.dogId}` : "/sightings";
-  } else if (a === "report-detail") reportDetail(did);
+  } else if (a === "report-detail")
+    window.dispatchEvent(new CustomEvent("open-report", { detail: did }));
   else if (a === "share") share(did);
   else if (a === "poster") poster(did);
   else if (a === "story") storyForm();

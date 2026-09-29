@@ -53,7 +53,11 @@ test("sightings are grouped by day, paged, and have one thumb-reach action", asy
   for (const g of groups) expect(["오늘", "어제", "이번 주", "이전"]).toContain(g);
   await expect(page.getByRole("button", { name: "강아지를 봤어요" })).toBeVisible();
   await rows.first().click();
-  await expect(page.getByRole("dialog")).toBeVisible();
+  const sheet = page.getByRole("dialog", { name: "목격 제보" });
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByText("보호자와 이 제보를 작성한 이웃만 대화할 수 있어요").or(sheet.locator("[data-chat-bubble]").first())).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(sheet).toHaveCount(0);
 });
 test("my home puts reports first and keeps logout in settings", async ({ page }) => {
   await ready(page, "/#/my");

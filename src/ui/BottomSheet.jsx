@@ -6,12 +6,15 @@ export default function BottomSheet({ open, title, onClose, children }) {
   const ref = useRef(null);
   const dragFrom = useRef(null);
   const titleId = useId();
+  // 닫기 함수가 렌더마다 바뀌어도 포커스를 다시 옮기지 않도록 참조로 보관한다.
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
   useEffect(() => {
     if (!open) return;
     const previous = document.activeElement;
     ref.current?.querySelector("h2")?.focus();
     const onKey = (e) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") closeRef.current();
       if (e.key !== "Tab") return;
       const items = [...ref.current.querySelectorAll(FOCUSABLE)].filter((el) => !el.disabled);
       if (!items.length) return;
@@ -24,7 +27,7 @@ export default function BottomSheet({ open, title, onClose, children }) {
       document.removeEventListener("keydown", onKey);
       previous?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
   if (!open) return null;
   return createPortal(
     <div className={s.sheetBackdrop} onClick={(e) => e.target === e.currentTarget && onClose()}>
