@@ -124,7 +124,7 @@ const persist = async () => {
 };
 const badge = (d) =>
   `<span class="badge ${d.status === "reunited" ? "sage" : ""}">${d.status === "reunited" ? "재회 완료" : "가족을 찾고 있어요"}</span>`;
-function toast(message) {
+export function toast(message) {
   const el = document.querySelector("#toast");
   el.textContent = message;
   el.classList.add("visible");
@@ -195,7 +195,11 @@ function admin() {
   }</section>`;
 }
 function render() {
-  if (!app) return;
+  // React 화면에서는 그리지 않고, 옛 동작이 바꾼 데이터를 React가 다시 그리도록 알린다.
+  if (!app) {
+    window.dispatchEvent(new Event("legacy-render"));
+    return;
+  }
   timelineCleanup();
   maps.forEach((m) => m.remove());
   maps = [];

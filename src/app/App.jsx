@@ -12,10 +12,19 @@ import Settings from "../screens/Settings.jsx";
 import s from "./Frame.module.css";
 // 새 디자인으로 옮긴 화면. 여기에 없는 경로는 기존 main.js가 #legacy-root에 그린다.
 export const SCREENS = { "/": Home, "/explore": Explore, "/sightings": Sightings, "/my": My, "/my/settings": Settings };
+const PATTERNS = [];
+export function resolveScreen(route) {
+  if (SCREENS[route]) return { Screen: SCREENS[route], params: {} };
+  for (const [re, Screen] of PATTERNS) {
+    const m = route.match(re);
+    if (m) return { Screen, params: m.groups };
+  }
+  return { Screen: null, params: {} };
+}
 export default function App() {
   const route = useRoute();
   const store = useStore();
-  const Screen = SCREENS[route];
+  const { Screen, params } = resolveScreen(route);
   const legacyRef = useRef(null);
   useEffect(() => {
     document.body.dataset.shell = Screen ? "column" : "legacy";
@@ -31,7 +40,7 @@ export default function App() {
       <TopBar route={route} store={store} />
       <div id="connection-banner" className={s.banner} hidden />
       <main id="main" className={Screen ? s.main : "container"}>
-        {Screen ? <Screen /> : <div ref={legacyRef} id="legacy-root" />}
+        {Screen ? <Screen {...params} /> : <div ref={legacyRef} id="legacy-root" />}
       </main>
       <BottomNav route={route} />
     </div>
