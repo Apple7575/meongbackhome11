@@ -1,0 +1,18 @@
+import { chromium } from '@playwright/test';
+import fs from 'node:fs/promises';
+const browser=await chromium.launch({channel:'msedge',headless:true});
+const page=await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:1});
+const errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.goto('http://localhost:5173');await page.locator('.hero-dogs').waitFor();
+await page.evaluate(()=>Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2500))]));
+await page.locator('.hero-dogs').evaluate(img=>img.decode());
+await fs.mkdir('artifacts',{recursive:true});
+await page.screenshot({path:'artifacts/home-desktop.png',fullPage:true});
+await page.setViewportSize({width:390,height:844});
+await page.screenshot({path:'artifacts/home-mobile.png',fullPage:true});
+await page.goto('http://localhost:5173/#/dog/demo-bori');
+await page.locator('.sighting-slide').first().waitFor();
+await page.waitForTimeout(3000);
+await page.screenshot({path:'artifacts/detail-mobile.png',fullPage:true});
+console.log(JSON.stringify({errors,mobileOverflow:await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),mapTiles:await page.locator('.leaflet-tile-loaded').count()}));
+await browser.close();

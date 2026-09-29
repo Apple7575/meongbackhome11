@@ -1,0 +1,173 @@
+const KEY = "meongback-home-v1";
+const date = (hours) => new Date(Date.now() - hours * 3600000).toISOString();
+export function seed() {
+  return {
+    dogs: [
+      {
+        id: "demo-bori",
+        name: "보리",
+        breed: "말티즈",
+        sex: "여아",
+        age: "3살",
+        region: "서울",
+        location: "서울 송파구 석촌호수 동호",
+        coords: [37.5104, 127.106],
+        time: date(5),
+        color: "흰색",
+        size: "소형",
+        accessory: "하네스",
+        description:
+          "복숭아색 하네스를 하고 있어요. 이름을 부르면 반응하지만 낯선 사람을 조금 무서워해요.",
+        image: "/assets/dog-maltese.png",
+        status: "missing",
+        demo: true,
+      },
+      {
+        id: "demo-choco",
+        name: "초코",
+        breed: "토이푸들",
+        sex: "남아",
+        age: "2살",
+        region: "서울",
+        location: "서울 송파구 올림픽공원 남문",
+        coords: [37.5164, 127.121],
+        time: date(12),
+        color: "갈색",
+        size: "소형",
+        accessory: "목줄",
+        description:
+          "초록색 목줄을 하고 있어요. 귀 끝의 털이 조금 더 짙고 사람을 좋아해요.",
+        image: "/assets/dog-poodle.png",
+        status: "missing",
+        demo: true,
+      },
+      {
+        id: "demo-dubu",
+        name: "두부",
+        breed: "진도 믹스",
+        sex: "남아",
+        age: "1살",
+        region: "경기",
+        location: "경기 성남시 분당구 중앙공원",
+        coords: [37.378, 127.121],
+        time: date(28),
+        color: "흰색",
+        size: "중형",
+        accessory: "없음",
+        description:
+          "흰 털과 쫑긋 선 귀가 특징이에요. 오른쪽 귀에 연한 베이지색 털이 있어요.",
+        image: "/assets/dog-jindo.png",
+        status: "missing",
+        demo: true,
+      },
+      {
+        id: "demo-gamja",
+        name: "감자",
+        breed: "웰시코기",
+        sex: "여아",
+        age: "4살",
+        region: "부산",
+        location: "부산 수영구 광안리 해변공원",
+        coords: [35.153, 129.118],
+        time: date(32),
+        color: "혼합",
+        size: "중형",
+        accessory: "목줄",
+        description:
+          "갈색과 흰색 털, 쫑긋한 귀, 짧은 다리가 특징이에요. 갈색 목줄을 하고 있어요.",
+        image: "/assets/dog-corgi.png",
+        status: "missing",
+        demo: true,
+      },
+    ],
+    reports: [
+      {
+        id: "s1",
+        dogId: "demo-bori",
+        kind: "목격",
+        coords: [37.5104, 127.106],
+        location: "석촌호수 동호 산책로",
+        time: date(4),
+        heading: 35,
+        status: "관련 목격",
+        description: "산책로에서 북동쪽으로 걸어가는 것을 봤어요.",
+        demo: true,
+        messages: [],
+      },
+      {
+        id: "s2",
+        dogId: "demo-bori",
+        kind: "목격",
+        coords: [37.5121, 127.1074],
+        location: "송파나루공원 북쪽 입구",
+        time: date(2.5),
+        heading: 90,
+        status: "확인 중",
+        description: "복숭아색 하네스를 한 흰 강아지가 지나갔어요.",
+        demo: true,
+        messages: [],
+      },
+      {
+        id: "s3",
+        dogId: "demo-bori",
+        kind: "목격",
+        coords: [37.5125, 127.11],
+        location: "송리단길 골목 입구",
+        time: date(1),
+        heading: 160,
+        status: "확인 전",
+        description: "골목 안쪽으로 천천히 이동했어요.",
+        demo: true,
+        messages: [],
+      },
+    ],
+    profiles: [],
+    saved: [],
+    areas: [],
+    notifications: [],
+    stories: [],
+    updates: [],
+    moderation: [],
+  };
+}
+let data;
+try {
+  data = JSON.parse(localStorage.getItem(KEY));
+} catch {
+  /* Start safely if browser data is invalid. */
+}
+if (!data || !Array.isArray(data.dogs) || !Array.isArray(data.reports))
+  data = seed();
+data = { ...seed(), ...data };
+let lastSaved = JSON.stringify(data);
+export function read() {
+  return data;
+}
+export function save() {
+  try {
+    const encoded = JSON.stringify(data);
+    localStorage.setItem(KEY, encoded);
+    lastSaved = encoded;
+    return true;
+  } catch {
+    data = JSON.parse(lastSaved);
+    return false;
+  }
+}
+export function id(prefix) {
+  return `${prefix}-${crypto.randomUUID()}`;
+}
+export function notify(title, body, dogId) {
+  data.notifications.unshift({
+    id: id("n"),
+    title,
+    body,
+    dogId,
+    time: new Date().toISOString(),
+    read: false,
+  });
+}
+export function reset() {
+  data = seed();
+  save();
+}

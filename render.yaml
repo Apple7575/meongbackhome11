@@ -1,0 +1,38 @@
+# Always-on paid service with persistent SQLite storage. No laptop tunnel.
+services:
+  - type: web
+    name: meongback-home
+    runtime: node
+    region: singapore
+    plan: 0.5c-512mb
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: off
+    disk:
+      name: meongback-data
+      mountPath: /var/data
+      sizeGB: 10
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_PATH
+        value: /var/data/meongback.sqlite
+      - key: BACKUP_DIR
+        value: /var/data/backups
+      - key: BACKUP_INTERVAL_HOURS
+        value: "24"
+      - key: BACKUP_KEEP
+        value: "7"
+      - key: SEED_EXAMPLES
+        value: "false"
+      - key: TRUST_PROXY
+        value: "1"
+      - key: MAIL_FROM
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: PUSH_SUBJECT
+        sync: false

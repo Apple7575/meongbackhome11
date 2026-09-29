@@ -1,0 +1,10 @@
+import {chromium} from '@playwright/test';
+import fs from 'node:fs/promises';
+const browser=await chromium.launch({channel:'msedge',headless:true});
+const page=await browser.newPage({viewport:{width:1200,height:1060},deviceScaleFactor:1});
+await page.goto('http://localhost:5173');
+await page.setContent(`<style>body{margin:0;font:16px sans-serif;background:#fff}main{display:grid;grid-template-columns:repeat(4,1fr)}section{text-align:center}div{height:315px;display:grid;place-items:center}img{width:280px;height:300px;object-fit:contain}h3{height:25px;margin:10px}</style><main>${['home','search','alert','reunion'].map(p=>`<section><h3>${p}</h3>${['#ffffff','#f7f0e5','#253a36'].map(c=>`<div style="background:${c}"><img src="http://localhost:5173/assets/mascot-${p}.webp"></div>`).join('')}</section>`).join('')}</main>`);
+await page.locator('img').evaluateAll(images=>Promise.all(images.map(i=>i.decode())));
+await fs.mkdir('artifacts',{recursive:true});
+await page.screenshot({path:'artifacts/mascot-alpha-check.png',fullPage:true});
+await browser.close();

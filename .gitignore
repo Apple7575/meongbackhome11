@@ -1,0 +1,15 @@
+node_modules/
+tools/*.exe
+data/
+.npm-cache/
+%SystemDrive%/
+dist/
+test-results/
+playwright-report/
+.env*
+!.env.example
+!.env.cloud.example
+.vercel/
+.supabase/
+supabase/.temp/
+

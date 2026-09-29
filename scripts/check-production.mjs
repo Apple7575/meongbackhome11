@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+const env=process.env;
+const checks=[];
+const check=(name,ok)=>checks.push({name,ok:!!ok});
+check('운영 HTTPS 주소',/^https:\/\/[^/]+$/.test(env.PUBLIC_ORIGIN||'')&&!/example|localhost|127\.0\.0\.1/.test(env.PUBLIC_ORIGIN||''));
+check('메일 API 키',!!env.RESEND_API_KEY&&!env.RESEND_API_KEY.includes('configure-'));
+check('인증된 발신 주소',!!env.MAIL_FROM&&!env.MAIL_FROM.includes('example'));
+check('푸시 발신 연락처',/^(mailto:|https:\/\/)/.test(env.PUSH_SUBJECT||'')&&!env.PUSH_SUBJECT.includes('example'));
+check('예시 데이터 비활성화',env.SEED_EXAMPLES==='false');
+check('운영 모드',env.NODE_ENV==='production');
+check('웹 빌드',fs.existsSync('dist/index.html'));
+for(const row of checks)console.log(`${row.ok?'PASS':'NEEDS SETUP'} ${row.name}`);
+console.log('이 검사는 설정 유무만 확인합니다. 도메인 DNS, 메일 발신 인증, HTTPS 및 실기기 도착은 별도 확인해야 합니다.');
+if(checks.some(c=>!c.ok))process.exitCode=1;

@@ -1,0 +1,12 @@
+data
+artifacts
+tools
+tests
+docs
+.env*
+!.env.example
+!.env.cloud.example
+supabase
+deploy
+playwright-report
+test-results
