@@ -43,6 +43,18 @@ test("explore filters with easy-to-answer sheets and pages 20 at a time", async 
   await page.getByRole("button", { name: "목록으로 보기" }).click();
   await expect(page.locator(".leaflet-container")).toHaveCount(0);
 });
+test("sightings are grouped by day, paged, and have one thumb-reach action", async ({ page }) => {
+  await ready(page, "/#/sightings");
+  await expect(page.getByRole("heading", { name: "목격 소식" })).toBeVisible();
+  const rows = page.locator("[data-sighting-row]");
+  expect(await rows.count()).toBeGreaterThan(0);
+  expect(await rows.count()).toBeLessThanOrEqual(20);
+  const groups = await page.getByRole("main").getByRole("heading", { level: 2 }).allInnerTexts();
+  for (const g of groups) expect(["오늘", "어제", "이번 주", "이전"]).toContain(g);
+  await expect(page.getByRole("button", { name: "강아지를 봤어요" })).toBeVisible();
+  await rows.first().click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+});
 test("my home puts reports first and keeps logout in settings", async ({ page }) => {
   await ready(page, "/#/my");
   await expect(page.getByRole("heading", { name: "마이홈" })).toBeVisible();
