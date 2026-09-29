@@ -52,7 +52,7 @@ import {
 } from "./client-store.js";
 import { formatTime, timeAgo } from "./format.js";
 import { baseMap, marker, drawTimeline, directionPicker } from "./maps.js";
-import "./style.css";
+import "./legacy.css";
 
 // 화면은 모두 React가 그린다. 옛 팝업 동작이 데이터를 바꾼 뒤 이 함수로 React에 다시 그리라고 알린다.
 function render() {
@@ -499,7 +499,6 @@ function decorateSession() {
   });
 }
 
-import "./quality.css";
 import { openSheet } from './app/sheets.js';
 // 신고 흐름이 쓰는 로그인 요청. React 로그인 시트를 연다.
 export function accountForm(after) {
