@@ -176,6 +176,38 @@ test("two browsers share a dog, deliver live notice, private conversation and re
     await other.close();
   }
 });
+test("guest writes a report first and is asked to sign in only at submit, keeping the draft", async ({
+  page,
+}) => {
+  await page.getByRole("button", { name: "실종 신고", exact: true }).click();
+  await expect(page.locator("#account-form")).toHaveCount(0);
+  const name = "먼저작성" + unique();
+  await page
+    .locator("input[name=photo]")
+    .setInputFiles("public/assets/dog-maltese.png");
+  await page.locator("input[name=name]").fill(name);
+  await page.locator("input[name=breed]").fill("말티즈");
+  await page.locator(".wizard-next").click();
+  await page.locator("input[name=location]").fill("서울 송파구 석촌호수");
+  await page
+    .locator("#location-picker")
+    .click({ position: { x: 140, y: 110 } });
+  await page.locator(".wizard-next").click();
+  await page
+    .getByRole("button", { name: "실종 신고 등록하기", exact: true })
+    .click();
+  await expect(page.locator("#account-form")).toBeVisible();
+  await expect(page.locator(".auth-intro")).toContainText("작성한 신고는 이 기기에 저장돼 있어요");
+  await page.locator("[data-auth-mode=register]").click();
+  const c = credentials();
+  await page.locator("#account-form input[name=name]").fill(c.name);
+  await page.locator("#account-form input[name=email]").fill(c.email);
+  await page.locator("#account-form input[name=password]").fill(c.password);
+  await page.locator("#account-form input[name=passwordConfirm]").fill(c.password);
+  await page.locator("#account-form button[type=submit]").click();
+  await expect(page.locator("#dog-form input[name=name]")).toHaveValue(name);
+  await expect(page.locator("#dog-form input[name=breed]")).toHaveValue("말티즈");
+});
 test("saved profile becomes a report and uploaded image can be exported as QR poster", async ({
   page,
 }) => {

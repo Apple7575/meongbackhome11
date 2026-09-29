@@ -9,6 +9,8 @@ test('small phone layouts, keyboard inputs, and location permission feedback',as
     for(const route of ['/#/','/#/explore','/#/sightings','/#/my']){
       await page.goto(route);
       await expect(page.locator('.mobile-nav')).toBeVisible();
+      await expect(page.locator('.mobile-report')).toBeVisible();
+      await expect(page.locator('.header-report')).toBeHidden();
       expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${width} ${route}`).toBe(true);
     }
   }

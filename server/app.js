@@ -77,6 +77,7 @@ export function createApp({
   mailer = createMailer(),
   publicOrigin = process.env.PUBLIC_ORIGIN || '',
   requireVerification = secure,
+  authRateLimit = 12,
 } = {}) {
   if (databasePath !== ":memory:")
     mkdirSync(path.dirname(databasePath), { recursive: true });
@@ -337,7 +338,7 @@ export function createApp({
     streams.delete(uid);
   }});
   app.post("/api/auth/:mode", async (req, res) => {
-    rate(`auth:${req.ip}`, 12);
+    rate(`auth:${req.ip}`, authRateLimit);
     const mode = req.params.mode;
     if (mode === "logout") {
       if (req.token)

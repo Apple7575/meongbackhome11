@@ -190,6 +190,11 @@ function footer() {
       ([p, i, t]) =>
         `<a href="#${p}" class="${route() === p ? "active" : ""}">${icon(i)}<span>${t}</span></a>`,
     )
+    .map((html, n) =>
+      n === 2
+        ? `<button class="mobile-report" data-action="report" aria-label="실종 신고"><span class="mobile-report-icon">${icon("plus")}</span><span>신고</span></button>${html}`
+        : html,
+    )
     .join("")}</nav>`;
 }
 function hero() {
@@ -483,11 +488,6 @@ function initPhotoPreview(form) {
 }
 
 function dogForm({ profile, edit, profileOnly = false } = {}) {
-  if (!profileOnly && !read().user?.registered) {
-    accountForm(() => dogForm({ profile, edit, profileOnly }));
-    return;
-  }
-  if(!profileOnly&&read().user?.verificationRequired&&!read().user?.verified){accountForm();toast('받은 메일에서 이메일 인증을 완료한 뒤 신고해주세요.');return;}
   const d = edit || profile || {};
   openModal(
     profileOnly
@@ -565,6 +565,14 @@ function dogForm({ profile, edit, profileOnly = false } = {}) {
         throw new Error("이름과 견종을 입력해주세요.");
       const image = await photoValue(form, d.image);
       if (!image) throw new Error("강아지 사진을 한 장 올려주세요.");
+      // 작성은 로그인 없이 시작하고, 등록 직전에만 계정을 확인한다. 초안은 closeModal에서 저장된다.
+      if (!profileOnly && !read().user?.registered) {
+        closeModal();
+        accountForm(() => dogForm({ profile, edit, profileOnly }));
+        return;
+      }
+      if (!profileOnly && read().user?.verificationRequired && !read().user?.verified)
+        throw new Error("받은 메일에서 이메일 인증을 마치면 바로 등록할 수 있어요. 작성한 내용은 이 기기에 7일 동안 보관돼요.");
       if (profileOnly) {
         read().profiles.push({ ...values, image, id: id("profile") });
       } else {
@@ -1413,7 +1421,7 @@ function accountForm(after) {
   const show = () => {
     openModal(
       mode === 'register' ? '회원가입' : '로그인',
-      `<div class="auth-intro"><p>${after?'내 신고를 관리하고 목격 제보를 확인하려면 로그인 또는 회원가입이 필요해요.':'로그인하면 내 신고와 제보를 확인할 수 있어요.'}</p>${after?'<div class="auth-next-step">처음 가입한 경우, 이메일 인증 후 신고할 수 있어요.</div>':''}</div><div class="auth-tabs" aria-label="로그인 또는 회원가입"><button type="button" data-auth-mode="login" class="${mode==='login'?'active':''}" aria-pressed="${mode==='login'}">로그인</button><button type="button" data-auth-mode="register" class="${mode==='register'?'active':''}" aria-pressed="${mode==='register'}">회원가입</button></div><form id="account-form">${mode==='register'?field('닉네임','name','text',values.name||'','required maxlength="30" autocomplete="nickname" placeholder="예: 보리 보호자"'):''}${field('이메일','email','email',values.email||'','required autocomplete="email" placeholder="이메일 주소 입력"')}${field(mode==='register'?'비밀번호 (10자 이상)':'비밀번호','password','password','','required minlength="10" maxlength="200" autocomplete="'+(mode==='register'?'new-password':'current-password')+'" placeholder="비밀번호 입력"')}${mode==='register'?field('비밀번호 확인','passwordConfirm','password','','required minlength="10" maxlength="200" autocomplete="new-password" placeholder="비밀번호 다시 입력"'):''}<button class="button primary full" type="submit">${mode==='register'?'회원가입':'로그인'}</button></form>`,
+      `<div class="auth-intro"><p>${after?'작성한 신고는 이 기기에 저장돼 있어요. 로그인하면 이어서 등록할 수 있어요.':'로그인하면 내 신고와 제보를 확인할 수 있어요.'}</p>${after?'<div class="auth-next-step">처음 가입한 경우, 이메일 인증 후 신고할 수 있어요.</div>':''}</div><div class="auth-tabs" aria-label="로그인 또는 회원가입"><button type="button" data-auth-mode="login" class="${mode==='login'?'active':''}" aria-pressed="${mode==='login'}">로그인</button><button type="button" data-auth-mode="register" class="${mode==='register'?'active':''}" aria-pressed="${mode==='register'}">회원가입</button></div><form id="account-form">${mode==='register'?field('닉네임','name','text',values.name||'','required maxlength="30" autocomplete="nickname" placeholder="예: 보리 보호자"'):''}${field('이메일','email','email',values.email||'','required autocomplete="email" placeholder="이메일 주소 입력"')}${field(mode==='register'?'비밀번호 (10자 이상)':'비밀번호','password','password','','required minlength="10" maxlength="200" autocomplete="'+(mode==='register'?'new-password':'current-password')+'" placeholder="비밀번호 입력"')}${mode==='register'?field('비밀번호 확인','passwordConfirm','password','','required minlength="10" maxlength="200" autocomplete="new-password" placeholder="비밀번호 다시 입력"'):''}<button class="button primary full" type="submit">${mode==='register'?'회원가입':'로그인'}</button></form>`,
 
     );
     document.querySelectorAll("[data-auth-mode]").forEach(
@@ -1437,8 +1445,10 @@ function accountForm(after) {
         const result=await authenticate(mode, Object.fromEntries(new FormData(form)));
         closeModal();
         render();
-        if (after) after();
-        else toast(result.emailDelivery==='sent'?'회원가입이 완료됐어요. 받은 메일에서 이메일을 인증해주세요.':mode==='register'?'회원가입이 완료됐어요.':'로그인했어요.');
+        if (after) {
+          after();
+          if (result.emailDelivery === 'sent') toast('받은 메일에서 이메일을 인증하면 작성한 신고를 바로 등록할 수 있어요.');
+        } else toast(result.emailDelivery==='sent'?'회원가입이 완료됐어요. 받은 메일에서 이메일을 인증해주세요.':mode==='register'?'회원가입이 완료됐어요.':'로그인했어요.');
       } catch (err) {
         formError(form, err.message);
         b.disabled = false;
