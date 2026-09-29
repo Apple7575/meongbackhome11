@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { chronologicalSightings, headingLabel, haversine, filterDogs, matchCandidates, arrowEnd, escapeHTML } from '../src/domain.js';
-import { relativeTime, dayGroup, objectParticle } from '../src/format.js';
+import { relativeTime, dayGroup, objectParticle, subjectParticle } from '../src/format.js';
 
 test('relative time, day groups and Korean object particle', () => {
   const now = new Date(2026, 8, 29, 16, 0).getTime();
@@ -14,6 +14,9 @@ test('relative time, day groups and Korean object particle', () => {
   assert.equal(dayGroup(new Date(2026, 8, 1).getTime(), now), '이전');
   assert.equal(objectParticle('보리'), '를');
   assert.equal(objectParticle('초콩'), '을');
+  assert.equal(subjectParticle('보리'), '가');
+  assert.equal(subjectParticle('초콩'), '이');
+  assert.equal(subjectParticle('Max'), '가');
 });
 
 test('timeline orders by sighting time without mutating source and excludes unrelated reports',()=>{

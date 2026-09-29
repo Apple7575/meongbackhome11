@@ -16,6 +16,11 @@ export function dayGroup(t, now = Date.now()) {
   const days = Math.round((startOfDay(new Date(now)) - startOfDay(new Date(t))) / 86400000);
   return days <= 0 ? "오늘" : days === 1 ? "어제" : days < 7 ? "이번 주" : "이전";
 }
+const hasBatchim = (name) => {
+  const code = String(name).trim().slice(-1).charCodeAt(0) - 0xac00;
+  return code >= 0 && code <= 11171 && code % 28 !== 0;
+};
+export const subjectParticle = (name) => (hasBatchim(name) ? "이" : "가");
 export function objectParticle(name) {
   const code = String(name).trim().slice(-1).charCodeAt(0) - 0xac00;
   if (code < 0 || code > 11171) return "를";

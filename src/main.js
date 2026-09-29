@@ -171,7 +171,6 @@ function render() {
   let body;
   if (p === "/stories") body = stories();
   else if (p === "/admin") body = admin();
-  else if (p.startsWith('/account/')) body=accountPage(p);
   else
     body = empty(
       "페이지를 찾을 수 없어요",
@@ -181,7 +180,6 @@ function render() {
   app.innerHTML = body;
   refreshIcons();
   decorateSession();
-  bindAccountPage();
   window.dispatchEvent(new Event("legacy-render"));
 }
 function closeModal() {
@@ -262,38 +260,6 @@ function initPhotoPreview(form) {
   });
 }
 
-function areaModal() {
-  openModal(
-    "우리 동네 소식 받아보기",
-    `<p class="modal-intro">관심 있는 지역을 선택해주세요. 여러 곳을 저장할 수 있어요.</p><form id="areas-form"><div class="region-grid">${REGIONS.slice(
-      1,
-    )
-      .map(
-        (r) =>
-          `<label class="area-check"><input type="checkbox" name="area" value="${r}" ${read().areas.includes(r) ? "checked" : ""}/><span>${r}</span></label>`,
-      )
-      .join(
-        "",
-      )}</div><p class="local-notice">새 실종 신고가 올라오면 알림함에서 바로 확인할 수 있어요. 설정에서 새 목격 소식 알림을 켜면 앱을 닫아도 알려드려요.</p><button class="button primary full" type="submit">관심 지역 저장하기</button></form>`,
-  );
-  document.querySelector("#areas-form").onsubmit = async (e) => {
-    e.preventDefault();
-    read().areas = new FormData(e.target).getAll("area");
-    await persist();
-    closeModal();
-    toast("관심 지역을 저장했어요.");
-  };
-}
-async function notifications() {
-  const ns = read().notifications;
-  openModal(
-    "도착한 소식",
-    `${ns.length ? `<div class="notifications-list">${ns.map((n) => `<button class="notification-item" data-action="notification-open" data-id="${n.id}">${icon("bell-ring")}<span><strong>${esc(n.title)}</strong><p>${esc(n.body)}</p><small>${timeAgo(n.time)}</small></span>${!n.read ? '<b class="unread-dot"></b>' : ""}</button>`).join("")}</div>` : empty("아직 도착한 소식이 없어요", "관심 지역을 등록하거나, 아이의 소식을 저장해보세요.")}<button class="button white full" data-action="areas">${icon("map-pin")}관심 지역 설정</button>`,
-  );
-  ns.forEach((n) => (n.read = true));
-  await persist();
-  render();
-}
 async function share(dogId) {
   const d = read().dogs.find((d) => d.id === dogId);
   const url = `${location.origin}${location.pathname}#/dog/${dogId}`;
@@ -487,26 +453,6 @@ function updateForm(dogId) {
     toast("수색 상황을 저장했어요.");
   };
 }
-function reunite(dogId) {
-  const d = read().dogs.find((d) => d.id === dogId);
-  openModal(
-    "다시 만나서 정말 다행이에요",
-    `<div class="reunion-confirm"><img src="/assets/mascot-reunion.webp" alt="서로 기대는 두 강아지"/><h3>${esc(d.name)}가 집으로 돌아왔나요?</h3><p>신고가 재회 완료로 바뀌고, 제보한 이웃과<br>소식을 저장한 분들에게 재회 알림이 전달돼요.</p><button class="button primary full" id="confirm-reunion">네, 무사히 만났어요${icon("heart")}</button></div>`,
-  );
-  document.querySelector("#confirm-reunion").onclick = async () => {
-    d.status = "reunited";
-    d.reunitedAt = new Date().toISOString();
-    notify(
-      `${d.name}가 가족의 품으로 돌아왔어요`,
-      "함께 마음 써주셔서 감사해요. 수색이 종료되었어요.",
-      d.id,
-    );
-    await persist();
-    closeModal();
-    render();
-    toast("재회 완료로 바꿨어요. 소중한 순간을 후기로 남겨주세요.");
-  };
-}
 function flag(target) {
   openModal(
     "내용 신고하기",
@@ -539,7 +485,11 @@ document.addEventListener("click", async (e) => {
     toast('화면 안내용 예시예요. 실제 제보나 공유 대상이 아니에요.');
     return;
   }
-  if (a === "account") accountForm();
+  // 로그인한 사람의 계정 메뉴는 설정 화면이 맡는다.
+  if (a === "account") {
+    if (read().user?.registered) location.hash = "/my/settings";
+    else openSheet("auth");
+  }
   else if(a==='verify-resend') {
     b.disabled=true;
     try {await api('/api/auth/resend',{});toast('인증 메일을 보냈어요. 스팸함도 확인해주세요.');}
@@ -589,19 +539,15 @@ document.addEventListener("click", async (e) => {
         ? "저장을 취소했어요."
         : "소식을 저장했어요. 마이홈에서 다시 볼 수 있어요.",
     );
-  } else if (a === "areas") areaModal();
-  else if (a === "notifications") notifications();
-  else if (a === "notification-open") {
-    const n = read().notifications.find((n) => n.id === did);
-    closeModal();
-    location.hash = n.dogId ? `/dog/${n.dogId}` : "/sightings";
-  } else if (a === "report-detail")
+  } else if (a === "areas") openSheet("areas");
+  else if (a === "notifications") openSheet("notifications");
+  else if (a === "report-detail")
     window.dispatchEvent(new CustomEvent("open-report", { detail: did }));
   else if (a === "share") share(did);
   else if (a === "poster") poster(did);
   else if (a === "story") storyForm();
   else if (a === "update") updateForm(did);
-  else if (a === "reunite") reunite(did);
+  else if (a === "reunite") openSheet("reunite", { dogId: did });
   else if (a === "flag") flag(did);
   else if (a === "resolve") {
     read().moderation.find((m) => m.id === did).resolved = true;
@@ -689,60 +635,13 @@ function decorateSession() {
     b.hidden = !read().dogs.find((d) => d.id === b.dataset.id)?.canManage;
   });
 }
-export function accountForm(after) {
-  const user = read().user;
-  if (user?.registered && !after) {
-    openModal(
-      "내 계정",
-      `<div class="account-intro"><img src="/assets/mascot-alert.webp" alt=""/><h3>${esc(user.name)} 님과 함께 찾고 있어요</h3>${verificationPanel()}<button class="button primary full" data-action="push">새 목격 소식 알림 받기</button><button class="button white full" data-action="install-app">홈 화면에 추가하기</button><button class="text-button" data-action="device-check">이 휴대폰에서 기능 확인</button><button class="text-button" data-action="logout">로그아웃</button></div>`,
-    );
-    return;
-  }
-  let mode = 'login';
-  const values={};
-  const show = () => {
-    openModal(
-      mode === 'register' ? '회원가입' : '로그인',
-      `<div class="auth-intro"><p>${after?'작성한 신고는 이 기기에 저장돼 있어요. 로그인하면 이어서 등록할 수 있어요.':'로그인하면 내 신고와 제보를 확인할 수 있어요.'}</p>${after?'<div class="auth-next-step">처음 가입한 경우, 이메일 인증 후 신고할 수 있어요.</div>':''}</div><div class="auth-tabs" aria-label="로그인 또는 회원가입"><button type="button" data-auth-mode="login" class="${mode==='login'?'active':''}" aria-pressed="${mode==='login'}">로그인</button><button type="button" data-auth-mode="register" class="${mode==='register'?'active':''}" aria-pressed="${mode==='register'}">회원가입</button></div><form id="account-form">${mode==='register'?field('닉네임','name','text',values.name||'','required maxlength="30" autocomplete="nickname" placeholder="예: 보리 보호자"'):''}${field('이메일','email','email',values.email||'','required autocomplete="email" placeholder="이메일 주소 입력"')}${field(mode==='register'?'비밀번호 (10자 이상)':'비밀번호','password','password','','required minlength="10" maxlength="200" autocomplete="'+(mode==='register'?'new-password':'current-password')+'" placeholder="비밀번호 입력"')}${mode==='register'?field('비밀번호 확인','passwordConfirm','password','','required minlength="10" maxlength="200" autocomplete="new-password" placeholder="비밀번호 다시 입력"'):''}<button class="button primary full" type="submit">${mode==='register'?'회원가입':'로그인'}</button></form>`,
-
-    );
-    document.querySelectorAll("[data-auth-mode]").forEach(
-      (b) =>
-        (b.onclick = () => {
-          const current=document.querySelector('#account-form');
-          if(current)Object.assign(values,{email:current.elements.email.value,name:current.elements.name?.value||values.name});
-          mode = b.dataset.authMode;
-          show();
-        }),
-    );
-    const form = document.querySelector("#account-form");
-    if(mode==='login')form.insertAdjacentHTML('afterend','<a class="text-button recovery-link" href="#/account/forgot">비밀번호를 잊으셨나요?</a>');
-    form.onsubmit = async (e) => {
-      e.preventDefault();
-      const b = form.querySelector("[type=submit]");
-      b.disabled = true;
-      if(mode==='register'&&form.elements.password.value!==form.elements.passwordConfirm.value){formError(form,'비밀번호가 일치하지 않아요. 다시 확인해주세요.');b.disabled=false;return;}
-      b.textContent = mode==='register'?'가입 중…':'로그인 중…';
-      try {
-        const result=await authenticate(mode, Object.fromEntries(new FormData(form)));
-        closeModal();
-        render();
-        if (after) {
-          after();
-          if (result.emailDelivery === 'sent') toast('받은 메일에서 이메일을 인증하면 작성한 신고를 바로 등록할 수 있어요.');
-        } else toast(result.emailDelivery==='sent'?'회원가입이 완료됐어요. 받은 메일에서 이메일을 인증해주세요.':mode==='register'?'회원가입이 완료됐어요.':'로그인했어요.');
-      } catch (err) {
-        formError(form, err.message);
-        b.disabled = false;
-        b.textContent = "다시 시도하기";
-      }
-    };
-  };
-  show();
-}
 
 import "./quality.css";
-import {accountPage,bindAccountPage,verificationPanel} from './account-ui.js';
+import { openSheet } from './app/sheets.js';
+// 신고 흐름이 쓰는 로그인 요청. React 로그인 시트를 연다.
+export function accountForm(after) {
+  openSheet("auth", { after });
+}
 import {setupWebApp} from './webapp.js';
 setupWebApp({openModal,toast});
 

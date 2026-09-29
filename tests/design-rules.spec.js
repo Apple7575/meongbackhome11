@@ -39,11 +39,11 @@ test("logout lives in settings, not on my home", async ({ page }) => {
   await page.goto("/#/my/settings");
   await expect(page.getByRole("button", { name: "로그아웃" })).toBeVisible();
 });
-test("legacy pages still render inside the React frame", async ({ page }) => {
+test("detail, stories and account pages render inside the React frame", async ({ page }) => {
   for (const [path, check] of [
     ["/#/dog/demo-bori", () => page.getByRole("heading", { name: /보리/ }).first()],
     ["/#/stories", () => page.getByRole("button", { name: "우리의 재회 이야기 쓰기" })],
-    ["/#/account/forgot", () => page.locator("#legacy-root input").first()],
+    ["/#/account/forgot", () => page.locator("#main input").first()],
   ]) {
     await ready(page, path);
     await expect(check()).toBeVisible();

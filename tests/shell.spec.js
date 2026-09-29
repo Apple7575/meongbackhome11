@@ -59,6 +59,19 @@ test("sightings are grouped by day, paged, and have one thumb-reach action", asy
   await page.keyboard.press("Escape");
   await expect(sheet).toHaveCount(0);
 });
+test("notification and area sheets: saving an area makes it the home default", async ({ page }) => {
+  await ready(page);
+  await registerByApi(page);
+  await page.getByRole("button", { name: /^알림 \d+개$/ }).click();
+  const alerts = page.getByRole("dialog", { name: "알림" });
+  await expect(alerts).toBeVisible();
+  await alerts.getByRole("button", { name: "관심 지역 고르기" }).click();
+  const areas = page.getByRole("dialog", { name: "관심 지역" });
+  await areas.getByRole("button", { name: "부산" }).click();
+  await areas.getByRole("button", { name: "1곳 저장하기" }).click();
+  await expect(areas).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: /^부산에서 찾고 있어요/ })).toBeVisible();
+});
 test("my home puts reports first and keeps logout in settings", async ({ page }) => {
   await ready(page, "/#/my");
   await expect(page.getByRole("heading", { name: "마이홈" })).toBeVisible();

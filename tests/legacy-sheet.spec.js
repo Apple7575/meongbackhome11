@@ -1,10 +1,15 @@
 import { test, expect } from "@playwright/test";
-import { ready, openLogin } from "./helpers.js";
+import { ready } from "./helpers.js";
+// 로그인은 React 시트로 옮겨서, 계속 옛 팝업으로 남는 "문제 신고"로 검사한다.
+async function openLegacyModal(page) {
+  await ready(page, "/#/dog/demo-bori");
+  await page.getByRole("button", { name: "문제 신고" }).click();
+  await expect(page.locator("#modal-root [role=dialog]")).toBeVisible();
+}
 test("legacy modal is a bottom sheet on phones and closes when dragged down", async ({ page }, info) => {
   test.skip(info.project.name !== "mobile", "Phone layout");
-  await ready(page);
-  await openLogin(page);
-  const sheet = page.getByRole("dialog");
+  await openLegacyModal(page);
+  const sheet = page.locator("#modal-root [role=dialog]");
   const vh = page.viewportSize().height;
   // 등장 애니메이션이 끝난 뒤의 위치를 잰다.
   await expect.poll(async () => { const b = await sheet.boundingBox(); return Math.round(b.y + b.height); }).toBe(vh);
@@ -17,12 +22,11 @@ test("legacy modal is a bottom sheet on phones and closes when dragged down", as
   await page.mouse.down();
   await page.mouse.move(h.x + h.width / 2, h.y + h.height / 2 + 120, { steps: 5 });
   await page.mouse.up();
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.locator("#modal-root [role=dialog]")).toHaveCount(0);
 });
 test("controls inside legacy sheets follow touch and type rules", async ({ page }, info) => {
   test.skip(info.project.name !== "mobile", "Phone layout");
-  await ready(page);
-  await openLogin(page);
+  await openLegacyModal(page);
   const r = await page.evaluate(() => {
     const root = document.querySelector("#modal-root");
     const vis = (el) => { const b = el.getBoundingClientRect(); return b.width > 0 && b.height > 0; };
@@ -40,9 +44,8 @@ test("controls inside legacy sheets follow touch and type rules", async ({ page 
 });
 test("legacy modal is a centered 480px window on desktop", async ({ page }, info) => {
   test.skip(info.project.name !== "desktop", "Desktop layout");
-  await ready(page);
-  await openLogin(page);
-  const box = await page.getByRole("dialog").boundingBox();
+  await openLegacyModal(page);
+  const box = await page.locator("#modal-root [role=dialog]").boundingBox();
   expect(Math.round(box.width)).toBe(480);
   const vw = page.viewportSize().width;
   expect(Math.abs(box.x + box.width / 2 - vw / 2)).toBeLessThanOrEqual(1);

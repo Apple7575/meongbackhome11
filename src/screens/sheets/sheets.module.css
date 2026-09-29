@@ -1,0 +1,23 @@
+.body { padding: 0 var(--gutter) 8px; display: flex; flex-direction: column; gap: 16px; }
+.intro { margin: 0; font-size: var(--t6); line-height: var(--t6-lh); color: var(--grey-600); }
+.next { margin: 0; padding: 12px 14px; border-radius: var(--radius); background: var(--grey-100); font-size: var(--t6); color: var(--grey-700); }
+.tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: var(--radius); background: var(--grey-100); }
+.tab { min-height: 44px; border-radius: 10px; font-size: var(--t6); font-weight: 600; color: var(--grey-600); background: none; border: 0; }
+.tab[aria-pressed="true"] { background: #fff; color: var(--grey-900); box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+.form { display: flex; flex-direction: column; gap: 16px; }
+.field { display: flex; flex-direction: column; gap: 8px; }
+.label { font-size: var(--t6); font-weight: 600; color: var(--grey-800); }
+.input { min-height: 52px; padding: 0 16px; border: 0; border-radius: var(--radius); background: var(--grey-100); font-size: 1rem; color: var(--grey-900); font-family: inherit; }
+.input:focus-visible { outline: 2px solid var(--brand); }
+.error { margin: 0; font-size: var(--t6); color: #f04452; }
+.link { align-self: center; min-height: 44px; display: inline-flex; align-items: center; font-size: var(--t6); color: var(--grey-700); }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.option { min-height: 48px; border-radius: var(--radius); border: 1px solid var(--grey-200); background: #fff; font-size: var(--t6); color: var(--grey-800); }
+.option[aria-pressed="true"] { border-color: var(--grey-900); font-weight: 700; color: var(--grey-900); background: var(--grey-50); }
+.center { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
+.center img { width: 120px; height: 120px; object-fit: contain; }
+.center h3 { margin: 0; font-size: var(--t4); line-height: var(--t4-lh); font-weight: 700; color: var(--grey-900); }
+.page { padding: 24px var(--gutter) 32px; display: flex; flex-direction: column; gap: 16px; }
+.page img { width: 96px; height: 96px; object-fit: contain; align-self: center; }
+.page h1 { margin: 0; font-size: var(--t2); line-height: var(--t2-lh); font-weight: 700; color: var(--grey-900); letter-spacing: -0.02em; }
+.status { margin: 0; min-height: 1.4em; font-size: var(--t6); color: var(--grey-800); }

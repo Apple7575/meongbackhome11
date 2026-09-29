@@ -13,7 +13,14 @@ import Settings from "../screens/Settings.jsx";
 import DogDetail from "../screens/DogDetail.jsx";
 import ReportFlow from "../screens/forms/ReportFlow.jsx";
 import SightingFlow from "../screens/forms/SightingFlow.jsx";
+import AccountPage from "../screens/AccountPage.jsx";
+import AuthSheet from "../screens/sheets/AuthSheet.jsx";
+import NotificationsSheet from "../screens/sheets/NotificationsSheet.jsx";
+import AreasSheet from "../screens/sheets/AreasSheet.jsx";
+import ReuniteSheet from "../screens/sheets/ReuniteSheet.jsx";
 import s from "./Frame.module.css";
+// openSheet(name, props)로 여는 시트들.
+const SHEETS = { auth: AuthSheet, notifications: NotificationsSheet, areas: AreasSheet, reunite: ReuniteSheet };
 // 새 디자인으로 옮긴 화면. 여기에 없는 경로는 기존 main.js가 #legacy-root에 그린다.
 export const SCREENS = { "/": Home, "/explore": Explore, "/sightings": Sightings, "/my": My, "/my/settings": Settings };
 const PATTERNS = [
@@ -22,6 +29,7 @@ const PATTERNS = [
   [/^\/report\/(?<mode>from|edit)\/(?<id>[^/]+)$/, ReportFlow],
   [/^\/(?<mode>profile)\/new$/, ReportFlow],
   [/^\/sighting\/new(?:\/(?<dogId>[^/]+))?$/, SightingFlow],
+  [/^\/account\/(?<kind>[a-z]+)(?:\?(?<query>.*))?$/, AccountPage],
 ];
 // 폼을 쓰는 동안에는 하단 메뉴를 숨기고 상단에 닫기만 둔다.
 export const isFlow = (route) => /^\/(report|profile|sighting)\//.test(route);
@@ -39,14 +47,22 @@ export default function App() {
   const { Screen, params } = resolveScreen(route);
   const legacyRef = useRef(null);
   const [reportId, setReportId] = useState(null);
+  const [sheet, setSheet] = useState(null);
   useEffect(() => {
-    const open = (e) => setReportId(e.detail);
-    addEventListener("open-report", open);
-    return () => removeEventListener("open-report", open);
+    const openReport = (e) => setReportId(e.detail);
+    const openNamed = (e) => setSheet(e.detail);
+    addEventListener("open-report", openReport);
+    addEventListener("open-sheet", openNamed);
+    return () => {
+      removeEventListener("open-report", openReport);
+      removeEventListener("open-sheet", openNamed);
+    };
   }, []);
   useEffect(() => {
     setReportId(null);
+    setSheet(null);
   }, [route]);
+  const Sheet = sheet && SHEETS[sheet.name];
   useEffect(() => {
     document.body.dataset.shell = Screen ? "column" : "legacy";
     if (Screen) return;
@@ -61,10 +77,12 @@ export default function App() {
       <TopBar route={route} store={store} />
       <div id="connection-banner" className={s.banner} hidden />
       <main id="main" className={Screen ? s.main : "container"}>
-        {Screen ? <Screen {...params} /> : <div ref={legacyRef} id="legacy-root" />}
+        {/* 주소가 바뀌면(예: 인증 → 비밀번호 찾기, 다른 강아지) 화면 상태를 새로 시작한다. */}
+        {Screen ? <Screen key={route.split("?")[0]} {...params} /> : <div ref={legacyRef} id="legacy-root" />}
       </main>
       {!isFlow(route) && <BottomNav route={route} />}
       {reportId && <ReportSheet id={reportId} onClose={() => setReportId(null)} />}
+      {Sheet && <Sheet {...sheet.props} onClose={() => setSheet(null)} />}
     </div>
   );
 }
