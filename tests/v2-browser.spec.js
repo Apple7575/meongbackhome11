@@ -23,8 +23,7 @@ async function submitDog(page, name) {
   return page.url().split("/dog/")[1];
 }
 test.beforeEach(async ({ page }) => ready(page));
-// 찾기 화면을 옮기는 Task 5에서 test로 되돌린다.
-test.fixme("home list, explore search and no horizontal overflow", async ({
+test("home list, explore search and no horizontal overflow", async ({
   page,
 }) => {
   await expect(page.locator("[data-dog-row]").first()).toBeVisible();

@@ -26,6 +26,23 @@ test("home shows missing dogs first and lets people change the region in a botto
   await expect(page.getByRole("heading", { name: /^부산에서 찾고 있어요/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /집에 돌아온 아이들/ })).toBeVisible();
 });
+test("explore filters with easy-to-answer sheets and pages 20 at a time", async ({ page }) => {
+  await ready(page, "/#/explore");
+  await expect(page.getByRole("heading", { name: "찾기" })).toBeVisible();
+  const total = await page.locator("[data-dog-row]").count();
+  expect(total).toBeGreaterThan(0);
+  expect(total).toBeLessThanOrEqual(20);
+  await page.getByRole("button", { name: "필터" }).click();
+  const sheet = page.getByRole("dialog", { name: "필터" });
+  await sheet.getByRole("button", { name: "소형" }).click();
+  await sheet.getByRole("button", { name: /마리 보기$/ }).click();
+  await expect(page.getByRole("button", { name: "필터 1" })).toBeVisible();
+  for (const row of await page.locator("[data-dog-row]").all()) await expect(row).toBeVisible();
+  await page.getByRole("button", { name: "지도로 보기" }).click();
+  await expect(page.locator(".leaflet-container")).toBeVisible();
+  await page.getByRole("button", { name: "목록으로 보기" }).click();
+  await expect(page.locator(".leaflet-container")).toHaveCount(0);
+});
 test("my home puts reports first and keeps logout in settings", async ({ page }) => {
   await ready(page, "/#/my");
   await expect(page.getByRole("heading", { name: "마이홈" })).toBeVisible();

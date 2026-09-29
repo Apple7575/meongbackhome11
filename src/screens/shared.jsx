@@ -30,7 +30,7 @@ export function DogRow({ dog, size = 56 }) {
       data-dog-row=""
       left={<Thumb src={dog.image} size={size} />}
       title={<><span className={s.name}>{dog.name}</span><span className={s.breed}> · {dog.breed}</span></>}
-      description={`${dog.location} · ${relativeTime(dog.time)}`}
+      description={`${relativeTime(dog.time)} · ${dog.location}`}
       right={<DogBadge dog={dog} />}
     />
   );
