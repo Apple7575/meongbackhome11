@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import type { ComponentType } from "react";
 import type { SheetName, SheetRequest } from "./sheets.ts";
-import "../main.js";
+import "./boot.ts";
+import ConnectionBanner from "./ConnectionBanner.tsx";
 import ReportSheet from "../screens/ReportSheet.tsx";
 import { useRoute } from "./router.ts";
 import { useStore } from "./useStore.ts";
@@ -23,11 +24,20 @@ import NotificationsSheet from "../screens/sheets/NotificationsSheet.tsx";
 import AreasSheet from "../screens/sheets/AreasSheet.tsx";
 import ReuniteSheet from "../screens/sheets/ReuniteSheet.tsx";
 import StorySheet from "../screens/sheets/StorySheet.tsx";
+import ShareSheet from "../screens/sheets/ShareSheet.tsx";
+import PosterSheet from "../screens/sheets/PosterSheet.tsx";
+import InfoSheet from "../screens/sheets/InfoSheet.tsx";
+import { UpdateSheet, FlagSheet } from "../screens/sheets/TextSheets.tsx";
+import { DeviceSheet, DeleteAccountSheet, SuccessSheet } from "../screens/sheets/AccountSheets.tsx";
 import { EmptyState, ButtonLink } from "../ui/index.tsx";
 import s from "./Frame.module.css";
 // openSheet(name, props)로 여는 시트들. 화면·시트마다 props가 달라 표는 느슨한 타입으로 둔다.
 type AnyComponent = ComponentType<any>;
-const SHEETS: Record<SheetName, AnyComponent> = { auth: AuthSheet, notifications: NotificationsSheet, areas: AreasSheet, reunite: ReuniteSheet, story: StorySheet };
+const SHEETS: Record<SheetName, AnyComponent> = {
+  auth: AuthSheet, notifications: NotificationsSheet, areas: AreasSheet, reunite: ReuniteSheet, story: StorySheet,
+  share: ShareSheet, poster: PosterSheet, update: UpdateSheet, flag: FlagSheet, info: InfoSheet,
+  device: DeviceSheet, deleteAccount: DeleteAccountSheet, success: SuccessSheet,
+};
 export const SCREENS: Record<string, AnyComponent> = {
   "/": Home, "/explore": Explore, "/sightings": Sightings, "/my": My, "/my/settings": Settings,
   "/stories": Stories, "/admin": Admin,
@@ -78,7 +88,7 @@ export default function App() {
   return (
     <div className={s.app} data-shell="react">
       <TopBar route={route} store={store} />
-      <div id="connection-banner" className={s.banner} hidden />
+      <ConnectionBanner connection={store.connection} />
       <main id="main" className={s.main}>
         {/* 주소가 바뀌면(예: 인증 → 비밀번호 찾기, 다른 강아지) 화면 상태를 새로 시작한다. */}
         <Screen key={route.split("?")[0]} {...params} />

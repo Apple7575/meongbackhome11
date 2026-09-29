@@ -27,7 +27,8 @@ test("small phone layouts, keyboard inputs, and location permission feedback", a
   await page.evaluate(() => Object.defineProperty(navigator, "geolocation", { configurable: true, value: { getCurrentPosition: (_ok, error) => error({ code: 1 }) } }));
   await page.getByRole("button", { name: "현재 위치 확인", exact: true }).click();
   await expect(page.locator("#gps-status")).toContainText("위치 권한이 꺼져");
-  await page.getByRole("button", { name: "닫기", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.goto("/#/account/forgot");
   expect(await page.locator("#main input").first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(16);
   await page.screenshot({ path: "artifacts/account-phone.png", fullPage: true });

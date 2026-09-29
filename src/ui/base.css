@@ -1,0 +1,175 @@
+/* 앱 전체 기본 규칙: 초기화 · 포커스 표시 · 지도 핀(Leaflet) · 본문 바로가기 · 알림 메시지 · 저장 중 표시. */
+* {
+  box-sizing: border-box;
+}body {
+  margin: 0;
+}button,
+input,
+select,
+textarea {
+  font: inherit;
+}button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}button {
+  cursor: pointer;
+  color: inherit;
+}a {
+  color: inherit;
+  text-decoration: none;
+}button {
+  border: 0;
+  background: none;
+}img {
+  max-width: 100%;
+  display: block;
+}button svg,
+a svg {
+  pointer-events: none;
+}button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #c97552;
+  outline-offset: 4px;
+}button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}[hidden] {
+  display: none !important;
+}.custom-map-icon {
+  background: none;
+  border: 0;
+}.map-pin {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  background: #e88b6a;
+  font-size: 13px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50% 50% 50% 5px;
+  transform: rotate(-45deg);
+  border: 3px solid #fff;
+  box-shadow: 0 3px 8px #686b6240;
+}.map-pin {
+  font-size: 0;
+}.map-pin:after {
+  content: "•";
+  font-size: 24px;
+  transform: rotate(45deg);
+}.map-pin.confirmed {
+  background: #73906f;
+}.direction-icon span {
+  color: #e77f5d;
+  display: block;
+  font-size: 18px;
+  text-shadow: 0 0 2px #fff;
+  line-height: 16px;
+  transform-origin: center;
+}.leaflet-container {
+  font-family: inherit;
+}.leaflet-popup-content {
+  font-size: 12px;
+  line-height: 1.9;
+}.leaflet-control-attribution {
+  font-size: 9px !important;
+}.skip-link {
+  position: absolute;
+  left: 10px;
+  top: -100px;
+  z-index: 2000;
+  background: white;
+  padding: 12px;
+}.skip-link:focus {
+  top: 10px;
+}#toast {
+  position: fixed;
+  z-index: 2000;
+  bottom: 30px;
+  left: 50%;
+  transform: translate(-50%, 20px);
+  background: #485140f2;
+  box-shadow: 0 4px 20px #3b44312b;
+  padding: 15px 24px;
+  border-radius: 13px;
+  color: #fff;
+  font-size: 13px;
+  max-width: calc(100vw - 36px);
+  width: max-content;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+  line-height: 1.7;
+}#toast.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}@media (max-width: 760px) {
+  #toast {
+    bottom: 90px;
+    font-size: 12px;
+    padding: 13px 18px;
+  }
+}@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}.map-pin {
+  font-size: 13px;
+}.map-pin:after {
+  content: none;
+}.map-pin > b {
+  display: block;
+  transform: rotate(45deg);
+  font-size: 13px;
+  font-weight: 700;
+}.is-saving button[type="submit"] {
+  pointer-events: none;
+  opacity: 0.65;
+}.is-saving:after {
+  content: "안전하게 저장하고 있어요…";
+  position: fixed;
+  bottom: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3000;
+  border-radius: 30px;
+  padding: 12px 22px;
+  background: #4b5843;
+  color: #fff;
+  font-size: 12px;
+  box-shadow: 0 5px 15px #26312020;
+  white-space: nowrap;
+}.selected-pin {
+  z-index: 1000 !important;
+}.selected-pin .map-pin {
+  box-shadow:
+    0 0 0 6px #f3ba9360,
+    0 5px 15px #6b5e422a;
+}.map-pin.unconfirmed {
+  background: #bba792;
+  border-style: dashed;
+}.map-pin.confirmed {
+  background: #738d67;
+}@media (max-width: 760px) {
+  .is-saving:after {
+    bottom: 90px;
+  }
+}@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}@media(max-width:700px){
+  body{padding-bottom:calc(76px + env(safe-area-inset-bottom));}
+}

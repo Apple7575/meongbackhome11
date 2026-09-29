@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useStore } from "../../app/useStore.ts";
 import { commit } from "../../app/actions.ts";
 import { read, id as newId } from "../../client-store.js";
-import { toast } from "../../main.js";
+import { toast } from "../../app/toast.ts";
 import { COORDS } from "../../domain.js";
 import { objectParticle } from "../../format.ts";
 import Flow from "./Flow.tsx";

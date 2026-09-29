@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { loadDraft, saveDraft, clearDraft } from "../../wizard.js";
+import { loadDraft, saveDraft, clearDraft } from "../../drafts.ts";
 export interface DraftState<V, E> {
   values: V;
   image: string;

@@ -2,7 +2,7 @@ import { useState } from "react";
 import BottomSheet from "../../ui/BottomSheet.tsx";
 import { Button } from "../../ui/index.tsx";
 import { authenticate } from "../../client-store.js";
-import { toast } from "../../main.js";
+import { toast } from "../../app/toast.ts";
 import s from "./sheets.module.css";
 import type { FormEvent, InputHTMLAttributes } from "react";
 import { errorText } from "../../errors.ts";

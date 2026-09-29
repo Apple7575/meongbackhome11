@@ -3,7 +3,7 @@ import BottomSheet from "../../ui/BottomSheet.tsx";
 import { Button } from "../../ui/index.tsx";
 import { commit } from "../../app/actions.ts";
 import { read } from "../../client-store.js";
-import { toast } from "../../main.js";
+import { toast } from "../../app/toast.ts";
 import { subjectParticle } from "../../format.ts";
 import s from "./sheets.module.css";
 import { errorText } from "../../errors.ts";

@@ -2,7 +2,8 @@ import { useRef, useState } from "react";
 import { useStore } from "../../app/useStore.ts";
 import { commit } from "../../app/actions.ts";
 import { read, id as newId } from "../../client-store.js";
-import { toast, accountForm, registeredNext } from "../../main.js";
+import { toast } from "../../app/toast.ts";
+import { openSheet } from "../../app/sheets.ts";
 import { COORDS } from "../../domain.js";
 import { EmptyState, SkeletonRows } from "../../ui/index.tsx";
 import Flow from "./Flow.tsx";
@@ -123,7 +124,7 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
   const submit = async () => {
     const values = { ...v, name: v.name.trim(), breed: v.breed.trim(), location: v.location.trim(), description: v.description.trim() };
     if (!profileOnly && !read().user?.registered) {
-      accountForm(() => submitRef.current?.());
+      openSheet("auth", { after: () => submitRef.current?.() });
       return;
     }
     if (!profileOnly && read().user?.verificationRequired && !read().user?.verified)
@@ -148,7 +149,7 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
     await commit();
     draft.finish();
     location.hash = `/dog/${entry.id}`;
-    if (!target) setTimeout(() => registeredNext(entry.id), 80);
+    if (!target) setTimeout(() => openSheet("success", { dogId: entry.id }), 80);
     toast(target ? "신고를 고쳤어요." : "신고가 등록됐어요. 이제 이웃에게 알려주세요.");
   };
   const run = async () => {

@@ -17,6 +17,15 @@
 .center { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
 .center img { width: 120px; height: 120px; object-fit: contain; }
 .center h3 { margin: 0; font-size: var(--t4); line-height: var(--t4-lh); font-weight: 700; color: var(--grey-900); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.poster { width: 100%; height: auto; border-radius: var(--radius); border: 1px solid var(--grey-200); background: #fffaf3; }
+.mascot { width: 120px; height: 120px; object-fit: contain; align-self: center; }
+.paragraph { margin: 0; font-size: var(--t5); line-height: var(--t5-lh); color: var(--grey-800); word-break: keep-all; }
+.facts { margin: 0; border-radius: var(--radius); background: var(--grey-50); padding: 4px 16px; }
+.facts > div { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--grey-200); }
+.facts > div:last-child { border-bottom: 0; }
+.facts dt { font-size: var(--t6); color: var(--grey-600); }
+.facts dd { margin: 0; font-size: var(--t6); font-weight: 600; color: var(--grey-900); text-align: right; }
 .page { padding: 24px var(--gutter) 32px; display: flex; flex-direction: column; gap: 16px; }
 .page img { width: 96px; height: 96px; object-fit: contain; align-self: center; }
 .page h1 { margin: 0; font-size: var(--t2); line-height: var(--t2-lh); font-weight: 700; color: var(--grey-900); letter-spacing: -0.02em; }

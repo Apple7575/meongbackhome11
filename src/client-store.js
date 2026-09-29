@@ -57,7 +57,7 @@ export async function refresh({force=false}={}) {
   try {
     const incoming = await api("/api/state");
     if(requestEpoch!==epoch||busy)return;
-    if(!force&&document.querySelector('#modal-root')?.children.length){window.dispatchEvent(new Event('remote-change'));return;}
+
     data = withExamples(incoming);
     baseline = structuredClone(data);
     window.dispatchEvent(new Event("store-updated"));

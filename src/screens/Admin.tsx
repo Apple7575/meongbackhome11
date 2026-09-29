@@ -1,7 +1,7 @@
 import { useStore } from "../app/useStore.ts";
 import { commit } from "../app/actions.ts";
 import { read } from "../client-store.js";
-import { toast } from "../main.js";
+import { toast } from "../app/toast.ts";
 import { Top, ListHeader, ListRow, Badge, Button, EmptyState } from "../ui/index.tsx";
 import { formatTime } from "../format.ts";
 import s from "./stories.module.css";

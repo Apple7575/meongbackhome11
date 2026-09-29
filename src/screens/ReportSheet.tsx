@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useStore } from "../app/useStore.ts";
 import { commit } from "../app/actions.ts";
 import { read as readStore } from "../client-store.js";
-import { toast } from "../main.js";
+import { toast } from "../app/toast.ts";
 import BottomSheet from "../ui/BottomSheet.tsx";
 import { ListHeader, ListRow, Badge, Button } from "../ui/index.tsx";
 import Icon from "../ui/Icon.tsx";

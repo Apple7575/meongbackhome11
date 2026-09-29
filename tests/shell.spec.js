@@ -85,6 +85,22 @@ test("members can leave a reunion story from the stories screen", async ({ page 
   await expect(sheet).toHaveCount(0);
   await expect(page.getByRole("heading", { name: title })).toBeVisible();
 });
+test("share, flag and info open as React bottom sheets with no legacy modal root", async ({ page }) => {
+  await ready(page, "/#/dog/demo-bori");
+  await expect(page.locator("#modal-root")).toHaveCount(0);
+  await page.getByRole("button", { name: /^공유/ }).click();
+  const share = page.getByRole("dialog", { name: "소식을 함께 나눠주세요" });
+  await expect(share.locator("#share-url")).toHaveValue(/#\/dog\/demo-bori$/);
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: /^문제 신고/ }).click();
+  const flag = page.getByRole("dialog", { name: "문제 신고하기" });
+  await flag.getByRole("button", { name: "중복 신고" }).click();
+  await expect(flag.getByRole("button", { name: "중복 신고" })).toHaveAttribute("aria-pressed", "true");
+  await page.keyboard.press("Escape");
+  await page.goto("/#/my/settings");
+  await page.getByRole("button", { name: /서비스 안내/ }).click();
+  await expect(page.getByRole("dialog", { name: "멍백홈 안내" })).toBeVisible();
+});
 test("unknown addresses show a friendly not-found screen", async ({ page }) => {
   await ready(page, "/#/no-such-page");
   await expect(page.getByRole("heading", { name: "페이지를 찾을 수 없어요" })).toBeVisible();
