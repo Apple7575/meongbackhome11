@@ -1,0 +1,44 @@
+/* 2-1: 옛 openModal 팝업을 새 규칙으로 덮어쓴다. 2-5에서 옛 CSS와 함께 삭제. */
+#modal-root .modal-backdrop {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: none;
+  padding: 24px;
+  align-items: center;
+}
+#modal-root .modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  background: #fff;
+  border: 0;
+  border-radius: var(--sheet-radius);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  font-family: inherit;
+  color: var(--grey-900);
+}
+#modal-root .modal.wide { max-width: 640px; }
+#modal-root .sheet-handle { display: none; }
+@media (max-width: 600px) {
+  #modal-root .modal-backdrop { padding: 0; align-items: flex-end; }
+  #modal-root .modal,
+  #modal-root .modal.wide {
+    max-width: none;
+    max-height: 90dvh;
+    border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  #modal-root .sheet-handle {
+    display: flex; align-items: center; justify-content: center;
+    height: 24px; touch-action: none; position: sticky; top: 0; z-index: 501; background: #fff;
+    border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+  }
+  #modal-root .sheet-handle::before {
+    content: ""; width: 40px; height: 4px; border-radius: 2px; background: var(--grey-300);
+  }
+  #modal-root .modal-header { top: 24px; }
+  #modal-root .modal { animation: legacy-sheet-rise 0.22s ease-out; }
+}
+@keyframes legacy-sheet-rise { from { transform: translateY(32px); opacity: 0.6; } }
+@media (prefers-reduced-motion: reduce) {
+  #modal-root .modal { animation: none; }
+}

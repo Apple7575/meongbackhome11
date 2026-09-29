@@ -242,8 +242,20 @@ function openModal(title, body, wide = false) {
   const focus = document.activeElement;
   closeModal();
   previousFocus = focus;
-  modalRoot.innerHTML = `<div class="modal-backdrop"><section class="modal ${wide ? "wide" : ""}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-header"><h2 id="modal-title">${title}</h2><button class="icon-button" data-action="close" aria-label="닫기">${icon("x")}</button></div><div class="modal-content">${body}</div></section></div>`;
+  modalRoot.innerHTML = `<div class="modal-backdrop"><section class="modal ${wide ? "wide" : ""}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="sheet-handle" aria-hidden="true"></div><div class="modal-header"><h2 id="modal-title">${title}</h2><button class="icon-button" data-action="close" aria-label="닫기">${icon("x")}</button></div><div class="modal-content">${body}</div></section></div>`;
   document.body.classList.add("modal-open");
+  const handle = modalRoot.querySelector(".sheet-handle");
+  handle.addEventListener("pointerdown", (down) => {
+    const startY = down.clientY;
+    handle.setPointerCapture?.(down.pointerId);
+    handle.addEventListener(
+      "pointerup",
+      (up) => {
+        if (up.clientY - startY > 60) closeModal();
+      },
+      { once: true },
+    );
+  });
   refreshIcons();
   setTimeout(
     () => modalRoot.querySelector("input,select,textarea,button")?.focus(),
