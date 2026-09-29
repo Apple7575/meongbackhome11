@@ -2,12 +2,9 @@ import {exampleDetail} from './example-detail.js';
 import {
   createIcons,
   ArrowRight,
-  ArrowUpRight,
-  Bell,
   BellRing,
   Building2,
   Camera,
-  ChevronDown,
   ChevronRight,
   Clock3,
   Compass,
@@ -19,25 +16,17 @@ import {
   Heart,
   House,
   House as HouseHeart,
-  LayoutGrid,
   LocateFixed,
-  Map,
   MapPin,
-  MapPinned,
   MessagesSquare,
   Navigation,
-  PawPrint,
   Plus,
   QrCode,
   Route,
   ScanEye,
   ScanSearch,
-  Search,
   Send,
   Share2,
-  SlidersHorizontal,
-  Sprout,
-  UserRound,
   X,
 } from "lucide";
 import QRCode from "qrcode";
@@ -74,17 +63,6 @@ export function mountLegacy(el) {
   if (app) render();
 }
 const modalRoot = document.querySelector("#modal-root");
-const state = {
-  region: "전국",
-  query: "",
-  color: "",
-  size: "",
-  accessory: "",
-  status: "all",
-  view: "list",
-  showFilters: false,
-  tab: "missing",
-};
 let timelineCleanup = () => {},
   pendingRefresh = false;
 let maps = [],
@@ -96,12 +74,9 @@ const refreshIcons = () =>
   createIcons({
     icons: {
       ArrowRight,
-      ArrowUpRight,
-      Bell,
       BellRing,
       Building2,
       Camera,
-      ChevronDown,
       ChevronRight,
       Clock3,
       Compass,
@@ -113,25 +88,17 @@ const refreshIcons = () =>
       Heart,
       House,
       HouseHeart,
-      LayoutGrid,
       LocateFixed,
-      Map,
       MapPin,
-      MapPinned,
       MessagesSquare,
       Navigation,
-      PawPrint,
       Plus,
       QrCode,
       Route,
       ScanEye,
       ScanSearch,
-      Search,
       Send,
       Share2,
-      SlidersHorizontal,
-      Sprout,
-      UserRound,
       X,
     },
     attrs: { "stroke-width": 1.7 },
@@ -164,93 +131,8 @@ function toast(message) {
   clearTimeout(toast.timer);
   toast.timer = setTimeout(() => el.classList.remove("visible"), 3800);
 }
-function header() {
-  const current = route();
-  const count = read().notifications.filter((n) => !n.read).length;
-  return `<header class="site-header"><div class="header-inner"><a class="brand" href="#/" aria-label="멍백홈 홈"><img src="/favicon.svg" alt=""/><span>멍백홈<span class="brand-dot">.</span></span></a><nav class="desktop-nav" aria-label="메인 메뉴"><a href="#/" class="${current === "/" ? "active" : ""}">홈</a><a href="#/explore" class="${current === "/explore" ? "active" : ""}">강아지 찾기</a><a href="#/sightings" class="${current === "/sightings" ? "active" : ""}">목격 소식</a><a href="#/stories" class="${current === "/stories" ? "active" : ""}">따뜻한 재회</a></nav><div class="header-actions"><button class="icon-button notification-button" data-action="notifications" aria-label="알림 ${count}개">${icon("bell")}${count ? '<span class="notification-dot"></span>' : ""}</button><a class="my-link" href="#/my">${icon("user-round")}<span>마이홈</span></a><button class="button primary small header-report" data-action="report">${icon("plus")}실종 신고</button></div></div></header>`;
-}
-function footer() {
-  return `<footer class="site-footer"><div><a class="brand" href="#/"><img src="/favicon.svg" alt=""/><span>멍백홈<span class="brand-dot">.</span></span></a><p>모든 강아지가 다시, 따뜻한 집으로.</p></div><div class="footer-right"><button class="text-button" data-action="about">서비스 안내</button><button class="text-button" data-action="privacy">개인정보 안내</button><a href="#/admin">운영 화면</a><span>© ${new Date().getFullYear()} MEONGBACK HOME</span></div></footer><div class="demo-strip">${icon("sprout")} 작은 관심이 소중한 재회로 · 예시 표시가 있는 신고는 실제 실종 신고가 아니에요.</div><nav class="mobile-nav" aria-label="모바일 메뉴">${[
-    ["/", "house", "홈"],
-    ["/explore", "search", "찾기"],
-    ["/sightings", "map-pin", "목격 소식"],
-    ["/my", "user-round", "마이홈"],
-  ]
-    .map(
-      ([p, i, t]) =>
-        `<a href="#${p}" class="${route() === p ? "active" : ""}">${icon(i)}<span>${t}</span></a>`,
-    )
-    .map((html, n) =>
-      n === 2
-        ? `<button class="mobile-report" data-action="report" aria-label="실종 신고"><span class="mobile-report-icon">${icon("plus")}</span><span>신고</span></button>${html}`
-        : html,
-    )
-    .join("")}</nav>`;
-}
-function hero() {
-  return `<section class="hero"><div class="hero-copy"><span class="eyebrow"><span></span> 잃어버린 강아지를 함께 찾는 곳</span><h1>우리 강아지 찾기,<br>여기서 시작하세요<span class="coral">.</span></h1><p>잃어버렸다면 사진과 장소를 등록하세요.<br>발견했다면 어디서 봤는지 알려주세요.</p><div class="hero-buttons"><button class="button primary" data-action="report">${icon("search")}강아지를 잃어버렸어요</button><button class="button white" data-action="sighting">${icon("map-pin")}강아지를 발견했어요</button></div><div class="hero-note"><span class="tiny-paw">${icon("paw-print")}</span> 강아지 둘러보기와 발견 제보는 로그인 없이 가능해요.</div></div><div class="hero-art"><div class="hero-orbit"></div><span class="art-spark spark-one">✦</span><span class="art-spark spark-two">✧</span><img class="hero-dogs" src="/assets/mascot-home.webp" alt="코랄색 인식표를 한 멍백홈의 하얀 강아지" fetchpriority="high"/><div class="hero-sticker">${icon("heart")} 함께라서, 찾을 수 있어요</div></div></section>`;
-}
-function actionCards() {
-  return `<section class="quick-actions" aria-label="함께 찾는 방법"><button class="quick-card peach" data-action="report"><span class="quick-icon">${icon("scan-search")}</span><span><span class="mini-label">혼자 걱정하지 마세요</span><strong>우리 아이를 찾고 있어요</strong><span class="quick-desc">사진과 마지막으로 본 장소를 알려주세요.</span></span><span class="quick-arrow">${icon("arrow-up-right")}</span></button><button class="quick-card mint" data-action="sighting"><span class="quick-icon">${icon("map-pinned")}</span><span><span class="mini-label">잠깐의 관심이 큰 도움이 돼요</span><strong>이 강아지를 보셨나요?</strong><span class="quick-desc">목격한 장소와 이동 방향을 남겨주세요.</span></span><span class="quick-arrow">${icon("arrow-up-right")}</span></button></section>`;
-}
-function dogCard(d) {
-  const saved = read().saved.includes(d.id);
-  return `<article class="dog-card"><a class="dog-photo" href="#/dog/${d.id}"><img src="${esc(d.image || "/assets/mascot-home.webp")}" alt="${esc(d.name)} ${esc(d.breed)} 사진" loading="lazy"/>${badge(d)}${d.demo ? '<span class="sample-label">예시</span>' : ""}</a><button class="save-button ${saved ? "saved" : ""}" data-action="save" data-id="${d.id}" aria-label="${esc(d.name)} ${saved ? "저장 취소" : "저장"}" aria-pressed="${saved}">${icon("heart")}</button><a class="dog-info" href="#/dog/${d.id}"><div class="dog-title"><h3>${esc(d.name)}</h3><span>${esc(d.breed)} · ${esc(d.sex)}</span></div><p>${icon("map-pin")}${esc(d.location)}</p><div class="dog-meta"><span>${icon("clock-3")}${timeAgo(d.time)}</span><span>${esc(d.age)}<span class="dot-separator">·</span>${esc(d.size)}</span></div></a></article>`;
-}
 function empty(title, body, button = "") {
   return `<div class="empty-state"><img src="/assets/mascot-reunion.webp" alt=""/><h3>${title}</h3><p>${body}</p>${button}</div>`;
-}
-function filterBar() {
-  return `<div class="filter-bar"><div class="search-input">${icon("search")}<input id="dog-search" type="search" value="${esc(state.query)}" placeholder="지역, 견종, 이름으로 찾아보세요" aria-label="강아지 검색"/></div><button class="filter-button" data-action="region">${icon("map-pin")}<span>${state.region === "전국" ? "전국 모든 지역" : state.region}</span>${icon("chevron-down")}</button><button class="filter-button ${state.showFilters ? "selected" : ""}" data-action="filters" aria-expanded="${state.showFilters}">${icon("sliders-horizontal")}<span>상세 필터</span>${state.color || state.size || state.accessory ? '<b class="filter-dot"></b>' : ""}</button><div class="view-toggle"><button data-action="view" data-view="list" class="${state.view === "list" ? "active" : ""}" aria-label="목록 보기" aria-pressed="${state.view === "list"}">${icon("layout-grid")}</button><button data-action="view" data-view="map" class="${state.view === "map" ? "active" : ""}" aria-label="지도 보기" aria-pressed="${state.view === "map"}">${icon("map")}</button></div></div>${state.showFilters ? `<div class="advanced-filters"><label>털 색<select data-filter="color"><option value="">모든 색</option>${options(["흰색", "갈색", "검정색", "회색", "혼합"], state.color)}</select></label><label>크기<select data-filter="size"><option value="">모든 크기</option>${options(["소형", "중형", "대형"], state.size)}</select></label><label>착용물<select data-filter="accessory"><option value="">모든 착용물</option>${options(["없음", "목줄", "하네스", "옷"], state.accessory)}</select></label><button class="text-button" data-action="clear-filters">초기화</button></div>` : ""}`;
-}
-function explorer(home = false) {
-  return `<section class="explore-section" id="explore"><div class="section-heading"><div><span class="eyebrow section-eyebrow">함께 찾아주세요</span><h2>찾고 있는 강아지<span class="coral">.</span></h2><p>사진을 누르면 특징과 목격 장소를 볼 수 있어요.</p></div><button class="text-button area-alert" data-action="areas">${icon("bell-ring")}우리 동네 알림 받기${icon("chevron-right")}</button></div><div class="list-tabs"><button class="${state.status === "all" ? "active" : ""}" data-action="status" data-status="all">전체 소식</button><button class="${state.status === "missing" ? "active" : ""}" data-action="status" data-status="missing">찾고 있어요<span>${read().dogs.filter((d) => d.status === "missing").length}</span></button><button class="${state.status === "reunited" ? "active" : ""}" data-action="status" data-status="reunited">집에 돌아왔어요</button><span class="example-note">예시 데이터 포함</span></div>${filterBar()}<div id="dog-results">${resultsHTML(home)}</div></section>`;
-}
-function resultsHTML(home = false) {
-  const dogs = filterDogs(read().dogs, state);
-  if (!dogs.length)
-    return empty(
-      "아직 등록된 소식이 없어요",
-      "다른 지역이나 검색 조건으로 찾아보세요.",
-      `<button class="button white" data-action="clear-filters">검색 조건 초기화</button>`,
-    );
-  return state.view === "map"
-    ? '<div id="explore-map" class="explore-map" aria-label="실종 강아지 지도"></div>'
-    : `<div class="dog-grid">${dogs
-        .slice(0, home ? 4 : 100)
-        .map(dogCard)
-        .join(
-          "",
-        )}</div>${home ? '<a class="all-link" href="#/explore">더 많은 아이들 만나보기 ' + icon("arrow-right") + "</a>" : ""}`;
-}
-function renderResults() {
-  const el = document.querySelector("#dog-results");
-  if (!el) return;
-  maps.forEach((m) => m.remove());
-  maps = [];
-  el.innerHTML = resultsHTML(route() === "/");
-  refreshIcons();
-  initExploreMap();
-}
-function initExploreMap() {
-  const el = document.querySelector("#explore-map");
-  if (!el) return;
-  const dogs = filterDogs(read().dogs, state);
-  const m = baseMap(
-    el,
-    dogs[0]?.coords || COORDS.서울,
-    state.region === "전국" ? 7 : 12,
-  );
-  maps.push(m);
-  dogs.forEach((d) => {
-    const mk = marker(m, d.coords, "♥");
-    mk.bindPopup(
-      `<a href="#/dog/${d.id}"><b>${esc(d.name)}</b> · ${esc(d.breed)}<br>${esc(d.location)}<br>상세 보기 →</a>`,
-    );
-  });
-}
-function communityBanner() {
-  return `<section class="community-banner"><div class="community-art"><img src="/assets/mascot-reunion.webp" alt="다시 만나 기쁘게 집으로 달려오는 멍백홈 강아지" loading="lazy"/></div><div><span class="eyebrow">우리가 함께 만드는 해피엔딩</span><h2>“다시 만나서, 정말 다행이야.”</h2><p>작은 제보로 시작된, 따뜻한 재회의 이야기를 만나보세요.</p></div><a class="button white" href="#/stories">재회 이야기 읽기${icon("arrow-up-right")}</a></section><section class="how-it-works"><div><span class="eyebrow">작은 행동, 커다란 변화</span><h2>함께라면 더 빨리 만날 수 있어요</h2></div><div class="how-steps"><div><span>01</span><strong>주변을 살펴봐 주세요</strong><p>우리 동네 실종 소식에 관심을 가져주세요.</p></div><div><span>02</span><strong>기억을 나눠주세요</strong><p>목격한 장소와 시간이 큰 단서가 돼요.</p></div><div><span>03</span><strong>소식을 퍼뜨려 주세요</strong><p>공유한 링크 하나가 재회로 이어져요.</p></div></div></section>`;
 }
 function detail(d) {
   if (!d)
@@ -281,17 +163,6 @@ function detail(d) {
     '<p class="muted">주변 발견 제보가 등록되면 위치·시간·특징으로 후보를 보여드려요.</p>'
   }<button class="text-button" data-action="public-data">공공 보호 정보 연계 안내${icon("external-link")}</button></section></div>`;
 }
-function sightings() {
-  const reports = [...read().reports]
-    .sort((a, b) => new Date(b.time) - new Date(a.time))
-    .filter(
-      (r) =>
-        state.region === "전국" ||
-        r.region === state.region ||
-        read().dogs.find((d) => d.id === r.dogId)?.region === state.region,
-    );
-  return `<section class="page-heading"><span class="eyebrow">당신이 본 그 아이, 누군가는 찾고 있어요</span><h1>우리 주변의 목격 소식<span class="coral">.</span></h1><p>목격한 시간과 장소, 작은 기억 하나도 소중한 단서가 돼요.</p><button class="button primary" data-action="sighting">${icon("plus")}발견 제보 남기기</button></section><div class="section-heading"><h2>최근 발견 제보 <span class="count-chip">${reports.length}</span></h2><button class="filter-button" data-action="region">${icon("map-pin")}${state.region}${icon("chevron-down")}</button></div><div class="sighting-grid">${reports.map((r) => `<button class="sighting-card" data-action="report-detail" data-id="${r.id}"><span class="sighting-symbol">${icon(r.kind === "목격" ? "map-pin" : r.kind === "보호 중" ? "house-heart" : "building-2")}</span><span><span class="badge sage">${esc(r.kind)}</span>${r.demo ? '<span class="subtle-tag">예시</span>' : ""}<h3>${esc(r.location)}</h3><p>${esc(r.description)}</p><small>${formatTime(r.time)} · ${headingLabel(r.heading)}</small></span>${icon("chevron-right")}</button>`).join("") || empty("아직 목격 소식이 없어요", "주변에서 발견한 강아지의 소식을 남겨주세요.")}</div>`;
-}
 function stories() {
   return `<section class="stories-hero"><img src="/assets/mascot-reunion.webp" alt="서로 기대고 있는 강아지들"/><div><span class="eyebrow">함께 만들어낸 해피엔딩</span><h1>다시 만나서,<br>정말 다행이야<span class="coral">.</span></h1><p>평범했던 일상이 다시 돌아온 순간.<br>소중한 재회의 이야기를 나눠주세요.</p><button class="button primary" data-action="story">${icon("heart")}우리의 재회 이야기 쓰기</button></div></section><section class="story-list">${
     read().stories.length
@@ -306,34 +177,6 @@ function stories() {
           "다시 만난 순간과 도움이 되었던 경험을 나눠주세요.",
         )
   }</section>`;
-}
-function myHome() {
-  const db = read();
-  return `<section class="page-heading"><span class="eyebrow">우리 아이와 함께하는 공간</span><h1>나의 멍백홈<span class="coral">.</span></h1><p>신고와 반려견 정보를 한곳에서 관리하고, 새 목격 소식을 확인하세요.</p></section><div class="my-sections"><section><div class="section-heading"><h2>우리 집 강아지</h2><button class="button white small" data-action="profile">${icon("plus")}프로필 등록</button></div><div class="profile-grid">${db.profiles.length ? db.profiles.map((p) => `<article class="profile-card"><img src="${esc(p.image || "/assets/mascot-home.webp")}" alt="${esc(p.name)}"/><div><h3>${esc(p.name)}</h3><p>${esc(p.breed)} · ${esc(p.age)}</p><button class="text-button" data-action="report" data-profile="${p.id}">이 정보로 실종 신고${icon("arrow-right")}</button></div></article>`).join("") : `<button class="profile-add" data-action="profile">${icon("paw-print")}<strong>우리 아이를 미리 등록해두세요</strong><span>사진과 특징을 저장하면, 필요할 때 빠르게 신고할 수 있어요.</span>${icon("plus")}</button>`}</div></section><section><div class="section-heading"><h2>내 신고 관리</h2><button class="button primary small" data-action="report">신고 등록</button></div><div class="manage-list">${
-    db.dogs
-      .filter((d) => d.canManage)
-      .map(
-        (d) =>
-          `<article class="manage-card"><a href="#/dog/${d.id}"><img src="${esc(d.image || "/assets/mascot-home.webp")}" alt=""/><span><strong>${esc(d.name)}</strong><small>${esc(d.location)}</small>${badge(d)}</span></a><div><button class="button white small" data-action="edit-dog" data-id="${d.id}">수정</button>${d.status !== "reunited" ? `<button class="button primary small" data-action="reunite" data-id="${d.id}">재회 완료</button>` : ""}</div></article>`,
-      )
-      .join("") ||
-    '<p class="muted panel">직접 등록한 실종 신고가 여기에 표시돼요.</p>'
-  }</div></section><section><div class="section-heading"><h2>저장한 소식</h2><button class="text-button" data-action="areas">${icon("bell")}관심 지역 설정</button></div><div class="dog-grid">${
-    db.dogs
-      .filter((d) => db.saved.includes(d.id))
-      .map(dogCard)
-      .join("") ||
-    '<p class="muted">마음이 쓰이는 아이의 하트를 눌러 소식을 저장해보세요.</p>'
-  }</div></section><section><div class="section-heading"><h2>들어온 제보</h2></div>${
-    db.reports
-      .filter((r) => db.dogs.some((d) => d.canManage && d.id === r.dogId))
-      .map(
-        (r) =>
-          `<button class="candidate panel" data-action="report-detail" data-id="${r.id}"><span><strong>${esc(r.location)}</strong><small>${formatTime(r.time)} · ${esc(r.status)}</small></span>${icon("chevron-right")}</button>`,
-      )
-      .join("") ||
-    '<p class="muted">내 신고에 연결된 제보를 여기에서 확인할 수 있어요.</p>'
-  }</section></div>`;
 }
 function admin() {
   if (read().user?.role !== "admin")
@@ -358,15 +201,9 @@ function render() {
   maps = [];
   const p = route();
   let body;
-  if (p === "/")
-    body =
-      dashboard() + hero() + explorer(true) + communityBanner();
-  else if (p === "/explore") body = explorer();
-  else if (p.startsWith("/dog/"))
+  if (p.startsWith("/dog/"))
     body = detail(read().dogs.find((d) => d.id === p.split("/")[2]));
-  else if (p === "/sightings") body = sightings();
   else if (p === "/stories") body = stories();
-  else if (p === "/my") body = myHome();
   else if (p === "/admin") body = admin();
   else if (p.startsWith('/account/')) body=accountPage(p);
   else
@@ -379,7 +216,6 @@ function render() {
   refreshIcons();
   decorateSession();
   bindAccountPage();
-  initExploreMap();
   const el = document.querySelector("#timeline-map");
   if (el) {
     const d = read().dogs.find((d) => d.id === p.split("/")[2]);
@@ -892,12 +728,6 @@ function reportDetail(reportId) {
   if (link && !read().dogs.some((d) => d.canManage && d.status === "missing"))
     link.closest("label").hidden = true;
 }
-function regionModal() {
-  openModal(
-    "어느 지역을 살펴볼까요?",
-    `<p class="modal-intro">전국 어디서든 소식을 나눌 수 있어요.</p><div class="region-grid">${REGIONS.map((r) => `<button class="region-chip ${r === state.region ? "active" : ""}" data-action="select-region" data-region="${r}">${r}</button>`).join("")}</div>`,
-  );
-}
 function areaModal() {
   openModal(
     "우리 동네 소식 받아보기",
@@ -1227,30 +1057,6 @@ document.addEventListener("click", async (e) => {
         ? "저장을 취소했어요."
         : "소식을 저장했어요. 마이홈에서 다시 볼 수 있어요.",
     );
-  } else if (a === "region") regionModal();
-  else if (a === "select-region") {
-    state.region = b.dataset.region;
-    closeModal();
-    render();
-  } else if (a === "filters") {
-    state.showFilters = !state.showFilters;
-    render();
-  } else if (a === "clear-filters") {
-    Object.assign(state, {
-      region: "전국",
-      query: "",
-      color: "",
-      size: "",
-      accessory: "",
-      status: "all",
-    });
-    render();
-  } else if (a === "view") {
-    state.view = b.dataset.view;
-    render();
-  } else if (a === "status") {
-    state.status = b.dataset.status;
-    render();
   } else if (a === "areas") areaModal();
   else if (a === "notifications") notifications();
   else if (a === "notification-open") {
@@ -1285,24 +1091,12 @@ document.addEventListener("click", async (e) => {
       `<div class="info-content"><p>등록한 신고·제보는 서버에 저장돼요. 작성 중인 초안은 이 기기에 7일 동안 보관되며 등록을 완료하면 지워져요. 대화와 보호 중인 정확한 위치는 당사자만 볼 수 있어요.</p><p>지도를 열면 OpenStreetMap 서버에서 지도 이미지를 불러와요. 현재 위치와 나침반은 사용자가 해당 버튼을 누르고 권한을 허용할 때 사용해요.</p><p>공용 기기에서는 이용 후 로그아웃해주세요. 신고 설명이나 공개 사진에는 전화번호와 집 주소가 드러나지 않도록 확인해주세요.</p></div>`,
     );
 });
-document.addEventListener("input", (e) => {
-  if (e.target.id === "dog-search") {
-    state.query = e.target.value;
-    renderResults();
-  }
-});
 document.querySelector(".skip-link").addEventListener("click", (e) => {
   e.preventDefault();
   const main = document.querySelector("#main");
   main.setAttribute("tabindex", "-1");
   main.focus();
   main.scrollIntoView();
-});
-document.addEventListener("change", (e) => {
-  if (e.target.dataset.filter) {
-    state[e.target.dataset.filter] = e.target.value;
-    renderResults();
-  }
 });
 document.addEventListener("keydown", (e) => {
   if (!modalRoot.children.length) return;
@@ -1347,21 +1141,7 @@ window.addEventListener("unhandledrejection", (e) => {
 window.addEventListener("online", () => refresh());
 initialize();
 
-function dashboard() {
-  const mine = read().dogs.filter((d) => d.canManage && d.status === "missing");
-  if (!mine.length) return "";
-  const d = mine[0],
-    reports = chronologicalSightings(
-      read().reports.filter((r) => r.dogId === d.id),
-    ),
-    last = reports.at(-1),
-    unread = read().notifications.filter(
-      (n) => !n.read && n.dogId === d.id,
-    ).length;
-  return `<section class="owner-dashboard"><div class="dashboard-intro"><span class="eyebrow"><span class="live-dot"></span>함께 찾고 있어요</span><h1>${esc(d.name)}의 새로운 단서부터<br>확인해보세요<span class="coral">.</span></h1><p>${last ? `최근 목격 · ${esc(last.location)}` : "주변 이웃의 소중한 제보를 기다리고 있어요."}</p><div class="dashboard-actions"><a class="button primary" href="#/dog/${d.id}">목격 지도 확인 ${icon("arrow-right")}</a><button class="button white" data-action="share" data-id="${d.id}">${icon("share-2")}소식 공유</button></div></div><div class="dashboard-companion"><img src="/assets/mascot-search.webp" alt="함께 찾고 있는 멍백홈 강아지"/><div class="dashboard-count"><b>${reports.length}</b>개의 목격 단서 <span>${unread ? "새 알림 " + unread + "개" : "함께 찾는 마음을 모아요"}</span></div></div><div class="dashboard-last"><span>${icon("map-pin")}${last ? esc(last.location) : esc(d.location)}</span><span>${last ? formatTime(last.time) : "마지막으로 본 장소"}</span></div></section>`;
-}
 function decorateSession() {
-  const user = read().user;
   const connection = document.querySelector("#connection-banner");
   if (!connection) return;
   const status = read().connection;
@@ -1372,18 +1152,9 @@ function decorateSession() {
       : status === "offline"
       ? `서버에 연결하지 못했어요. 작성 중인 내용은 초안으로 보관해요. <button data-action="refresh">다시 연결</button>`
       : "연결을 다시 확인하고 있어요. 잠시만 기다려주세요.";
-  if (route() === "/my" && !document.querySelector(".account-panel"))
-    document
-      .querySelector(".my-sections")
-      ?.insertAdjacentHTML(
-        "afterbegin",
-        `<section class="account-panel ${user?.registered && !user.verified ? "account-panel-unverified" : ""}"><img src="/assets/mascot-alert.webp" alt=""/><div><strong>${user?.registered ? (user.verified ? esc(user.name) + " 님, 소식을 놓치지 마세요" : esc(user.name) + " 님, 이메일 인증이 필요해요") : "다른 기기에서도 이어서 관리하세요"}</strong><p>${user?.registered ? (user.verified ? "목격 제보와 재회 소식을 알림으로 받아보세요." : "인증 전에는 실종 신고와 제보 저장을 사용할 수 없어요.") : "계정을 연결하면 신고와 대화를 안전하게 이어갈 수 있어요."}</p><button class="button primary small" data-action="${user?.registered ? "account" : "account"}">${user?.registered ? (user.verified ? "브라우저 알림 켜기" : "이메일 인증하기") : "로그인 / 회원가입"}</button>${user?.registered ? '<button class="text-button logout-button" data-action="logout">로그아웃</button>' : ""}</div></section>`,
-      );
   document.querySelectorAll('[data-action="update"]').forEach((b) => {
     b.hidden = !read().dogs.find((d) => d.id === b.dataset.id)?.canManage;
   });
-  if (read().dogs.some((d) => d.canManage && d.status === "missing"))
-    document.querySelector(".hero")?.classList.add("returning-hero");
 }
 function accountForm(after) {
   const user = read().user;
