@@ -389,8 +389,7 @@ function render() {
       "홈으로 돌아가 다시 시작해주세요.",
       '<a class="button primary" href="#/">홈으로</a>',
     );
-  app.innerHTML =
-    header() + `<main id="main" class="container">${body}</main>` + footer();
+  app.innerHTML = body;
   refreshIcons();
   decorateSession();
   bindAccountPage();
@@ -1375,22 +1374,8 @@ function dashboard() {
 }
 function decorateSession() {
   const user = read().user;
-  const header = document.querySelector(".header-actions");
-  const accountLabel = !user?.registered
-    ? "로그인"
-    : user.verified
-      ? `${esc(user.name)} 님`
-      : `인증 전 · ${esc(user.name)}`;
-  if (header && !header.querySelector(".account-button"))
-    header.insertAdjacentHTML("afterbegin", `<button class="account-button text-button" data-action="account">${accountLabel}</button>`);
-  else if (header?.querySelector(".account-button"))
-    header.querySelector(".account-button").innerHTML = accountLabel;
-  let connection = document.querySelector("#connection-banner");
-  if (!connection) {
-    connection = document.createElement("div");
-    connection.id = "connection-banner";
-    document.querySelector(".site-header")?.after(connection);
-  }
+  const connection = document.querySelector("#connection-banner");
+  if (!connection) return;
   const status = read().connection;
   connection.hidden = status === "online" || status === "loading";
   connection.innerHTML =

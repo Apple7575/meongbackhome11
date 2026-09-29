@@ -1,27 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { randomUUID } from "node:crypto";
-const unique = () => randomUUID().slice(0, 8);
-const credentials = () => ({
-  email: `${unique()}@example.com`,
-  password: "browser-test-password",
-  name: "테스트 보호자",
-});
-async function ready(page) {
-  await page.goto("/");
-  await expect(page.locator(".account-button")).toBeVisible();
-  await expect
-    .poll(async () =>
-      page.evaluate(() => document.querySelector("#connection-banner")?.hidden),
-    )
-    .toBe(true);
-}
-async function account(page) {
-  const c = credentials();
-  await page.request.post("/api/auth/register", { data: c });
-  await page.reload();
-  await expect(page.locator(".account-button")).toContainText(c.name);
-  return c;
-}
+import { unique, credentials, ready, registerByApi as account, openLogin } from "./helpers.js";
 async function submitDog(page, name) {
   await page.getByRole("button", { name: "실종 신고", exact: true }).click();
   await page
@@ -78,7 +56,7 @@ test("timeline swipes, selected marker, chronological playback and independent a
 test("account registration, three-step report and personalized owner home", async ({
   page,
 }) => {
-  await page.locator(".account-button").click();
+  await openLogin(page);
   await expect(page.locator('#account-form input[name=name]')).toHaveCount(0);
   await page.locator('[data-auth-mode=register]').click();
   const c = credentials();
@@ -151,7 +129,7 @@ test("two browsers share a dog, deliver live notice, private conversation and re
       .click();
     await expect(witness.getByRole("dialog")).toHaveCount(0);
     await page.bringToFront();
-    await expect(page.locator(".notification-dot")).toBeVisible({timeout:20000});
+    await expect(page.getByRole("button", { name: /^알림 [1-9]\d*개$/ })).toBeVisible({ timeout: 20000 });
     await expect(page.locator(".sighting-slide")).toHaveCount(1);
     await page.locator(".open-sighting").click();
     await page.locator("#message-form input").fill("보호자입니다. 감사합니다!");
