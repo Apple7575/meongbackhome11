@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { ready, registerByApi } from "./helpers.js";
-test("React shell draws top bar and bottom navigation around legacy pages", async ({ page }) => {
+test("React shell draws top bar and bottom navigation around every screen", async ({ page }) => {
   await ready(page, "/#/stories");
   await expect(page.locator("#app [data-shell=react]")).toHaveCount(1);
   const nav = page.getByRole("navigation", { name: "하단 메뉴" });
@@ -8,7 +8,7 @@ test("React shell draws top bar and bottom navigation around legacy pages", asyn
   await expect(nav.getByRole("button", { name: "실종 신고", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: /^알림 \d+개$/ })).toBeVisible();
   await expect(page.locator(".site-header, .site-footer, .mobile-nav")).toHaveCount(0);
-  await expect(page.locator("#legacy-root")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "집에 돌아온 아이들" })).toBeVisible();
 });
 test("home shows missing dogs first and lets people change the region in a bottom sheet", async ({ page }) => {
   await ready(page);
@@ -71,6 +71,23 @@ test("notification and area sheets: saving an area makes it the home default", a
   await areas.getByRole("button", { name: "1곳 저장하기" }).click();
   await expect(areas).toHaveCount(0);
   await expect(page.getByRole("heading", { name: /^부산에서 찾고 있어요/ })).toBeVisible();
+});
+test("members can leave a reunion story from the stories screen", async ({ page }) => {
+  await ready(page);
+  await registerByApi(page);
+  await page.goto("/#/stories");
+  await page.getByRole("button", { name: "우리의 재회 이야기 쓰기" }).click();
+  const sheet = page.getByRole("dialog", { name: "다시 만난 이야기" });
+  const title = "이웃 덕분에 만났어요 " + Date.now();
+  await sheet.locator("input[name=title]").fill(title);
+  await sheet.locator("textarea[name=text]").fill("제보 덕분에 하루 만에 찾았어요.");
+  await sheet.getByRole("button", { name: "이야기 남기기" }).click();
+  await expect(sheet).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: title })).toBeVisible();
+});
+test("unknown addresses show a friendly not-found screen", async ({ page }) => {
+  await ready(page, "/#/no-such-page");
+  await expect(page.getByRole("heading", { name: "페이지를 찾을 수 없어요" })).toBeVisible();
 });
 test("my home puts reports first and keeps logout in settings", async ({ page }) => {
   await ready(page, "/#/my");
