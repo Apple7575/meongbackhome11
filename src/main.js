@@ -1,4 +1,3 @@
-import {exampleDetail} from './example-detail.js';
 import {
   createIcons,
   ArrowRight,
@@ -53,7 +52,6 @@ import {
 } from "./client-store.js";
 import { enhanceWizard, loadDraft, clearDraft } from "./wizard.js";
 import { formatTime, timeAgo } from "./format.js";
-import { timelineExperience } from "./timeline.js";
 import { baseMap, marker, drawTimeline, directionPicker } from "./maps.js";
 import "./style.css";
 
@@ -63,10 +61,8 @@ export function mountLegacy(el) {
   if (app) render();
 }
 const modalRoot = document.querySelector("#modal-root");
-let timelineCleanup = () => {},
-  pendingRefresh = false;
-let maps = [],
-  modalCleanup = async () => {},
+let pendingRefresh = false;
+let modalCleanup = async () => {},
   previousFocus = null;
 const icon = (name, cls = "") =>
   `<i data-lucide="${name}" class="${cls}" aria-hidden="true"></i>`;
@@ -134,35 +130,6 @@ export function toast(message) {
 function empty(title, body, button = "") {
   return `<div class="empty-state"><img src="/assets/mascot-reunion.webp" alt=""/><h3>${title}</h3><p>${body}</p>${button}</div>`;
 }
-function detail(d) {
-  if (!d)
-    return empty(
-      "신고를 찾을 수 없어요",
-      "링크가 올바른지 확인하거나 목록에서 다시 찾아주세요.",
-      '<a class="button primary" href="#/explore">목록으로</a>',
-    );
-  const reports = chronologicalSightings(
-    read().reports.filter((r) => r.dogId === d.id),
-  );
-  return `<div class="page-breadcrumb"><a href="#/explore">강아지 찾기</a>${icon("chevron-right")}<span>${esc(d.name)}의 소식</span>${d.demo ? '<span class="subtle-tag">체험용 예시 신고</span>' : ""}</div><section class="detail-top"><div class="detail-image"><img src="${esc(d.image || "/assets/mascot-home.webp")}" alt="${esc(d.name)} 사진"/>${badge(d)}</div><div class="detail-copy"><span class="eyebrow">${d.status === "reunited" ? "가족의 품으로 돌아왔어요" : "소중한 가족을 찾고 있어요"}</span><h1>${esc(d.name)}<span>${esc(d.breed)} · ${esc(d.age)} · ${esc(d.sex)}</span></h1><dl><div><dt>${icon("map-pin")}마지막 목격 장소</dt><dd>${esc(d.location)}</dd></div><div><dt>${icon("clock-3")}실종 시간</dt><dd>${formatTime(d.time)}</dd></div><div><dt>${icon("scan-eye")}구별되는 특징</dt><dd>${esc(d.color)} · ${esc(d.size)} · ${esc(d.accessory)}</dd></div></dl><p class="dog-description">${esc(d.description)}</p><div class="detail-actions">${d.status !== "reunited" ? `<button class="button primary" data-action="sighting" data-id="${d.id}">${icon("map-pin")}이 아이를 봤어요</button>` : '<span class="reunited-message">♥ 소중한 관심에 감사해요</span>'}<button class="button white" data-action="share" data-id="${d.id}">${icon("share-2")}공유하기</button><button class="icon-button outlined ${read().saved.includes(d.id) ? "saved" : ""}" data-action="save" data-id="${d.id}" aria-label="신고 저장">${icon("heart")}</button></div><div class="detail-tools"><button class="text-button" data-action="poster" data-id="${d.id}">${icon("qr-code")}QR 전단 만들기</button><button class="text-button" data-action="flag" data-id="${d.id}">${icon("flag")}신고하기</button></div></div></section>${exampleDetail(d,read())}<section class="timeline-section"><div class="section-heading"><div><span class="eyebrow section-eyebrow">작은 단서를 하나씩 모아요</span><h2>목격 타임라인 <span class="count-chip">${reports.length}</span></h2></div><span class="subtle-tag">${icon("clock-3")}목격 시간순</span></div><div class="timeline-layout"><div><div id="timeline-map" class="timeline-map" aria-label="목격 시간순 연결선과 이동 방향 지도"></div><div class="map-legend"><span><i class="legend-line"></i>목격 시간순 연결</span><span><i class="legend-arrow">↗</i>제보된 이동 방향</span></div><p class="map-disclaimer">점선은 목격 지점을 시간순으로 연결한 선이며, 실제 이동 경로가 아니에요. 다른 강아지로 확인된 제보는 제외돼요.</p></div><div class="timeline-list">${reports.length ? reports.map((s, i) => `<button class="timeline-item" data-action="report-detail" data-id="${s.id}" id="timeline-${s.id}"><span class="timeline-number ${s.status === "관련 목격" ? "confirmed" : ""}">${i + 1}</span><span class="timeline-body"><span class="timeline-time">${formatTime(s.time)}<span class="report-status">${esc(s.status)}</span></span><strong>${esc(s.location)}</strong><span>${s.stationary ? "머물러 있었어요" : s.heading == null ? "방향 정보 없음" : `${headingLabel(s.heading)}으로 이동 ↗`}</span><small>${esc(s.description)}</small></span>${icon("chevron-right")}</button>`).join("") : empty("아직 목격 제보가 없어요", "첫 번째 단서를 기다리고 있어요.")}</div></div></section><div class="detail-bottom"><section class="panel"><h3>${icon("route")}수색 상황</h3>${
-    read()
-      .updates.filter((u) => u.dogId === d.id)
-      .map(
-        (u) =>
-          `<p class="update-item"><small>${formatTime(u.time)}</small>${esc(u.text)}</p>`,
-      )
-      .join("") || '<p class="muted">아직 공유된 수색 상황이 없어요.</p>'
-  }<button class="button white small" data-action="update" data-id="${d.id}">수색 상황 남기기</button></section><section class="panel"><h3>${icon("scan-search")}함께 확인할 발견 제보</h3>${
-    matchCandidates(d, read().reports)
-      .slice(0, 3)
-      .map(
-        (r) =>
-          `<button class="candidate" data-action="report-detail" data-id="${r.id}">${icon("map-pin")}<span>${esc(r.location)}<small>${r.distance.toFixed(1)}km · ${formatTime(r.time)}</small></span>${icon("chevron-right")}</button>`,
-      )
-      .join("") ||
-    '<p class="muted">주변 발견 제보가 등록되면 위치·시간·특징으로 후보를 보여드려요.</p>'
-  }<button class="text-button" data-action="public-data">공공 보호 정보 연계 안내${icon("external-link")}</button></section></div>`;
-}
 function stories() {
   return `<section class="stories-hero"><img src="/assets/mascot-reunion.webp" alt="서로 기대고 있는 강아지들"/><div><span class="eyebrow">함께 만들어낸 해피엔딩</span><h1>다시 만나서,<br>정말 다행이야<span class="coral">.</span></h1><p>평범했던 일상이 다시 돌아온 순간.<br>소중한 재회의 이야기를 나눠주세요.</p><button class="button primary" data-action="story">${icon("heart")}우리의 재회 이야기 쓰기</button></div></section><section class="story-list">${
     read().stories.length
@@ -200,14 +167,9 @@ function render() {
     window.dispatchEvent(new Event("legacy-render"));
     return;
   }
-  timelineCleanup();
-  maps.forEach((m) => m.remove());
-  maps = [];
   const p = route();
   let body;
-  if (p.startsWith("/dog/"))
-    body = detail(read().dogs.find((d) => d.id === p.split("/")[2]));
-  else if (p === "/stories") body = stories();
+  if (p === "/stories") body = stories();
   else if (p === "/admin") body = admin();
   else if (p.startsWith('/account/')) body=accountPage(p);
   else
@@ -220,15 +182,6 @@ function render() {
   refreshIcons();
   decorateSession();
   bindAccountPage();
-  const el = document.querySelector("#timeline-map");
-  if (el) {
-    const d = read().dogs.find((d) => d.id === p.split("/")[2]);
-    const m = baseMap(el, d.coords);
-    maps.push(m);
-    const reports = read().reports.filter((r) => r.dogId === d.id);
-    timelineCleanup = timelineExperience(m, reports, reportDetail);
-    if (!reports.length) marker(m, d.coords, "♥");
-  }
   window.dispatchEvent(new Event("legacy-render"));
 }
 function closeModal() {
@@ -685,64 +638,6 @@ function sightingForm(dogId) {
       formError(form, err.message);
     }
   };
-}
-function reportDetail(reportId) {
-  const r = read().reports.find((r) => r.id === reportId);
-  if (!r) return;
-  const dog = read().dogs.find((d) => d.id === r.dogId);
-  openModal(
-    "목격 제보 확인",
-    `${r.demo ? '<p class="local-notice">예시 제보예요. 실제 제보의 상태 변경은 해당 보호자만 할 수 있어요.</p>' : ""}${r.image ? `<img class="report-image" src="${esc(r.image)}" alt="제보 사진"/>` : ""}<span class="badge sage">${esc(r.kind)}</span><h3>${esc(r.location)}</h3><p class="muted">${formatTime(r.time)} · ${r.stationary ? "머물러 있었어요" : headingLabel(r.heading)}</p><p class="report-description">${esc(r.description || "추가 설명이 없어요.")}</p><label class="field"><span>제보 확인 상태 <small>보호자 확인</small></span><select id="report-status">${options(REPORT_STATUSES, r.status)}</select></label>${
-      !dog
-        ? `<label class="field"><span>실종 신고에 연결하기</span><select id="link-report"><option value="">신고를 선택해주세요</option>${read()
-            .dogs.filter((d) => d.status === "missing")
-            .map(
-              (d) =>
-                `<option value="${d.id}">${esc(d.name)} · ${esc(d.location)}</option>`,
-            )
-            .join("")}</select></label>`
-        : `<a class="text-button" href="#/dog/${dog.id}" data-action="close-link">${esc(dog.name)}의 신고 보기${icon("arrow-right")}</a>`
-    }<section class="chat-section"><h3>${icon("messages-square")}추가 대화</h3><p class="field-hint">이 대화는 보호자와 제보자만 볼 수 있어요.</p><div class="chat-messages">${(r.messages || []).map((m) => `<div class="chat-bubble">${esc(m.text)}<small>${formatTime(m.time)}</small></div>`).join("") || '<p class="muted">확인하고 싶은 내용을 남겨보세요.</p>'}</div><form id="message-form" class="chat-input"><input name="message" aria-label="추가 메시지" placeholder="추가로 궁금한 내용을 입력하세요" required maxlength="1000"/><button class="icon-button" type="submit" aria-label="메시지 저장">${icon("send")}</button></form></section>`,
-  );
-  document.querySelector("#report-status").onchange = async (e) => {
-    r.status = e.target.value;
-    await persist();
-    render();
-    reportDetail(r.id);
-    toast("제보 상태를 변경했어요.");
-  };
-  const link = document.querySelector("#link-report");
-  if (link)
-    link.onchange = async (e) => {
-      if (!e.target.value) return;
-      r.dogId = e.target.value;
-      await persist();
-      render();
-      reportDetail(r.id);
-      toast("실종 신고에 제보를 연결했어요.");
-    };
-  document.querySelector("#message-form").onsubmit = async (e) => {
-    e.preventDefault();
-    const input = e.target.elements.message;
-    if (!input.value.trim()) return;
-    (r.messages ||= []).push({
-      text: input.value.trim(),
-      time: new Date().toISOString(),
-    });
-    await persist();
-    reportDetail(r.id);
-  };
-  document.querySelector("#report-status").disabled = !r.canManage;
-  if (!r.canChat) {
-    const chat = document.querySelector(".chat-section");
-    chat.innerHTML =
-      r.previewOnly&&r.exampleConversation?.length
-      ? '<h3>추가 확인 대화 · 가상 예시</h3><p class="field-hint">아래 대화는 기능 설명용 예시이며 실제 사용자 대화가 아니에요.</p><div class="chat-messages">'+r.exampleConversation.map(m=>'<div class="chat-bubble"><small>'+esc(m.who)+'</small>'+esc(m.text)+'</div>').join('')+'</div>'
-      : '<p class="message-restricted">보호자와 이 제보를 작성한 이웃만 대화할 수 있어요.</p>';
-  }
-  if (link && r.previewOnly)link.disabled=true;
-  if (link && !read().dogs.some((d) => d.canManage && d.status === "missing"))
-    link.closest("label").hidden = true;
 }
 function areaModal() {
   openModal(

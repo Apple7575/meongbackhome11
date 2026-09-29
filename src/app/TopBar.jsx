@@ -5,9 +5,14 @@ const PLAIN = new Set(["/explore", "/sightings", "/my"]);
 export default function TopBar({ route, store }) {
   const unread = store.notifications.filter((n) => !n.read).length;
   const back = BACK[route];
+  const goBack = () => (history.length > 1 ? history.back() : (location.hash = "/explore"));
   return (
     <header className={s.top}>
-      {back ? (
+      {route.startsWith("/dog/") ? (
+        <button type="button" className={`${s.iconButton} ${s.back}`} onClick={goBack} aria-label="뒤로">
+          <Icon name="ChevronLeft" />
+        </button>
+      ) : back ? (
         <a className={`${s.iconButton} ${s.back}`} href={`#${back}`} aria-label="뒤로">
           <Icon name="ChevronLeft" />
         </a>

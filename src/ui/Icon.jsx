@@ -2,13 +2,13 @@ import { createElement } from "react";
 import {
   Bell, ChevronDown, ChevronLeft, ChevronRight, Heart, House, List, Map, MapPin,
   Plus, Search, Settings, SlidersHorizontal, UserRound, Building2,
-  Smartphone, Info, ShieldCheck, LogOut, Download, Send, Share2, QrCode, Flag, Pencil,
+  Smartphone, Info, ShieldCheck, LogOut, Download, Send, Share2, QrCode, Flag, Pencil, Clock3,
 } from "lucide";
 // lucide에는 HouseHeart가 없어 기존 main.js처럼 House를 그 이름으로 쓴다.
 const ICONS = {
   Bell, ChevronDown, ChevronLeft, ChevronRight, Heart, House, List, Map, MapPin,
   Plus, Search, Settings, SlidersHorizontal, UserRound, Building2, HouseHeart: House,
-  Smartphone, Info, ShieldCheck, LogOut, Download, Send, Share2, QrCode, Flag, Pencil,
+  Smartphone, Info, ShieldCheck, LogOut, Download, Send, Share2, QrCode, Flag, Pencil, Clock3,
 };
 const camel = (attrs) =>
   Object.fromEntries(

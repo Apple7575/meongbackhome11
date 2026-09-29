@@ -19,7 +19,7 @@ async function submitDog(page, name) {
   await expect(page.locator(".success-next")).toBeVisible();
   await expect(page.getByRole("button", { name: "새 목격 제보 알림 받기" })).toBeVisible();
   await page.getByRole("button", { name: "신고 내용 먼저 확인하기" }).click();
-  await expect(page.locator(".detail-copy h1")).toContainText(name);
+  await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
   return page.url().split("/dog/")[1];
 }
 test.beforeEach(async ({ page }) => ready(page));
@@ -34,18 +34,30 @@ test("home list, explore search and no horizontal overflow", async ({
   await expect(page.getByText("조건에 맞는 강아지가 없어요")).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
-test("timeline swipes, selected marker, chronological playback and independent arrows", async ({
+test("detail lists sightings in time order and plays them on the map", async ({
   page,
 }) => {
   await page.goto("/#/dog/demo-bori");
-  expect(await page.locator(".sighting-slide").count()).toBeGreaterThanOrEqual(3);
+  const steps = page.locator("[data-sighting-step]");
+  expect(await steps.count()).toBeGreaterThanOrEqual(3);
   expect(await page.locator(".direction-icon").count()).toBeGreaterThanOrEqual(3);
-  await page.locator(".next-sighting").click();
-  await expect(page.locator("#timeline-index")).toHaveText("2");
-  await expect(page.locator(".selected-pin b")).toHaveText("2");
-  await page.getByRole("button", { name: "목격 기록 재생" }).click();
-  await expect(page.locator("#timeline-index")).toHaveText("3");
-  await expect(page.locator(".timeline-note")).toContainText("실제 이동 경로");
+  await expect(page.getByText("실제 이동 경로가 아니에요")).toBeVisible();
+  await page.getByRole("button", { name: "순서대로 보기" }).click();
+  await expect(page.locator(".selected-pin b")).toHaveText("1");
+  await expect(page.locator(".selected-pin b")).toHaveText("3", { timeout: 10000 });
+  await expect(steps.nth(2)).toHaveAttribute("aria-current", "true");
+});
+test("saving from the detail updates my home immediately", async ({ page }) => {
+  await account(page);
+  const name = "저장확인" + unique();
+  const dogId = await submitDog(page, name);
+  await page.goto(`/#/dog/${dogId}`);
+  const save = page.getByRole("button", { name: /^저장/ });
+  await expect(save).toHaveAttribute("aria-pressed", "false");
+  await save.click();
+  await expect(save).toHaveAttribute("aria-pressed", "true");
+  await page.goto("/#/my");
+  await expect(page.getByRole("heading", { name: "저장한 소식 1" })).toBeVisible();
 });
 test("account registration, three-step report and personalized owner home", async ({
   page,
@@ -124,26 +136,24 @@ test("two browsers share a dog, deliver live notice, private conversation and re
     await expect(witness.getByRole("dialog")).toHaveCount(0);
     await page.bringToFront();
     await expect(page.getByRole("button", { name: /^알림 [1-9]\d*개$/ })).toBeVisible({ timeout: 20000 });
-    await expect(page.locator(".sighting-slide")).toHaveCount(1);
-    await page.locator(".open-sighting").click();
+    await expect(page.locator("[data-sighting-step]")).toHaveCount(1);
+    await page.locator("[data-sighting-step]").first().click();
+    await expect(page.getByRole("group", { name: "보호자 확인" })).toBeVisible();
     await page.locator("#message-form input").fill("보호자입니다. 감사합니다!");
     await page.locator("#message-form button").click();
-    await expect(page.locator(".chat-bubble")).toContainText("감사합니다");
+    await expect(page.locator("[data-chat-bubble]")).toContainText("감사합니다");
     await witness.reload();
-    await witness.locator(".open-sighting").click();
-    await expect(witness.locator(".chat-bubble")).toContainText("감사합니다");
-    await expect(witness.locator("#report-status")).toBeDisabled();
-    await page.getByRole("button", { name: "닫기", exact: true }).click();
+    await witness.locator("[data-sighting-step]").first().click();
+    await expect(witness.locator("[data-chat-bubble]")).toContainText("감사합니다");
+    await expect(witness.getByRole("group", { name: "보호자 확인" })).toHaveCount(0);
+    await page.keyboard.press("Escape");
     await page.goto("/#/my");
     await page.getByRole("button", { name: "찾았어요", exact: true }).click();
     await page.getByRole("button", { name: "네, 무사히 만났어요" }).click();
     await expect(page.getByRole("main").getByText("집에 돌아왔어요")).toBeVisible();
-    await witness.getByRole("button", { name: "닫기", exact: true }).click();
+    await witness.keyboard.press("Escape");
     await witness.bringToFront();
-    await expect(witness.locator(".detail-image>.badge")).toHaveText(
-      "재회 완료",
-      {timeout:20000},
-    );
+    await expect(witness.getByRole("main").getByText("집에 돌아왔어요").first()).toBeVisible({ timeout: 20000 });
   } finally {
     await other.close();
   }
@@ -199,7 +209,7 @@ test("saved profile becomes a report and uploaded image can be exported as QR po
   await expect(page.locator("input[name=breed]")).toHaveValue("진도 믹스");
   await page.getByRole("button", { name: "닫기", exact: true }).click();
   await page.goto("/#/dog/demo-bori");
-  await page.getByRole("button", { name: "QR 전단 만들기" }).click();
+  await page.getByRole("button", { name: "QR 전단", exact: true }).click();
   await page.getByRole("button", { name: "SNS 정사각형" }).click();
   await expect(page.locator("#poster-canvas")).toHaveAttribute(
     "height",
