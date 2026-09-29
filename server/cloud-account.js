@@ -14,6 +14,7 @@ export function installAccount({
   origin,
   defer = promise => promise.catch(() => {}),
   invalidate,
+  signIn = async () => {},
   changed = () => {}
 }) {
   const configured = mailer.configured && !!origin;
@@ -72,9 +73,10 @@ export function installAccount({
   });
   app.post('/api/auth/verify', async (req, res) => {
     await limited(req);
+    let record;
     await db.exec('BEGIN IMMEDIATE');
     try {
-      const record=await valid(req.body.token,'verify');
+      record=await valid(req.body.token,'verify');
       await db.prepare('UPDATE users SET verified_at=? WHERE id=?').run(Date.now(), record.user_id);
       await db.prepare('DELETE FROM account_tokens WHERE user_id=?').run(record.user_id);
       await invalidate(record.user_id);
@@ -83,9 +85,9 @@ export function installAccount({
       await db.exec('ROLLBACK');
       throw e;
     }
-    res.json({
-      ok: true
-    });
+    // 다른 기기의 이전 로그인은 끊고, 링크를 연 이 기기만 새로 로그인한다.
+    await signIn(res, record.user_id);
+    res.json({ ok: true, signedIn: true });
   });
   app.post('/api/auth/reset', async (req, res) => {
     await limited(req);

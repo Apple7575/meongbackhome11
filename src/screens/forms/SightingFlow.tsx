@@ -3,10 +3,10 @@ import { useStore } from "../../app/useStore.ts";
 import { commit } from "../../app/actions.ts";
 import { read, id as newId } from "../../client-store.js";
 import { toast } from "../../app/toast.ts";
-import { COORDS } from "../../domain.js";
+import { COORDS, nearestRegion } from "../../domain.js";
 import { objectParticle } from "../../format.ts";
 import Flow from "./Flow.tsx";
-import { TextField, Options, BigOptions, PhotoPicker, WhenField, WhereField, DirectionField, toLocalInput } from "./fields.tsx";
+import { TextField, Options, BigOptions, PhotoPicker, WhenField, WhereField, DirectionField, whenLabel, toLocalInput } from "./fields.tsx";
 import { useDraft } from "./useDraft.ts";
 import s from "./forms.module.css";
 import type { ReactNode } from "react";
@@ -43,13 +43,13 @@ function SightingForm({ dog, dogId }: { dog?: Dog | null; dogId?: string }) {
       title: dog ? `${dog.name}${objectParticle(dog.name)} 본 곳은 어디인가요?` : "강아지를 본 곳은 어디인가요?",
       description: "내 위치가 아니라 강아지를 본 지점을 골라주세요.",
       body: (
-        <WhereField mapId="sighting-picker" region={v.region} location={v.location} placeholder="예: 석촌호수 동호 북쪽 산책로"
+        <WhereField mapId="sighting-picker" region={v.region} location={v.location} placeholder="예: 석촌호수 동호 북쪽 산책로 벤치 앞"
           coords={extra.coords} heading={v.directionMode === "moving" ? heading : null} picked={extra.picked} onMessage={toast}
-          onRegion={(region) => draft.update({ values: { region }, extra: { coords: COORDS[region], picked: false } })}
+          onRegion={(region) => extra.picked ? set({ region }) : draft.update({ values: { region }, extra: { coords: COORDS[region], picked: false } })}
           onLocation={(location) => set({ location })}
-          onPick={(coords) => draft.update({ extra: { coords, picked: true } })} />
+          onPick={(coords) => draft.update({ values: { region: nearestRegion(coords) }, extra: { coords, picked: true } })} />
       ),
-      check: () => (!v.location.trim() ? "장소를 적어주세요." : !extra.picked ? "지도에서 강아지를 본 지점을 눌러주세요." : undefined),
+      check: () => (!v.location.trim() ? "장소를 적어주세요." : !extra.picked ? "지도를 움직여 강아지를 본 곳에 핀을 맞춰주세요." : undefined),
     },
     {
       title: "언제, 어떤 상황이었나요?",
@@ -75,9 +75,10 @@ function SightingForm({ dog, dogId }: { dog?: Dog | null; dogId?: string }) {
       description: "없으면 넘어가도 돼요.",
       body: (<>
         <PhotoPicker value={image} onChange={(img) => draft.update({ image: img })} onError={setError} onBusy={setPhotoBusy} label="사진 올리기 (선택)" />
-        {!dog && <Options label="털 색" options={["모름", "흰색", "갈색", "검정색", "회색", "혼합"]} value={v.color} onChange={(color) => set({ color })} />}
+        {!dog && <Options label="털 색" options={["모름", "흰색", "크림", "갈색", "검정색", "회색", "황색", "얼룩"]} value={v.color} onChange={(color) => set({ color })} />}
         {!dog && <Options label="크기" options={["모름", "소형", "중형", "대형"]} value={v.size} onChange={(size) => set({ size })} />}
-        <TextField label="더 알려줄 내용 (선택)" name="description" multiline value={v.description} onChange={(description) => set({ description })} maxLength={1000} placeholder="모습, 이동 상황, 맡긴 기관 등" />
+        <TextField label="더 알려줄 내용 (선택)" name="description" multiline value={v.description} onChange={(description) => set({ description })} maxLength={1000} placeholder={"예: 빨간 목줄을 하고 있었어요.\n편의점 앞을 지나 공원 쪽으로 뛰어갔어요."}
+          hint="모습, 이동 상황, 맡긴 보호소·경찰서 이름을 적으면 보호자에게 큰 도움이 돼요." />
       </>),
       check: () => (photoBusy ? "사진을 준비하고 있어요. 잠시만 기다려주세요." : undefined),
     },
@@ -88,7 +89,7 @@ function SightingForm({ dog, dogId }: { dog?: Dog | null; dogId?: string }) {
         <div className={s.review}>
           {image && <img src={image} alt="제보 사진" />}
           <dl>
-            {[["상황", v.kind], ["시간", v.time.replace("T", " ")], ["장소", `${v.region} · ${v.location}`],
+            {[["상황", v.kind], ["시간", whenLabel(v.time)], ["장소", `${v.region} · ${v.location}`],
               ["방향", v.directionMode === "moving" ? `${heading}°` : v.directionMode === "still" ? "머물러 있었어요" : "모름"], ["설명", v.description]]
               .filter(([, x]) => x).map(([k, x]) => <div key={k}><dt>{k}</dt><dd>{x}</dd></div>)}
           </dl>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, initialize } from "../client-store.js";
-import { Button, EmptyState } from "../ui/index.tsx";
+import { Button, ButtonLink, EmptyState } from "../ui/index.tsx";
 import s from "./sheets/sheets.module.css";
 import type { FormEvent, InputHTMLAttributes } from "react";
 import { errorText } from "../errors.ts";
@@ -41,7 +41,8 @@ export default function AccountPage({ kind, query }: { kind: string; query?: str
       else {
         setLinkToken("");
         setDone(true);
-        setStatus(kind === "verify" ? "이메일 인증이 완료됐어요. 다시 로그인해주세요." : "비밀번호를 바꿨어요. 다시 로그인해주세요.");
+        // 인증은 링크를 연 이 기기를 바로 로그인시킨다. 비밀번호 재설정은 모든 기기에서 다시 로그인해야 한다.
+        setStatus(kind === "verify" ? "이메일 인증이 완료됐어요. 바로 시작할 수 있어요." : "비밀번호를 바꿨어요. 새 비밀번호로 로그인해주세요.");
         await initialize();
       }
     } catch (err) {
@@ -58,7 +59,11 @@ export default function AccountPage({ kind, query }: { kind: string; query?: str
       {done ? (
         <>
           <p className={`${s.status} recovery-status`} role="status">{status}</p>
-          <Button size="lg" full data-action="account">로그인하기</Button>
+          {kind === "verify" ? (
+            <ButtonLink href="#/my" size="lg" full>마이홈으로</ButtonLink>
+          ) : (
+            <Button size="lg" full data-action="account">로그인하기</Button>
+          )}
         </>
       ) : (
         <form id="recovery-form" className={s.form} onSubmit={submit} noValidate>

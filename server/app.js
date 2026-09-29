@@ -330,7 +330,7 @@ export function createApp({
     signal(req.user.id);
     res.json({ok:true});
   });
-  const accounts=installAccount({app,db,rate,mailer,changed:broadcast,origin:publicOrigin.replace(/\/$/,''),invalidate(uid){
+  const accounts=installAccount({app,db,rate,mailer,changed:broadcast,signIn:session,origin:publicOrigin.replace(/\/$/,''),invalidate(uid){
     db.prepare('DELETE FROM sessions WHERE user_id=?').run(uid);
     db.prepare('DELETE FROM outbox WHERE endpoint IN (SELECT endpoint FROM subscriptions WHERE user_id=?)').run(uid);
     db.prepare('DELETE FROM subscriptions WHERE user_id=?').run(uid);

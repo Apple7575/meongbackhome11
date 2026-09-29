@@ -31,6 +31,8 @@ export default function AuthSheet({ after, onClose }: { after?: () => void; onCl
       const { passwordConfirm, ...rest } = values;
       const result = await authenticate(mode, register ? { ...rest, passwordConfirm } : { email: rest.email, password: rest.password });
       onClose();
+      // 인증·비밀번호 화면에서 로그인했다면 그 화면에 머물 이유가 없으니 마이홈으로 보낸다.
+      if (location.hash.startsWith("#/account/")) location.hash = "/my";
       if (after) {
         after();
         if (result.emailDelivery === "sent") toast("받은 메일에서 이메일을 인증하면 작성한 신고를 바로 등록할 수 있어요.");

@@ -2,7 +2,6 @@ import Icon from "../ui/Icon.tsx";
 import s from "./Frame.module.css";
 import type { Store } from "../types.ts";
 const BACK: Record<string, string> = { "/my/settings": "/my" };
-const PLAIN = new Set(["/explore", "/sightings", "/my"]);
 export default function TopBar({ route, store }: { route: string; store: Store }) {
   const unread = store.notifications.filter((n) => !n.read).length;
   const back = BACK[route];
@@ -21,8 +20,6 @@ export default function TopBar({ route, store }: { route: string; store: Store }
         <a className={`${s.iconButton} ${s.back}`} href={`#${back}`} aria-label="뒤로">
           <Icon name="ChevronLeft" />
         </a>
-      ) : PLAIN.has(route) ? (
-        <span />
       ) : (
         <a className={s.brand} href="#/" aria-label="멍백홈 홈">
           <img src="/favicon.svg" alt="" />

@@ -107,13 +107,32 @@ export function drawTimeline(map, reports, onSelect) {
     },
   };
 }
+// 가운데 고정 핀 방식: 지도를 끌면 가운데가 고른 지점이 되고, 누르면 그 지점으로 옮긴다.
+// 핀은 화면(CSS)이 지도 가운데에 그린다.
 export function directionPicker(element, coords, onChange) {
   const map = baseMap(element, coords, 16);
-  const m = marker(map, coords, "");
-  let arrow, tip;
+  let arrow, tip, silent = false;
+  const same = (a, b) => Math.abs(a[0] - b[0]) < 1e-6 && Math.abs(a[1] - b[1]) < 1e-6;
+  map.on("moveend", () => {
+    const c = map.getCenter();
+    // 크기 맞춤·확대 버튼처럼 가운데가 그대로인 이동은 고른 것으로 치지 않는다.
+    if (silent || same([c.lat, c.lng], coords)) return;
+    coords = [c.lat, c.lng];
+    onChange(coords);
+  });
+  map.on("click", (e) => {
+    coords = [e.latlng.lat, e.latlng.lng];
+    onChange(coords);
+    map.panTo(e.latlng);
+  });
   const set = (point, heading) => {
-    coords = point;
-    m.setLatLng(coords);
+    if (!same(point, coords)) {
+      coords = point;
+      // 코드로 옮길 때는 고른 것으로 치지 않는다.
+      silent = true;
+      map.setView(coords, map.getZoom(), { animate: false });
+      silent = false;
+    }
     if (arrow) map.removeLayer(arrow);
     if (tip) map.removeLayer(tip);
     if (heading !== null) {
@@ -132,6 +151,5 @@ export function directionPicker(element, coords, onChange) {
       }).addTo(map);
     }
   };
-  map.on("click", (e) => onChange([e.latlng.lat, e.latlng.lng]));
   return { map, set };
 }

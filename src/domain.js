@@ -7,17 +7,23 @@ export function headingLabel(value) {
   if (value === null || value === undefined || value === '') return '방향 모름';
   return ['북쪽','북동쪽','동쪽','남동쪽','남쪽','남서쪽','서쪽','북서쪽'][Math.round(((Number(value)%360+360)%360)/45)%8];
 }
+// 털 색·착용물은 여러 개를 '흰색, 갈색'처럼 쉼표로 이어 저장한다.
+export const valuesOf = value => String(value ?? '').split(',').map(v => v.trim()).filter(Boolean);
+export const joinValues = values => [...new Set(values.map(v => String(v).trim()).filter(Boolean))].join(', ');
+export const sharesValue = (a,b) => { const set = new Set(valuesOf(a)); return valuesOf(b).some(v => set.has(v)); };
+// 지도에서 고른 지점과 가장 가까운 시·도. 경계 근처는 틀릴 수 있어 화면에서 바꿀 수 있게 둔다.
+export const nearestRegion = point => Object.keys(COORDS).reduce((best, r) => haversine(point, COORDS[r]) < haversine(point, COORDS[best]) ? r : best, '서울');
 export function haversine(a,b) {
   const r = Math.PI/180, dLat=(b[0]-a[0])*r, dLng=(b[1]-a[1])*r;
   const h=Math.sin(dLat/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dLng/2)**2;
   return 6371*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));
 }
 export function matchCandidates(dog,reports) {
-  return reports.filter(r=>!r.dogId && !!r.demo===!!dog.demo && (!r.exampleFor||r.exampleFor===dog.id) && r.status!=='다른 강아지' && new Date(r.time)>=new Date(dog.time)).map(r=>({ ...r, distance:haversine(dog.coords,r.coords), score:(r.color===dog.color?3:0)+(r.size===dog.size?2:0)+Math.max(0,3-haversine(dog.coords,r.coords)/5) })).filter(r=>r.distance<50).sort((a,b)=>b.score-a.score);
+  return reports.filter(r=>!r.dogId && !!r.demo===!!dog.demo && (!r.exampleFor||r.exampleFor===dog.id) && r.status!=='다른 강아지' && new Date(r.time)>=new Date(dog.time)).map(r=>({ ...r, distance:haversine(dog.coords,r.coords), score:(sharesValue(r.color,dog.color)?3:0)+(r.size===dog.size?2:0)+Math.max(0,3-haversine(dog.coords,r.coords)/5) })).filter(r=>r.distance<50).sort((a,b)=>b.score-a.score);
 }
 export function filterDogs(dogs,{region='전국',query='',color='',size='',accessory='',status='all'}={}) {
   const q=query.trim().toLocaleLowerCase();
-  return dogs.filter(d=>(region==='전국'||d.region===region)&&(!q||[d.name,d.breed,d.location,d.description].join(' ').toLocaleLowerCase().includes(q))&&(!color||d.color===color)&&(!size||d.size===size)&&(!accessory||d.accessory===accessory)&&(status==='all'||d.status===status));
+  return dogs.filter(d=>(region==='전국'||d.region===region)&&(!q||[d.name,d.breed,d.location,d.description].join(' ').toLocaleLowerCase().includes(q))&&(!color||valuesOf(d.color).includes(color))&&(!size||d.size===size)&&(!accessory||valuesOf(d.accessory).includes(accessory))&&(status==='all'||d.status===status));
 }
 export function arrowEnd(coords,heading,meters=65) {
   const rad=Number(heading)*Math.PI/180;

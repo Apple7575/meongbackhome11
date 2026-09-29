@@ -54,6 +54,8 @@ test('PostgreSQL: email verification, durable reports, photo access, revisions, 
     assert.equal((await change(owner,'dogs',dog('/assets/mascot-home.webp'))).status,403);
     const verify=token(f.mail[0]);
     assert.equal((await owner('/api/auth/verify',{token:verify})).status,200);
+    // 링크를 연 기기는 바로 인증된 상태로 로그인된다.
+    assert.equal((await owner('/api/state')).data.user.verified,true);
     assert.equal((await owner('/api/auth/verify',{token:verify})).status,400);
     assert.equal((await owner('/api/auth/login',{email:'owner@example.com',password})).status,200);
     const bytes=await sharp({create:{width:8,height:8,channels:3,background:'#fff'}}).png().toBuffer();

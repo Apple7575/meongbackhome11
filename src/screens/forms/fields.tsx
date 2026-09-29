@@ -5,7 +5,7 @@ import Icon from "../../ui/Icon.tsx";
 import { readPhoto } from "../../photo.ts";
 import { withMaps } from "../../app/withMaps.ts";
 import type { Maps } from "../../app/withMaps.ts";
-import { REGIONS, COORDS, headingLabel } from "../../domain.js";
+import { REGIONS, headingLabel, valuesOf, joinValues } from "../../domain.js";
 import type { Coords } from "../../types.ts";
 import { errorText } from "../../errors.ts";
 import s from "./forms.module.css";
@@ -19,8 +19,9 @@ type TextFieldProps = {
   value: string;
   onChange: (value: string) => void;
   multiline?: boolean;
+  hint?: string;
 } & Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "name">;
-export function TextField({ label, name, value, onChange, multiline, ...rest }: TextFieldProps) {
+export function TextField({ label, name, value, onChange, multiline, hint, ...rest }: TextFieldProps) {
   const change = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange(e.target.value);
   return (
     <label className={s.field}>
@@ -30,6 +31,7 @@ export function TextField({ label, name, value, onChange, multiline, ...rest }: 
       ) : (
         <input className={s.input} name={name} value={value ?? ""} onChange={change} {...rest} />
       )}
+      {hint && <span className={s.hint}>{hint}</span>}
     </label>
   );
 }
@@ -54,6 +56,87 @@ export function BigOptions({ label, options, value, onChange }: { label: string;
           {title}{sub && <small>{sub}</small>}
         </button>
       ))}
+    </div>
+  );
+}
+// 입력칸 아래에서 자주 쓰는 값을 한 번에 고르는 칩.
+export function QuickChips({ label, options, value, onPick }: { label: string; options: string[]; value: string; onPick: (v: string) => void }) {
+  return (
+    <div className={s.chips} role="group" aria-label={label}>
+      {options.map((o) => (
+        <button key={o} type="button" className={s.chip} aria-pressed={value === o} onClick={() => onPick(o)}>{o}</button>
+      ))}
+    </div>
+  );
+}
+interface MultiOptionsProps {
+  label: string;
+  options: string[];
+  value: string;
+  onChange: (v: string) => void;
+  // 고르면 다른 값을 모두 지우는 값(예: 착용물 '없음').
+  exclusive?: string;
+  otherPlaceholder: string;
+}
+// 여러 개 고르기 + 목록에 없는 값은 '기타'로 직접 적는다. 값은 쉼표로 이어 저장한다.
+export function MultiOptions({ label, options, value, onChange, exclusive, otherPlaceholder }: MultiOptionsProps) {
+  const all = valuesOf(value);
+  const known = all.filter((x) => options.includes(x));
+  const other = all.filter((x) => !options.includes(x)).join(", ");
+  const [showOther, setShowOther] = useState(!!other);
+  const [otherText, setOtherText] = useState(other);
+  const emit = (picked: string[], text: string) => onChange(joinValues([...picked, ...valuesOf(text)]));
+  const toggle = (o: string) => {
+    if (o === exclusive) {
+      setShowOther(false);
+      setOtherText("");
+      return onChange(known.includes(o) ? "" : o);
+    }
+    const rest = known.filter((x) => x !== exclusive);
+    emit(rest.includes(o) ? rest.filter((x) => x !== o) : [...rest, o], otherText);
+  };
+  const toggleOther = () => {
+    if (showOther) emit(known, "");
+    setOtherText("");
+    setShowOther(!showOther);
+  };
+  const typeOther = (text: string) => {
+    setOtherText(text);
+    emit(known.filter((x) => x !== exclusive), text);
+  };
+  return (
+    <div className={s.field}>
+      <span className={s.label}>{label} <small className={s.sub}>여러 개 골라도 돼요</small></span>
+      <div className={s.options} role="group" aria-label={label}>
+        {options.map((o) => (
+          <button key={o} type="button" className={s.option} aria-pressed={known.includes(o)} onClick={() => toggle(o)}>{o}</button>
+        ))}
+        <button type="button" className={s.option} aria-pressed={showOther} onClick={toggleOther}>기타</button>
+      </div>
+      {showOther && (
+        <input className={s.input} aria-label={`${label} 직접 적기`} value={otherText} maxLength={40} autoFocus
+          placeholder={otherPlaceholder} onChange={(e) => typeOther(e.target.value)} />
+      )}
+    </div>
+  );
+}
+// 나이는 숫자를 올리고 내리거나 '1살 미만'·'모르겠어요'를 고른다. 빈 값은 모름.
+export function AgeField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const years = /^(\d+)살$/.exec(value)?.[1];
+  const n = years ? Number(years) : null;
+  const step = (d: number) => onChange(`${Math.min(25, Math.max(1, (n ?? (d > 0 ? 0 : 2)) + d))}살`);
+  return (
+    <div className={s.field}>
+      <span className={s.label}>나이</span>
+      <div className={s.stepper}>
+        <button type="button" onClick={() => step(-1)} disabled={n !== null && n <= 1} aria-label="한 살 줄이기"><Icon name="Minus" size={20} /></button>
+        <output aria-live="polite" className={n === null ? s.stepperEmpty : ""}>{n === null ? "몇 살인가요?" : `${n}살`}</output>
+        <button type="button" onClick={() => step(1)} disabled={n !== null && n >= 25} aria-label="한 살 늘리기"><Icon name="Plus" size={20} /></button>
+      </div>
+      <div className={s.chips} role="group" aria-label="나이 빠른 선택">
+        <button type="button" className={s.chip} aria-pressed={value === "1살 미만"} onClick={() => onChange("1살 미만")}>1살 미만</button>
+        <button type="button" className={s.chip} aria-pressed={!value} onClick={() => onChange("")}>잘 모르겠어요</button>
+      </div>
     </div>
   );
 }
@@ -88,16 +171,55 @@ export function PhotoPicker({ value, onChange, onError, onBusy, label = "사진 
     </label>
   );
 }
+const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+const daysAgo = (value: string) => Math.round((startOfDay(new Date()) - startOfDay(new Date(value))) / 86400000);
+const DAY_NAMES = ["오늘", "어제", "그저께"];
+export function whenLabel(value: string) {
+  if (!value) return "시간을 골라주세요";
+  const d = new Date(value);
+  const ago = daysAgo(value);
+  const day = ago >= 0 && ago < 3 ? DAY_NAMES[ago] : `${d.getMonth() + 1}월 ${d.getDate()}일`;
+  return `${day} ${d.toLocaleTimeString("ko-KR", { hour: "numeric", minute: "2-digit" })}`;
+}
+// 언제: 자주 쓰는 '몇 분 전'을 먼저 보여주고, 필요하면 날짜와 시각을 따로 고른다.
+// 시각은 휴대폰 기본 시간 선택기(휠·시계)를 쓴다.
 export function WhenField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  const ago = (h: number) => onChange(toLocalInput(Date.now() - h * 3600000));
+  const ago = (min: number) => onChange(toLocalInput(Date.now() - min * 60000));
+  // 미래가 되면 지금으로 맞춘다.
+  const setAt = (date: string, time: string) => {
+    const next = `${date}T${time || "12:00"}`;
+    onChange(new Date(next) > new Date() ? toLocalInput() : next);
+  };
+  const date = value.slice(0, 10);
+  const time = value.slice(11, 16);
+  const day = value ? daysAgo(value) : -1;
+  const dayOf = (n: number) => toLocalInput(Date.now() - n * 86400000).slice(0, 10);
+  const today = toLocalInput().slice(0, 10);
   return (
     <div className={s.field}>
-      <div className={s.quick} role="group" aria-label="빠른 선택">
-        <Button variant="weak" size="sm" onClick={() => ago(0)}>지금</Button>
-        <Button variant="weak" size="sm" onClick={() => ago(1)}>1시간 전</Button>
-        <Button variant="weak" size="sm" onClick={() => ago(3)}>3시간 전</Button>
+      <span className={s.label}>{label}</span>
+      <strong className={s.when} aria-live="polite">{whenLabel(value)}</strong>
+      <div className={s.chips} role="group" aria-label="빠른 선택">
+        {([[0, "방금"], [30, "30분 전"], [60, "1시간 전"], [180, "3시간 전"]] as const).map(([min, text]) => (
+          <button key={min} type="button" className={s.chip} onClick={() => ago(min)}>{text}</button>
+        ))}
       </div>
-      <TextField label={label} name="time" type="datetime-local" value={value} onChange={onChange} max={toLocalInput()} />
+      <div className={s.whenGrid}>
+        <span className={s.sublabel}>날짜</span>
+        <div className={s.chips} role="group" aria-label="날짜">
+          {DAY_NAMES.map((name, n) => (
+            <button key={name} type="button" className={s.chip} aria-pressed={day === n} onClick={() => setAt(dayOf(n), time)}>{name}</button>
+          ))}
+          <label className={s.chip} data-on={day > 2}>
+            {day > 2 ? `${new Date(value).getMonth() + 1}월 ${new Date(value).getDate()}일` : "다른 날"}
+            <input type="date" className={s.overlay} max={today} value={date} aria-label="다른 날짜 고르기"
+              onChange={(e) => e.target.value && setAt(e.target.value, time)} />
+          </label>
+        </div>
+        <span className={s.sublabel}>시각</span>
+        <input className={`${s.input} ${s.timeInput}`} type="time" name="time" value={time} aria-label="시각"
+          onChange={(e) => e.target.value && setAt(date || today, e.target.value)} />
+      </div>
     </div>
   );
 }
@@ -114,7 +236,8 @@ interface WhereFieldProps {
   onPick: (point: Coords) => void;
   onMessage: (message: string) => void;
 }
-// 지역·장소·지도 지점. 지도는 이 단계가 보이는 동안만 만든다.
+// 어디서: 지도가 먼저. 가운데 핀에 맞춰 지도를 움직이면 지점과 지역이 정해진다.
+// 지도는 이 단계가 보이는 동안만 만든다.
 export function WhereField({ mapId, region, onRegion, location, onLocation, placeholder, coords, heading = null, picked, onPick, onMessage }: WhereFieldProps) {
   const ref = useRef<HTMLDivElement>(null);
   const picker = useRef<ReturnType<Maps["directionPicker"]> | null>(null);
@@ -140,41 +263,38 @@ export function WhereField({ mapId, region, onRegion, location, onLocation, plac
   useEffect(() => {
     picker.current?.set(coords, heading);
   }, [coords, heading]);
-  const changeRegion = (r: string) => {
-    onRegion(r);
-    picker.current?.map.setView(COORDS[r], 13);
-  };
   const here = () => {
-    if (!navigator.geolocation) return onMessage("이 브라우저에서는 위치를 가져올 수 없어요. 지도에서 골라주세요.");
+    if (!navigator.geolocation) return onMessage("이 브라우저에서는 위치를 가져올 수 없어요. 지도를 움직여 골라주세요.");
     onMessage("현재 위치를 확인하고 있어요.");
     navigator.geolocation.getCurrentPosition(
       (p) => {
-        const point: Coords = [p.coords.latitude, p.coords.longitude];
-        picker.current?.map.setView(point, 16);
-        onPick(point);
-        onMessage("현재 위치예요. 강아지를 본 지점으로 조정해주세요.");
+        onPick([p.coords.latitude, p.coords.longitude]);
+        onMessage("내 위치로 옮겼어요. 강아지를 본 곳으로 핀을 맞춰주세요.");
       },
-      () => onMessage("위치 권한을 확인하거나 지도에서 직접 골라주세요."),
+      () => onMessage("위치 권한을 확인하거나 지도를 움직여 골라주세요."),
       { enableHighAccuracy: true, timeout: 12000 },
     );
   };
   return (
     <>
+      <div className={s.field}>
+        <div className={s.mapWrap}>
+          <div id={mapId} ref={ref} className={s.map} aria-label="지점 고르기 지도. 지도를 움직이거나 눌러서 핀을 맞춰주세요" />
+          <span className={s.centerPin} aria-hidden="true"><Icon name="MapPin" size={40} /></span>
+          <button type="button" className={s.locate} onClick={here}><Icon name="LocateFixed" size={18} />내 위치</button>
+        </div>
+        <p className={s.hint} role="status">
+          {picked ? "핀 위치로 정했어요. 더 정확하게 맞춰도 돼요." : "지도를 움직여 핀을 강아지를 본 곳에 맞춰주세요."}
+        </p>
+      </div>
+      <TextField label="어디쯤인가요?" name="location" value={location} onChange={onLocation} maxLength={150} placeholder={placeholder}
+        hint="가게·건물·공원 입구처럼 이웃이 알아볼 수 있는 이름을 적어주세요." />
       <label className={s.field}>
-        <span className={s.label}>지역</span>
-        <select className={s.input} name="region" value={region} onChange={(e) => changeRegion(e.target.value)}>
+        <span className={s.label}>지역 <small className={s.sub}>핀 위치로 자동으로 골라요</small></span>
+        <select className={s.input} name="region" value={region} onChange={(e) => onRegion(e.target.value)}>
           {REGIONS.slice(1).map((r) => <option key={r}>{r}</option>)}
         </select>
       </label>
-      <TextField label="장소" name="location" value={location} onChange={onLocation} maxLength={150} placeholder={placeholder} />
-      <div className={s.field}>
-        <div className={s.mapHead}>
-          <span className={s.label}>지도에서 본 지점을 눌러주세요</span>
-          <Button variant="weak" size="sm" onClick={here}>현재 위치</Button>
-        </div>
-        <div id={mapId} ref={ref} className={s.map} aria-label="지점 고르기 지도" />
-        <p className={s.hint}>{picked ? "지점을 골랐어요." : "내 위치가 아니라 강아지를 본 곳을 눌러주세요."}</p>
-      </div>
     </>
   );
 }

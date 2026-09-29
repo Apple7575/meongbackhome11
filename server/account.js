@@ -3,7 +3,7 @@ const hash = value => createHash('sha256').update(value).digest('hex');
 const reject = (status,message) => {throw Object.assign(new Error(message),{status});};
 import { accountEmail } from './email-template.js';
 
-export function installAccount({app,db,rate,mailer,origin,invalidate,changed=()=>{}}) {
+export function installAccount({app,db,rate,mailer,origin,invalidate,signIn=()=>{},changed=()=>{}}) {
   if (!db.prepare('PRAGMA table_info(users)').all().some(c=>c.name==='verified_at')) db.exec('ALTER TABLE users ADD COLUMN verified_at INTEGER');
   db.exec('CREATE TABLE IF NOT EXISTS account_tokens(token TEXT PRIMARY KEY,user_id TEXT NOT NULL,purpose TEXT NOT NULL,expires INTEGER NOT NULL); CREATE INDEX IF NOT EXISTS account_tokens_user ON account_tokens(user_id);');
   const configured = mailer.configured && !!origin;
@@ -57,7 +57,9 @@ export function installAccount({app,db,rate,mailer,origin,invalidate,changed=()=
       invalidate(record.user_id);
       db.exec('COMMIT');
     } catch(e){db.exec('ROLLBACK');throw e;}
-    res.json({ok:true});
+    // 다른 기기의 이전 로그인은 끊고, 링크를 연 이 기기만 새로 로그인한다.
+    signIn(res,record.user_id);
+    res.json({ok:true,signedIn:true});
   });
   app.post('/api/auth/reset',(req,res)=>{
     limited(req);

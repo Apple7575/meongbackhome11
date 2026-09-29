@@ -4,16 +4,21 @@ import { commit } from "../../app/actions.ts";
 import { read, id as newId } from "../../client-store.js";
 import { toast } from "../../app/toast.ts";
 import { openSheet } from "../../app/sheets.ts";
-import { COORDS } from "../../domain.js";
+import { COORDS, nearestRegion } from "../../domain.js";
 import { EmptyState, SkeletonRows } from "../../ui/index.tsx";
 import Flow from "./Flow.tsx";
-import { TextField, Options, PhotoPicker, WhenField, WhereField, toLocalInput } from "./fields.tsx";
+import { TextField, Options, QuickChips, MultiOptions, AgeField, PhotoPicker, WhenField, WhereField, whenLabel, toLocalInput } from "./fields.tsx";
 import { useDraft } from "./useDraft.ts";
 import s from "./forms.module.css";
 import type { ReactNode } from "react";
 import type { Coords, Dog, Profile } from "../../types.ts";
 import { errorText } from "../../errors.ts";
 type Mode = "new" | "from" | "edit" | "profile";
+const BREEDS = ["말티즈", "푸들", "포메라니안", "비숑", "시츄", "치와와", "진돗개", "웰시코기", "골든리트리버", "믹스"];
+const COLORS = ["흰색", "크림", "갈색", "검정색", "회색", "황색", "얼룩"];
+const ACCESSORIES = ["없음", "목줄", "하네스", "옷", "인식표"];
+// 예전 신고의 '여아·남아'를 새 표현으로 바꿔 보여준다.
+const SEX: Record<string, string> = { 여아: "암컷", 남아: "수컷" };
 interface ReportValues {
   name: string; breed: string; age: string; sex: string; color: string; size: string; accessory: string;
   region: string; time: string; location: string; description: string;
@@ -35,8 +40,8 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
   const key = profileOnly ? "profile" : `dog-${edit?.id || profile?.id || "new"}`;
   const draft = useDraft<ReportValues, ReportExtra>(key, {
     values: {
-      name: base.name || "", breed: base.breed || "", age: base.age || "", sex: base.sex || "모름",
-      color: base.color || "흰색", size: base.size || "소형", accessory: base.accessory || "없음",
+      name: base.name || "", breed: base.breed || "", age: base.age || "", sex: SEX[base.sex || ""] || base.sex || "모름",
+      color: base.color || "", size: base.size || "소형", accessory: base.accessory || "",
       region: base.region || "서울", time: base.time ? toLocalInput(base.time) : toLocalInput(),
       location: base.location || "", description: base.description || "",
     },
@@ -62,23 +67,25 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
     },
     {
       title: "이름과 견종을 알려주세요",
-      description: "견종을 모르면 '믹스'라고 적어도 돼요.",
+      description: "아래에서 고르거나 직접 적어주세요. 모르면 '믹스'를 골라도 돼요.",
       body: (<>
         <TextField label="이름" name="name" value={v.name} onChange={(name) => set({ name })} maxLength={30} placeholder="예: 보리" autoComplete="off" />
-        <TextField label="견종" name="breed" value={v.breed} onChange={(breed) => set({ breed })} maxLength={40} placeholder="예: 말티즈, 믹스" autoComplete="off" />
+        <TextField label="견종" name="breed" value={v.breed} onChange={(breed) => set({ breed })} maxLength={40} placeholder="예: 말티즈" autoComplete="off" />
+        <QuickChips label="자주 찾는 견종" options={BREEDS} value={v.breed} onPick={(breed) => set({ breed })} />
       </>),
       check: () => (!v.name.trim() || !v.breed.trim() ? "이름과 견종을 적어주세요." : undefined),
     },
     {
       title: "어떤 특징이 있나요?",
-      description: "고르기만 하면 돼요.",
+      description: "고르기만 하면 돼요. 목록에 없으면 기타를 눌러 적어주세요.",
       body: (<>
-        <Options label="성별" options={["모름", "여아", "남아"]} value={v.sex} onChange={(sex) => set({ sex })} />
-        <Options label="털 색" options={["흰색", "갈색", "검정색", "회색", "혼합"]} value={v.color} onChange={(color) => set({ color })} />
+        <Options label="성별" options={["수컷", "암컷", "모름"]} value={v.sex} onChange={(sex) => set({ sex })} />
+        <MultiOptions label="털 색" options={COLORS} value={v.color} onChange={(color) => set({ color })} otherPlaceholder="예: 은색, 흰색 바탕에 갈색 점" />
         <Options label="크기" options={["소형", "중형", "대형"]} value={v.size} onChange={(size) => set({ size })} />
-        {!profileOnly && <Options label="착용물" options={["없음", "목줄", "하네스", "옷"]} value={v.accessory} onChange={(accessory) => set({ accessory })} />}
-        <TextField label="나이 (선택)" name="age" value={v.age} onChange={(age) => set({ age })} maxLength={20} placeholder="예: 3살, 모름" />
+        {!profileOnly && <MultiOptions label="착용물" options={ACCESSORIES} exclusive="없음" value={v.accessory} onChange={(accessory) => set({ accessory })} otherPlaceholder="예: 빨간 방울, 파란 우비" />}
+        <AgeField value={v.age} onChange={(age) => set({ age })} />
       </>),
+      check: () => (!v.color.trim() ? "털 색을 하나 이상 골라주세요." : undefined),
     },
     ...(profileOnly ? [] : [
       {
@@ -91,19 +98,21 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
         title: "마지막으로 본 곳은 어디인가요?",
         description: "정확한 지점일수록 목격 제보를 연결하기 쉬워요.",
         body: (
-          <WhereField mapId="location-picker" region={v.region} location={v.location} placeholder="예: 서울 송파구 석촌호수 동호 입구"
+          <WhereField mapId="location-picker" region={v.region} location={v.location} placeholder="예: 석촌호수 동호 입구 편의점 앞"
             coords={extra.coords} picked={extra.picked} onMessage={toast}
-            onRegion={(region) => draft.update({ values: { region }, extra: { coords: COORDS[region], picked: false } })}
+            onRegion={(region) => extra.picked ? set({ region }) : draft.update({ values: { region }, extra: { coords: COORDS[region], picked: false } })}
             onLocation={(location) => set({ location })}
-            onPick={(coords) => draft.update({ extra: { coords, picked: true } })} />
+            onPick={(coords) => draft.update({ values: { region: nearestRegion(coords) }, extra: { coords, picked: true } })} />
         ),
-        check: () => (!v.location.trim() ? "장소를 적어주세요." : !extra.picked ? "지도에서 마지막으로 본 지점을 눌러주세요." : undefined),
+        check: () => (!v.location.trim() ? "장소를 적어주세요." : !extra.picked ? "지도를 움직여 마지막으로 본 곳에 핀을 맞춰주세요." : undefined),
       },
     ]),
     {
       title: "더 알려줄 특징이 있나요?",
-      description: "털 무늬, 성격, 이름을 부르면 어떻게 반응하는지 적어주세요. 없으면 넘어가도 돼요.",
-      body: <TextField label="특징 (선택)" name="description" multiline value={v.description} onChange={(description) => set({ description })} maxLength={1000} />,
+      description: "이웃이 한눈에 알아볼 수 있는 점을 적어주세요. 없으면 넘어가도 돼요.",
+      body: <TextField label="특징 (선택)" name="description" multiline value={v.description} onChange={(description) => set({ description })} maxLength={1000}
+        placeholder={"예: 왼쪽 귀에 갈색 점이 있어요.\n겁이 많아서 부르면 도망갈 수 있어요.\n'보리야' 부르면 꼬리를 흔들어요."}
+        hint="무늬·흉터, 성격, 이름을 부르면 어떻게 반응하는지 적으면 좋아요." />,
     },
     {
       title: profileOnly ? "이대로 저장할까요?" : edit ? "이대로 고칠까요?" : "이대로 등록할까요?",
@@ -112,8 +121,8 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
         <div className={s.review}>
           {image && <img src={image} alt="등록할 사진" />}
           <dl>
-            {[["이름", v.name], ["견종", v.breed], ["특징", [v.sex, v.color, v.size, !profileOnly && v.accessory].filter(Boolean).join(" · ")],
-              ...(profileOnly ? [] : [["시간", v.time.replace("T", " ")], ["장소", `${v.region} · ${v.location}`]]), ["설명", v.description]]
+            {[["이름", v.name], ["견종", v.breed], ["특징", [v.sex === "모름" ? "성별 모름" : v.sex, v.color, v.size, v.age, !profileOnly && v.accessory].filter(Boolean).join(" · ")],
+              ...(profileOnly ? [] : [["시간", whenLabel(v.time)], ["장소", `${v.region} · ${v.location}`]]), ["설명", v.description]]
               .filter(([, x]) => x).map(([k, x]) => <div key={k}><dt>{k}</dt><dd>{x}</dd></div>)}
           </dl>
         </div>

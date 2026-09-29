@@ -15,9 +15,9 @@ type SheetKind = "region" | "status" | "filters" | null;
 const EMPTY: Filters = { query: "", region: "전국", status: "all", color: "", size: "", accessory: "" };
 const STATUS: [string, string][] = [["all", "전체"], ["missing", "찾고 있어요"], ["reunited", "집에 돌아왔어요"]];
 const FILTERS: [FilterKey, string, string[]][] = [
-  ["color", "털 색", ["흰색", "갈색", "검정색", "회색", "혼합"]],
+  ["color", "털 색", ["흰색", "크림", "갈색", "검정색", "회색", "황색", "얼룩"]],
   ["size", "크기", ["소형", "중형", "대형"]],
-  ["accessory", "착용물", ["없음", "목줄", "하네스", "옷"]],
+  ["accessory", "착용물", ["없음", "목줄", "하네스", "옷", "인식표"]],
 ];
 interface FilterSheetProps {
   open: boolean;

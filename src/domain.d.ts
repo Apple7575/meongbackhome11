@@ -16,5 +16,9 @@ export interface DogFilter {
   accessory?: string;
   status?: string;
 }
+export function valuesOf(value: string | null | undefined): string[];
+export function joinValues(values: string[]): string;
+export function sharesValue(a: string | null | undefined, b: string | null | undefined): boolean;
+export function nearestRegion(point: Coords): string;
 export function filterDogs(dogs: Dog[], filter?: DogFilter): Dog[];
 export function arrowEnd(coords: Coords, heading: number, meters?: number): Coords;

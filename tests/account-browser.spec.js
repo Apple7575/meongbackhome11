@@ -34,11 +34,10 @@ test('email verification and password recovery work through delivered links on m
   await expect(page).not.toHaveURL(/token=/);
   await page.getByRole('button',{name:'이메일 인증 완료하기'}).click();
   await expect(page.locator('.recovery-status')).toContainText('인증이 완료');
-  await page.getByRole('button',{name:'로그인하기',exact:true}).click();
-  await page.locator('#account-form input[name=email]').fill(email);
-  await page.locator('#account-form input[name=password]').fill(password);
-  await page.locator('#account-form button[type=submit]').click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
+  // 인증 링크를 연 기기는 다시 로그인하지 않아도 바로 인증된 상태로 로그인된다.
+  await expect.poll(async()=>(await (await page.request.get('/api/state')).json()).user?.verified).toBe(true);
+  await page.getByRole('link',{name:'마이홈으로',exact:true}).first().click();
+  await expect(page.getByRole('heading',{name:'인증테스트 님'})).toBeVisible();
   await page.goto('/#/account/forgot');
   await page.locator('#recovery-form input').fill(email);
   await page.getByRole('button',{name:'재설정 링크 받기'}).click();

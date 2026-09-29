@@ -36,6 +36,7 @@ export async function fillReport(page, { name, breed = "말티즈", photo = "pub
   await page.locator("input[name=name]").fill(name);
   await page.locator("input[name=breed]").fill(breed);
   await nextStep(page);
+  await page.getByRole("group", { name: "털 색" }).getByRole("button", { name: "흰색" }).click();
   await nextStep(page);
   await nextStep(page);
   await page.locator("input[name=location]").fill("서울 송파구 석촌호수");

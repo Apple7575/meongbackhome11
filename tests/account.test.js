@@ -26,7 +26,9 @@ test('verification delivers hash-only expiring token, confirms email, revokes ol
     assert.notEqual(f.db.prepare('SELECT token FROM account_tokens').get().token,raw);
     assert.equal((await other('/api/auth/reset',{token:raw,password:'replacement-password'})).status,400);
     assert.equal((await other('/api/auth/verify',{token:raw})).status,200);
+    // 이전 기기의 로그인은 끊기고, 링크를 연 기기는 바로 인증된 상태로 로그인된다.
     assert.equal((await owner('/api/state')).data.user.registered,false);
+    assert.equal((await other('/api/state')).data.user.verified,true);
     assert.equal((await other('/api/auth/verify',{token:raw})).status,400);
     await owner('/api/auth/login',signup);
     assert.equal((await owner('/api/state')).data.user.verified,true);

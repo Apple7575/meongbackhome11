@@ -239,6 +239,7 @@ export async function createApp({
     mailer,
 
     defer,
+    signIn: session,
     origin: publicOrigin.replace(/\/$/, ''),
     async invalidate(uid) {
       await db.prepare('DELETE FROM sessions WHERE user_id=?').run(uid);

@@ -187,6 +187,11 @@ test("saved profile becomes a report and uploaded image can be exported as QR po
   await page.locator("input[name=name]").fill("프로필" + unique());
   await page.locator("input[name=breed]").fill("진도 믹스");
   await nextStep(page);
+  // 털 색은 여러 개 고를 수 있고, 목록에 없는 색은 기타로 적는다.
+  await page.getByRole("group", { name: "털 색" }).getByRole("button", { name: "황색" }).click();
+  await page.getByRole("group", { name: "털 색" }).getByRole("button", { name: "기타" }).click();
+  await page.getByLabel("털 색 직접 적기").fill("은색");
+  await page.getByRole("button", { name: "한 살 늘리기" }).click();
   await nextStep(page);
   await nextStep(page);
   await page.getByRole("button", { name: "프로필 저장하기" }).click();
