@@ -4,11 +4,12 @@ import { useRoute } from "./router.js";
 import { useStore } from "./useStore.js";
 import TopBar from "./TopBar.jsx";
 import BottomNav from "./BottomNav.jsx";
+import Home from "../screens/Home.jsx";
 import My from "../screens/My.jsx";
 import Settings from "../screens/Settings.jsx";
 import s from "./Frame.module.css";
 // 새 디자인으로 옮긴 화면. 여기에 없는 경로는 기존 main.js가 #legacy-root에 그린다.
-export const SCREENS = { "/my": My, "/my/settings": Settings };
+export const SCREENS = { "/": Home, "/my": My, "/my/settings": Settings };
 export default function App() {
   const route = useRoute();
   const store = useStore();

@@ -14,4 +14,8 @@
   font-size: var(--t6); color: var(--grey-800); }
 .option[aria-pressed="true"] { border-color: var(--grey-900); font-weight: 700; color: var(--grey-900); }
 .optionLabel { margin: 16px var(--gutter) 0; font-size: var(--t6); font-weight: 700; color: var(--grey-800); }
+.owner { display: flex; gap: 16px; margin: 8px var(--gutter) 12px; padding: 20px; border-radius: 16px; background: var(--grey-50); }
+.ownerBody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ownerTitle { margin: 0; font-size: var(--t4); line-height: var(--t4-lh); font-weight: 700; color: var(--grey-900); letter-spacing: -0.01em; }
+.ownerDesc { margin: 0 0 12px; font-size: var(--t6); line-height: var(--t6-lh); color: var(--grey-600); }
 .sheetActions { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; padding: 8px var(--gutter) 0; }

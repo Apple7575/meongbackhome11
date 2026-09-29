@@ -1331,6 +1331,8 @@ window.addEventListener("hashchange", () => {
 });
 
 window.addEventListener("store-updated", () => {
+  // React 화면에서는 render()가 그리지 않으므로 연결 배너는 여기서 따로 갱신한다.
+  decorateSession();
   if (!modalRoot.children.length && !route().startsWith('/account/')) render();
 });
 window.addEventListener("remote-change", () => {

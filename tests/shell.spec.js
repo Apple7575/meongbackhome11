@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { ready, registerByApi } from "./helpers.js";
 test("React shell draws top bar and bottom navigation around legacy pages", async ({ page }) => {
-  await ready(page);
+  await ready(page, "/#/stories");
   await expect(page.locator("#app [data-shell=react]")).toHaveCount(1);
   const nav = page.getByRole("navigation", { name: "하단 메뉴" });
   await expect(nav.getByRole("link")).toHaveCount(4);
@@ -9,6 +9,22 @@ test("React shell draws top bar and bottom navigation around legacy pages", asyn
   await expect(page.getByRole("button", { name: /^알림 \d+개$/ })).toBeVisible();
   await expect(page.locator(".site-header, .site-footer, .mobile-nav")).toHaveCount(0);
   await expect(page.locator("#legacy-root")).toBeVisible();
+});
+test("home shows missing dogs first and lets people change the region in a bottom sheet", async ({ page }) => {
+  await ready(page);
+  await expect(page.getByRole("button", { name: /강아지를 잃어버렸어요/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /강아지를 발견했어요/ })).toBeVisible();
+  const first = page.locator("[data-dog-row]").first();
+  await expect(first).toBeVisible();
+  expect((await first.boundingBox()).y).toBeLessThan(600);
+  expect(await page.locator("[data-dog-row]").count()).toBeLessThanOrEqual(5);
+  await page.getByRole("button", { name: "전국" }).click();
+  const sheet = page.getByRole("dialog", { name: "지역 선택" });
+  await expect(sheet).toBeVisible();
+  await sheet.getByRole("button", { name: "부산" }).click();
+  await expect(sheet).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: /^부산에서 찾고 있어요/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /집에 돌아온 아이들/ })).toBeVisible();
 });
 test("my home puts reports first and keeps logout in settings", async ({ page }) => {
   await ready(page, "/#/my");
