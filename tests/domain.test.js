@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { chronologicalSightings, headingLabel, haversine, filterDogs, matchCandidates, arrowEnd, escapeHTML } from '../src/domain.js';
-import { relativeTime, dayGroup, objectParticle, subjectParticle } from '../src/format.js';
+import { relativeTime, dayGroup, objectParticle, subjectParticle } from '../src/format.ts';
 
 test('relative time, day groups and Korean object particle', () => {
   const now = new Date(2026, 8, 29, 16, 0).getTime();

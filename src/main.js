@@ -50,7 +50,7 @@ import {
   enablePush,
   api,
 } from "./client-store.js";
-import { formatTime, timeAgo } from "./format.js";
+import { formatTime, timeAgo } from "./format.ts";
 import { baseMap, marker, drawTimeline, directionPicker } from "./maps.js";
 import "./legacy.css";
 
@@ -499,7 +499,7 @@ function decorateSession() {
   });
 }
 
-import { openSheet } from './app/sheets.js';
+import { openSheet } from './app/sheets.ts';
 // 신고 흐름이 쓰는 로그인 요청. React 로그인 시트를 연다.
 export function accountForm(after) {
   openSheet("auth", { after });
