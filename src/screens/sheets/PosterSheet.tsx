@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import QRCode from "qrcode";
 import BottomSheet from "../../ui/BottomSheet.tsx";
 import { Button } from "../../ui/index.tsx";
 import Icon from "../../ui/Icon.tsx";
@@ -50,6 +49,8 @@ async function draw(canvas: HTMLCanvasElement, dog: Dog, format: Format) {
   ctx.fillStyle = "#8a7c70";
   ctx.fillText(formatTime(dog.time), 500, y + 202);
   const qr = new Image();
+  // QR 라이브러리는 전단을 만들 때만 불러온다.
+  const { default: QRCode } = await import("qrcode");
   qr.src = await QRCode.toDataURL(`${location.origin}${location.pathname}#/dog/${dog.id}`, { width: 180, margin: 1 });
   await qr.decode();
   ctx.drawImage(qr, 760, h - 200, 150, 150);

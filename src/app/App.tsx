@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import type { ComponentType } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
+import type { ComponentType, LazyExoticComponent } from "react";
 import type { SheetName, SheetRequest } from "./sheets.ts";
 import "./boot.ts";
 import ConnectionBanner from "./ConnectionBanner.tsx";
@@ -14,11 +14,12 @@ import Sightings from "../screens/Sightings.tsx";
 import My from "../screens/My.tsx";
 import Settings from "../screens/Settings.tsx";
 import DogDetail from "../screens/DogDetail.tsx";
-import Stories from "../screens/Stories.tsx";
-import Admin from "../screens/Admin.tsx";
-import ReportFlow from "../screens/forms/ReportFlow.tsx";
-import SightingFlow from "../screens/forms/SightingFlow.tsx";
-import AccountPage from "../screens/AccountPage.tsx";
+// 자주 쓰지 않는 화면은 들어갈 때 불러온다(첫 화면을 가볍게).
+const Stories = lazy(() => import("../screens/Stories.tsx"));
+const Admin = lazy(() => import("../screens/Admin.tsx"));
+const ReportFlow = lazy(() => import("../screens/forms/ReportFlow.tsx"));
+const SightingFlow = lazy(() => import("../screens/forms/SightingFlow.tsx"));
+const AccountPage = lazy(() => import("../screens/AccountPage.tsx"));
 import AuthSheet from "../screens/sheets/AuthSheet.tsx";
 import NotificationsSheet from "../screens/sheets/NotificationsSheet.tsx";
 import AreasSheet from "../screens/sheets/AreasSheet.tsx";
@@ -29,10 +30,10 @@ import PosterSheet from "../screens/sheets/PosterSheet.tsx";
 import InfoSheet from "../screens/sheets/InfoSheet.tsx";
 import { UpdateSheet, FlagSheet } from "../screens/sheets/TextSheets.tsx";
 import { DeviceSheet, DeleteAccountSheet, SuccessSheet } from "../screens/sheets/AccountSheets.tsx";
-import { EmptyState, ButtonLink } from "../ui/index.tsx";
+import { EmptyState, ButtonLink, SkeletonRows } from "../ui/index.tsx";
 import s from "./Frame.module.css";
 // openSheet(name, props)로 여는 시트들. 화면·시트마다 props가 달라 표는 느슨한 타입으로 둔다.
-type AnyComponent = ComponentType<any>;
+type AnyComponent = ComponentType<any> | LazyExoticComponent<ComponentType<any>>;
 const SHEETS: Record<SheetName, AnyComponent> = {
   auth: AuthSheet, notifications: NotificationsSheet, areas: AreasSheet, reunite: ReuniteSheet, story: StorySheet,
   share: ShareSheet, poster: PosterSheet, update: UpdateSheet, flag: FlagSheet, info: InfoSheet,
@@ -91,7 +92,9 @@ export default function App() {
       <ConnectionBanner connection={store.connection} />
       <main id="main" className={s.main}>
         {/* 주소가 바뀌면(예: 인증 → 비밀번호 찾기, 다른 강아지) 화면 상태를 새로 시작한다. */}
-        <Screen key={route.split("?")[0]} {...params} />
+        <Suspense fallback={<SkeletonRows />}>
+          <Screen key={route.split("?")[0]} {...params} />
+        </Suspense>
       </main>
       {!isFlow(route) && <BottomNav route={route} />}
       {reportId && <ReportSheet id={reportId} onClose={() => setReportId(null)} />}

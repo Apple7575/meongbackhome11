@@ -3,7 +3,8 @@ import type { ChangeEvent, InputHTMLAttributes } from "react";
 import { Button } from "../../ui/index.tsx";
 import Icon from "../../ui/Icon.tsx";
 import { readPhoto } from "../../photo.ts";
-import { directionPicker } from "../../maps.js";
+import { withMaps } from "../../app/withMaps.ts";
+import type { Maps } from "../../app/withMaps.ts";
 import { REGIONS, COORDS, headingLabel } from "../../domain.js";
 import type { Coords } from "../../types.ts";
 import { errorText } from "../../errors.ts";
@@ -116,16 +117,26 @@ interface WhereFieldProps {
 // 지역·장소·지도 지점. 지도는 이 단계가 보이는 동안만 만든다.
 export function WhereField({ mapId, region, onRegion, location, onLocation, placeholder, coords, heading = null, picked, onPick, onMessage }: WhereFieldProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const picker = useRef<ReturnType<typeof directionPicker> | null>(null);
+  const picker = useRef<ReturnType<Maps["directionPicker"]> | null>(null);
+  const latest = useRef({ coords, heading });
+  latest.current = { coords, heading };
   const pickRef = useRef(onPick);
   pickRef.current = onPick;
-  useEffect(() => {
-    if (!ref.current) return;
-    const p = directionPicker(ref.current, coords, (point) => pickRef.current(point));
-    p.set(coords, heading);
-    picker.current = p;
-    return () => p.map.remove();
-  }, []);
+  useEffect(
+    () =>
+      withMaps(({ directionPicker }) => {
+        if (!ref.current) return;
+        const { coords: c, heading: h } = latest.current;
+        const p = directionPicker(ref.current, c, (point) => pickRef.current(point));
+        p.set(c, h);
+        picker.current = p;
+        return () => {
+          picker.current = null;
+          p.map.remove();
+        };
+      }),
+    [],
+  );
   useEffect(() => {
     picker.current?.set(coords, heading);
   }, [coords, heading]);

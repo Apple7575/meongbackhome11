@@ -5,7 +5,7 @@ import Icon from "../ui/Icon.tsx";
 import BottomSheet from "../ui/BottomSheet.tsx";
 import { DogRow, OptionSheet, RegionSheet } from "./shared.tsx";
 import { filterDogs, COORDS, escapeHTML } from "../domain.js";
-import { baseMap, marker } from "../maps.js";
+import { withMaps } from "../app/withMaps.ts";
 import s from "./screens.module.css";
 import type { Dog } from "../types.ts";
 import type { DogFilter } from "../domain.js";
@@ -53,14 +53,18 @@ function ExploreMap({ dogs }: { dogs: Dog[] }) {
   const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const ids = dogs.map((d) => d.id).join();
-  useEffect(() => {
-    if (!ref.current) return;
-    const map = baseMap(ref.current, dogs[0]?.coords || COORDS.서울, dogs.length > 1 ? 7 : 12);
-    dogs.forEach((d) =>
-      marker(map, d.coords, "♥").bindPopup(`<a href="#/dog/${d.id}"><b>${escapeHTML(d.name)}</b> · ${escapeHTML(d.breed)}<br>${escapeHTML(d.location)}</a>`),
-    );
-    return () => map.remove();
-  }, [ids]);
+  useEffect(
+    () =>
+      withMaps(({ baseMap, marker }) => {
+        if (!ref.current) return;
+        const map = baseMap(ref.current, dogs[0]?.coords || COORDS.서울, dogs.length > 1 ? 7 : 12);
+        dogs.forEach((d) =>
+          marker(map, d.coords, "♥").bindPopup(`<a href="#/dog/${d.id}"><b>${escapeHTML(d.name)}</b> · ${escapeHTML(d.breed)}<br>${escapeHTML(d.location)}</a>`),
+        );
+        return () => map.remove();
+      }),
+    [ids],
+  );
   return (
     <div className={s.map}>
       <div ref={ref} aria-label="실종 강아지 지도" />

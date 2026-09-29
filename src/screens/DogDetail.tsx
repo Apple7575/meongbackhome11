@@ -6,7 +6,7 @@ import { DogBadge } from "./shared.tsx";
 import { movement } from "./ReportSheet.tsx";
 import { chronologicalSightings, matchCandidates } from "../domain.js";
 import { formatTime } from "../format.ts";
-import { baseMap, marker, drawTimeline } from "../maps.js";
+import { withMaps } from "../app/withMaps.ts";
 import s from "./detail.module.css";
 import type { Dog, Report } from "../types.ts";
 interface SightingMapProps {
@@ -17,15 +17,23 @@ interface SightingMapProps {
 }
 function SightingMap({ dog, reports, selected, onSelect }: SightingMapProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const api = useRef<ReturnType<typeof drawTimeline> | null>(null);
+  const api = useRef<{ select(id: string): void } | null>(null);
+  const selectedRef = useRef(selected);
+  selectedRef.current = selected;
   const ids = reports.map((r) => r.id).join();
-  useEffect(() => {
-    if (!ref.current) return;
-    const map = baseMap(ref.current, dog.coords);
-    api.current = drawTimeline(map, reports, onSelect);
-    if (!reports.length) marker(map, dog.coords, "♥");
-    return () => map.remove();
-  }, [dog.id, ids]);
+  useEffect(
+    () =>
+      withMaps(({ baseMap, drawTimeline, marker }) => {
+        if (!ref.current) return;
+        const map = baseMap(ref.current, dog.coords);
+        api.current = drawTimeline(map, reports, onSelect);
+        if (!reports.length) marker(map, dog.coords, "♥");
+        // 지도가 늦게 준비되는 동안 고른 지점이 있으면 바로 강조한다.
+        if (selectedRef.current) api.current.select(selectedRef.current);
+        return () => map.remove();
+      }),
+    [dog.id, ids],
+  );
   useEffect(() => {
     if (selected) api.current?.select(selected);
   }, [selected]);

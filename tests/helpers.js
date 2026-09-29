@@ -39,6 +39,8 @@ export async function fillReport(page, { name, breed = "말티즈", photo = "pub
   await nextStep(page);
   await nextStep(page);
   await page.locator("input[name=location]").fill("서울 송파구 석촌호수");
+  // 지도는 필요할 때 불러오므로 준비된 뒤 누른다.
+  await expect(page.locator("#location-picker.leaflet-container")).toBeVisible();
   await page.locator("#location-picker").click({ position: { x: 140, y: 110 } });
   await nextStep(page);
   await nextStep(page);
@@ -46,16 +48,7 @@ export async function fillReport(page, { name, breed = "말티즈", photo = "pub
 // 목격 제보 흐름(어디서 → 언제·상황 → 방향 → 사진·특징)을 확인 단계 직전까지 채운다.
 export async function fillSighting(page, { place }) {
   await page.locator("input[name=location]").fill(place);
+  await expect(page.locator("#sighting-picker.leaflet-container")).toBeVisible();
   await page.locator("#sighting-picker").click({ position: { x: 140, y: 100 } });
   for (let i = 0; i < 4; i++) await nextStep(page);
-}
-// 기존 data-action 처리기를 화면 위치와 무관하게 호출한다(설정 화면이 생기기 전 임시).
-export async function trigger(page, action) {
-  await page.evaluate((a) => {
-    const b = document.createElement("button");
-    b.dataset.action = a;
-    document.body.append(b);
-    b.click();
-    b.remove();
-  }, action);
 }

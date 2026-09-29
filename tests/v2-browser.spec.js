@@ -30,7 +30,8 @@ test("detail lists sightings in time order and plays them on the map", async ({
   await page.goto("/#/dog/demo-bori");
   const steps = page.locator("[data-sighting-step]");
   expect(await steps.count()).toBeGreaterThanOrEqual(3);
-  expect(await page.locator(".direction-icon").count()).toBeGreaterThanOrEqual(3);
+  // 지도는 필요할 때 불러오므로 방향 화살표가 그려질 때까지 기다린다.
+  await expect(page.locator(".direction-icon").nth(2)).toBeAttached();
   await expect(page.getByText("실제 이동 경로가 아니에요")).toBeVisible();
   await page.getByRole("button", { name: "순서대로 보기" }).click();
   await expect(page.locator(".selected-pin b")).toHaveText("1");
@@ -76,6 +77,7 @@ test("sighting draft restores location and direction, survives close, then reach
   const place = "복원된 목격" + unique();
   await expect(page.getByRole("navigation", { name: "하단 메뉴" })).toHaveCount(0);
   await page.locator("input[name=location]").fill(place);
+  await expect(page.locator("#sighting-picker.leaflet-container")).toBeVisible();
   await page
     .locator("#sighting-picker")
     .click({ position: { x: 130, y: 100 } });
