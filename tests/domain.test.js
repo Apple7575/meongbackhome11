@@ -1,6 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { chronologicalSightings, headingLabel, haversine, filterDogs, matchCandidates, arrowEnd, escapeHTML } from '../src/domain.js';
+import { relativeTime, dayGroup, objectParticle } from '../src/format.js';
+
+test('relative time, day groups and Korean object particle', () => {
+  const now = new Date(2026, 8, 29, 16, 0).getTime();
+  assert.equal(relativeTime(now - 30_000, now), '방금 전');
+  assert.equal(relativeTime(now - 8 * 60_000, now), '8분 전');
+  assert.equal(relativeTime(now - 3 * 3600_000, now), '3시간 전');
+  assert.equal(dayGroup(new Date(2026, 8, 29, 1).getTime(), now), '오늘');
+  assert.equal(dayGroup(new Date(2026, 8, 28, 23).getTime(), now), '어제');
+  assert.equal(dayGroup(new Date(2026, 8, 25).getTime(), now), '이번 주');
+  assert.equal(dayGroup(new Date(2026, 8, 1).getTime(), now), '이전');
+  assert.equal(objectParticle('보리'), '를');
+  assert.equal(objectParticle('초콩'), '을');
+});
 
 test('timeline orders by sighting time without mutating source and excludes unrelated reports',()=>{
   const source=[{id:'late',time:'2026-09-08T03:00Z',status:'확인 전'},{id:'wrong',time:'2026-09-08T01:00Z',status:'다른 강아지'},{id:'early',time:'2026-09-08T02:00Z',status:'관련 목격'}];

@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { randomUUID } from "node:crypto";
-import { ready, currentUserName, trigger } from "./helpers.js";
+import { ready, currentUserName } from "./helpers.js";
 test("small phone layouts, keyboard inputs, and location permission feedback", async ({ page, context }, testInfo) => {
   test.skip(testInfo.project.name !== "mobile", "Phone-only coverage");
   await ready(page);
@@ -17,7 +17,8 @@ test("small phone layouts, keyboard inputs, and location permission feedback", a
   await page.request.post("/api/auth/register", { data: { name: "기기확인", email: `${randomUUID()}@example.com`, password: "test-phone-password" } });
   await page.reload();
   await expect.poll(() => currentUserName(page)).toBe("기기확인");
-  await trigger(page, "device-check");
+  await page.goto("/#/my/settings");
+  await page.getByRole("button", { name: /이 휴대폰에서 기능 확인/ }).click();
   await context.grantPermissions(["geolocation"]);
   await context.setGeolocation({ latitude: 37.51, longitude: 127.1, accuracy: 20 });
   await page.getByRole("button", { name: "현재 위치 확인", exact: true }).click();

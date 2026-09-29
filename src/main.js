@@ -63,6 +63,7 @@ import {
   api,
 } from "./client-store.js";
 import { enhanceWizard, loadDraft, clearDraft } from "./wizard.js";
+import { formatTime, timeAgo } from "./format.js";
 import { timelineExperience } from "./timeline.js";
 import { baseMap, marker, drawTimeline, directionPicker } from "./maps.js";
 import "./style.css";
@@ -135,21 +136,6 @@ const refreshIcons = () =>
     },
     attrs: { "stroke-width": 1.7 },
   });
-const formatTime = (t) =>
-  new Date(t).toLocaleString("ko-KR", {
-    month: "numeric",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-const timeAgo = (t) => {
-  const h = Math.max(0, Math.floor((Date.now() - new Date(t)) / 3600000));
-  return h < 1
-    ? "방금 전"
-    : h < 24
-      ? `${h}시간 전`
-      : `${Math.floor(h / 24)}일 전`;
-};
 const localDate = () => {
   const d = new Date();
   return new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
@@ -924,7 +910,7 @@ function areaModal() {
       )
       .join(
         "",
-      )}</div><p class="local-notice">새 실종 신고가 올라오면 알림함에서 바로 확인할 수 있어요. 브라우저 알림을 켜면 지원되는 기기에서 백그라운드 알림도 받을 수 있어요.</p><button class="button primary full" type="submit">관심 지역 저장하기</button></form>`,
+      )}</div><p class="local-notice">새 실종 신고가 올라오면 알림함에서 바로 확인할 수 있어요. 설정에서 새 목격 소식 알림을 켜면 앱을 닫아도 알려드려요.</p><button class="button primary full" type="submit">관심 지역 저장하기</button></form>`,
   );
   document.querySelector("#areas-form").onsubmit = async (e) => {
     e.preventDefault();
@@ -1214,7 +1200,7 @@ document.addEventListener("click", async (e) => {
   } else if (a === "push") {
     try {
       await enablePush();
-      toast("브라우저 알림을 켰어요.");
+      toast("새 목격 소식 알림을 켰어요.");
     } catch (err) {
       toast(err.message);
     }
@@ -1402,7 +1388,7 @@ function accountForm(after) {
   if (user?.registered && !after) {
     openModal(
       "내 계정",
-      `<div class="account-intro"><img src="/assets/mascot-alert.webp" alt=""/><h3>${esc(user.name)} 님과 함께 찾고 있어요</h3>${verificationPanel()}<button class="button primary full" data-action="push">브라우저 알림 켜기</button><button class="button white full" data-action="install-app">홈 화면에 추가하기</button><button class="text-button" data-action="device-check">이 휴대폰에서 기능 확인</button><button class="text-button" data-action="logout">로그아웃</button></div>`,
+      `<div class="account-intro"><img src="/assets/mascot-alert.webp" alt=""/><h3>${esc(user.name)} 님과 함께 찾고 있어요</h3>${verificationPanel()}<button class="button primary full" data-action="push">새 목격 소식 알림 받기</button><button class="button white full" data-action="install-app">홈 화면에 추가하기</button><button class="text-button" data-action="device-check">이 휴대폰에서 기능 확인</button><button class="text-button" data-action="logout">로그아웃</button></div>`,
     );
     return;
   }
@@ -1459,6 +1445,6 @@ function registeredNext(dogId) {
   if (!d) return;
   openModal(
     "이웃과 함께 찾을 준비가 됐어요",
-    `<div class="success-next"><img src="/assets/mascot-alert.webp" alt=""/><h3>${esc(d.name)}의 소식을 알려주세요</h3><p>공유한 링크 하나가<br>소중한 목격 제보로 이어질 수 있어요.</p><button class="button primary full" data-action="share" data-id="${dogId}">신고 링크 공유하기 →</button><button class="button white full" data-action="poster" data-id="${dogId}">QR 전단 만들기</button><button class="text-button" data-action="close">신고 내용 먼저 확인하기</button></div>`,
+    `<div class="success-next"><img src="/assets/mascot-alert.webp" alt=""/><h3>${esc(d.name)}의 소식을 알려주세요</h3><p>공유한 링크 하나가<br>소중한 목격 제보로 이어질 수 있어요.</p><button class="button primary full" data-action="share" data-id="${dogId}">신고 링크 공유하기 →</button><button class="button white full" data-action="poster" data-id="${dogId}">QR 전단 만들기</button><button class="button white full" data-action="push">새 목격 제보 알림 받기</button><p class="field-hint">${esc(d.name)} 목격 제보가 오면 바로 알려드려요. 나중에 설정에서 켜도 돼요.</p><button class="text-button" data-action="close">신고 내용 먼저 확인하기</button></div>`,
   );
 }
