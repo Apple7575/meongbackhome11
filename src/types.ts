@@ -19,6 +19,8 @@ export interface Dog {
   time: string;
   coords: Coords;
   image?: string;
+  // 대표 사진 말고 더 올린 사진(최대 2장)
+  images?: string[];
   status: DogStatus;
   demo?: boolean;
   previewOnly?: boolean;
@@ -75,6 +77,7 @@ export interface Profile {
   size?: string;
   description?: string;
   image?: string;
+  images?: string[];
 }
 export interface Story {
   id: string;

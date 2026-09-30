@@ -128,6 +128,20 @@ test("registered owner shares report with a second device; only owner can edit; 
     await f.stop();
   }
 });
+test("reports keep up to two extra photos and long multi-colour values", async () => {
+  const f = await fixture();
+  try {
+    const a = f.client();
+    await register(a);
+    const d = { ...dog(), color: "흰색, 크림, 갈색, 검정색, 회색, 황색, 얼룩, 은색 바탕에 갈색 점", images: [photo, photo, photo] };
+    assert.equal((await change(a, "dogs", d)).status, 200);
+    const saved = (await a.request("/api/state")).data.dogs.find((x) => x.id === d.id);
+    assert.equal(saved.images.length, 2);
+    assert.equal(saved.color, d.color);
+  } finally {
+    await f.stop();
+  }
+});
 test("an unlinked sighting alerts owners of similar missing dogs nearby, not far or different ones", async () => {
   const f = await fixture();
   try {

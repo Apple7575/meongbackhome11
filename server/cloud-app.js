@@ -341,6 +341,7 @@ export async function createApp({
         if (old && old.demo) fail(403, "예시 신고는 수정할 수 없어요. 직접 신고를 등록해주세요.");
         if (old && op.revision !== old.revision) fail(409, "다른 기기에서 내용이 바뀌었어요. 새로고침 후 다시 확인해주세요.");
         await media.validate(v.image,req.user.id,old?.image);
+        if (Array.isArray(v.images)) for (const extra of v.images.slice(0, 2)) await media.validate(extra, req.user.id, old?.images?.includes(extra) ? extra : old?.image);
         let clean;
         if (c === "dogs" || c === "profiles") {
           if (old && old.ownerId !== req.user.id) fail(403, "내 반려견 정보만 수정할 수 있어요.");
@@ -350,10 +351,13 @@ export async function createApp({
             breed: text(v.breed, 40, true),
             age: text(v.age || "", 20),
             sex: text(v.sex || "모름", 10),
-            color: text(v.color, 20, true),
+            // 털 색은 여러 개·기타를 쉼표로 이어 저장해서 넉넉히 받는다.
+            color: text(v.color, 80, true),
             size: text(v.size, 10, true),
             description: text(v.description || ""),
-            image: photo(v.image)
+            image: photo(v.image),
+            // 대표 사진 말고 더 올린 사진(최대 2장)
+            images: Array.isArray(v.images) ? v.images.slice(0, 2).map(photo).filter(Boolean) : []
           };
           if (!clean.image) fail(400, "강아지 사진이 필요해요.");
           if (c === "dogs") {
@@ -365,7 +369,7 @@ export async function createApp({
               location: text(v.location, 150, true),
               coords: point(v.coords),
               time: time(v.time),
-              accessory: text(v.accessory || "없음", 20),
+              accessory: text(v.accessory || "없음", 80),
               status: old ? v.status : "missing"
             });
             if (!["missing", "reunited"].includes(clean.status)) fail(400, "신고 상태를 확인해주세요.");

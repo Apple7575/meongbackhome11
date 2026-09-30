@@ -450,10 +450,13 @@ export function createApp({
             breed: text(v.breed, 40, true),
             age: text(v.age || "", 20),
             sex: text(v.sex || "모름", 10),
-            color: text(v.color, 20, true),
+            // 털 색은 여러 개·기타를 쉼표로 이어 저장해서 넉넉히 받는다.
+            color: text(v.color, 80, true),
             size: text(v.size, 10, true),
             description: text(v.description || ""),
             image: photo(v.image),
+            // 대표 사진 말고 더 올린 사진(최대 2장)
+            images: Array.isArray(v.images) ? v.images.slice(0, 2).map(photo).filter(Boolean) : [],
           };
           if (!clean.image) fail(400, "강아지 사진이 필요해요.");
           if (c === "dogs") {
@@ -466,7 +469,7 @@ export function createApp({
               location: text(v.location, 150, true),
               coords: point(v.coords),
               time: time(v.time),
-              accessory: text(v.accessory || "없음", 20),
+              accessory: text(v.accessory || "없음", 80),
               status: old ? v.status : "missing",
             });
             if (!["missing", "reunited"].includes(clean.status))

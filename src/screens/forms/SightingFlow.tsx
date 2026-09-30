@@ -38,7 +38,8 @@ function SightingForm({ dog, dogId }: { dog?: Dog | null; dogId?: string }) {
   const [busy, setBusy] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const heading = extra.heading ?? 0;
-  const place = () => v.location.trim() || extra.short || extra.address || "";
+  // 주소를 아직 못 찾았거나 찾지 못해도 핀 위치는 정확하므로 막지 않는다.
+  const place = () => v.location.trim() || extra.short || extra.address || "지도에 표시한 곳";
   const steps: Step[] = [
     {
       title: dog ? `${dog.name}${objectParticle(dog.name)} 본 곳은 어디인가요?` : "강아지를 본 곳은 어디인가요?",
@@ -50,7 +51,7 @@ function SightingForm({ dog, dogId }: { dog?: Dog | null; dogId?: string }) {
           onPick={(coords) => draft.update({ values: { region: nearestRegion(coords) }, extra: { coords, picked: true, address: "", short: "" } })}
           onPlace={(place) => draft.update({ values: place?.region ? { region: place.region } : {}, extra: { address: place?.label || "", short: place?.short || "" } })} />
       ),
-      check: () => (!extra.picked ? "지도를 움직여 강아지를 본 곳에 핀을 맞춰주세요." : !place() ? "자세한 장소를 적어주세요." : undefined),
+      check: () => (!extra.picked ? "지도를 움직여 강아지를 본 곳에 핀을 맞춰주세요." : undefined),
     },
     {
       title: "언제, 어떤 상황이었나요?",

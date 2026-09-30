@@ -7,6 +7,7 @@ import { movement } from "./ReportSheet.tsx";
 import { chronologicalSightings, matchCandidates } from "../domain.js";
 import { formatTime, sexLabel, subjectParticle, placeText } from "../format.ts";
 import { withMaps } from "../app/withMaps.ts";
+import { thumbSrc } from "../thumb.ts";
 import s from "./detail.module.css";
 import type { Dog, Report } from "../types.ts";
 interface SightingMapProps {
@@ -45,6 +46,7 @@ export default function DogDetail({ id }: { id: string }) {
   const reports = d ? chronologicalSightings(db.reports.filter((r) => r.dogId === d.id)) : [];
   const [selected, setSelected] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [shown, setShown] = useState(0);
   useEffect(() => {
     if (!playing) return;
     const timer = setInterval(() => {
@@ -68,6 +70,8 @@ export default function DogDetail({ id }: { id: string }) {
       />
     );
   const saved = db.saved.includes(d.id);
+  // 대표 사진 + 더 올린 사진(최대 2장)
+  const photos = [d.image || "/assets/mascot-home.webp", ...(d.images || [])];
   const updates = db.updates.filter((u) => u.dogId === d.id);
   const candidates = matchCandidates(d, db.reports).slice(0, 3);
   const missing = d.status !== "reunited";
@@ -79,10 +83,19 @@ export default function DogDetail({ id }: { id: string }) {
     <div className={missing ? s.withCta : s.screen}>
       {/* 세로 사진도 잘리지 않게 전체를 보여주고, 남는 곳은 같은 사진을 흐리게 채운다. */}
       <div className={s.photo}>
-        <img className={s.photoFill} src={d.image || "/assets/mascot-home.webp"} alt="" aria-hidden="true" />
-        <img className={s.photoMain} src={d.image || "/assets/mascot-home.webp"} alt={`${d.name} ${d.breed} 사진`} />
+        <img className={s.photoFill} src={photos[shown] ?? photos[0]} alt="" aria-hidden="true" />
+        <img className={s.photoMain} src={photos[shown] ?? photos[0]} alt={`${d.name} ${d.breed} 사진${photos.length > 1 ? ` ${shown + 1}/${photos.length}` : ""}`} />
         <span className={s.photoBadge}><DogBadge dog={d} /></span>
       </div>
+      {photos.length > 1 && (
+        <div className={s.gallery} role="group" aria-label="사진 고르기">
+          {photos.map((src, i) => (
+            <button key={src + i} type="button" aria-pressed={i === shown} aria-label={`사진 ${i + 1} 보기`} onClick={() => setShown(i)}>
+              <img src={thumbSrc(src)} alt="" />
+            </button>
+          ))}
+        </div>
+      )}
       <Top title={d.name} subtitle={[d.breed, d.age, sexLabel(d.sex) === "모름" ? "" : sexLabel(d.sex)].filter(Boolean).join(" · ")} />
       {d.previewOnly && <p className={s.notice}>체험용 예시 신고예요. 실제 실종 신고가 아니에요.</p>}
       <div className={s.actions}>

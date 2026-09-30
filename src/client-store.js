@@ -137,6 +137,9 @@ export async function save() {
         const uploaded=await api('/api/photos',{image:operation.value.image});
         operation.value.image=uploaded.image;
       }
+      // 더 올린 사진(최대 2장)도 저장소에 올리고 주소로 바꾼다.
+      if(Array.isArray(operation.value.images))
+        operation.value.images=await Promise.all(operation.value.images.map(async img=>img?.startsWith('data:image/')?(await api('/api/photos',{image:img})).image:img));
     }
     data = await api("/api/changes", {
       operations,

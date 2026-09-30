@@ -29,7 +29,7 @@ export function installMedia({app,db,storage,rate}){
     const uri=`/api/media/${media.id}`;
     let permitted=media.owner===req.user.id;
     if(!permitted){
-      const refs=await db.prepare("SELECT * FROM docs WHERE json::jsonb->>'image'=?").all(uri);
+      const refs=await db.prepare("SELECT * FROM docs WHERE json::jsonb->>'image'=? OR COALESCE(json::jsonb->'images','[]'::jsonb) @> jsonb_build_array(?::text)").all(uri,uri);
       for(const row of refs){
         const value=JSON.parse(row.json);
         if(['dogs','stories'].includes(row.collection)||row.owner===req.user.id||(row.collection==='reports'&&value.kind==='목격'))permitted=true;
@@ -58,7 +58,7 @@ export function installMedia({app,db,storage,rate}){
       if(!id||!(await db.prepare('SELECT 1 FROM media WHERE id=? AND owner=?').get(id,uid)))reject(400,'사진을 다시 선택해주세요.');
     },
     async cleanup(){
-      const rows=await db.prepare("SELECT * FROM media WHERE created_at<? AND NOT EXISTS (SELECT 1 FROM docs WHERE json::jsonb->>'image'='/api/media/'||media.id) LIMIT 50").all(Date.now()-86400000);
+      const rows=await db.prepare("SELECT * FROM media WHERE created_at<? AND NOT EXISTS (SELECT 1 FROM docs WHERE json::jsonb->>'image'='/api/media/'||media.id OR COALESCE(json::jsonb->'images','[]'::jsonb) @> jsonb_build_array('/api/media/'||media.id)) LIMIT 50").all(Date.now()-86400000);
       if(!rows.length)return;
       const {error}=await storage.remove(rows.map(r=>r.path));
       if(error)throw new Error('Photo cleanup failed');

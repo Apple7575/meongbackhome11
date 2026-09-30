@@ -176,6 +176,42 @@ export function PhotoPicker({ value, onChange, onError, onBusy, label = "사진 
     </label>
   );
 }
+// 대표 사진 말고 옆모습·무늬 사진을 최대 2장 더 올린다.
+export function ExtraPhotos({ values, onChange, onError, onBusy }: { values: string[]; onChange: (v: string[]) => void; onError?: (m: string) => void; onBusy?: (b: boolean) => void }) {
+  const add = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    onBusy?.(true);
+    try {
+      onChange([...values, await readPhoto(file)].slice(0, 2));
+      onError?.("");
+    } catch (err) {
+      onError?.(errorText(err));
+    } finally {
+      onBusy?.(false);
+    }
+  };
+  return (
+    <div className={s.field}>
+      <span className={s.label}>사진 더 올리기 <small className={s.sub}>선택 · 최대 2장</small></span>
+      <div className={s.extraPhotos}>
+        {values.map((src, i) => (
+          <div key={i} className={s.extraPhoto}>
+            <img src={src} alt={`추가 사진 ${i + 1}`} />
+            <button type="button" aria-label={`추가 사진 ${i + 1} 빼기`} onClick={() => onChange(values.filter((_, j) => j !== i))}><Icon name="X" size={16} /></button>
+          </div>
+        ))}
+        {values.length < 2 && (
+          <label className={s.extraAdd}>
+            <input type="file" name="photo-extra" accept="image/jpeg,image/png,image/webp" onChange={add} aria-label="사진 더 올리기" />
+            <Icon name="Plus" size={24} />
+          </label>
+        )}
+      </div>
+    </div>
+  );
+}
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 const daysAgo = (value: string) => Math.round((startOfDay(new Date()) - startOfDay(new Date(value))) / 86400000);
 const DAY_NAMES = ["오늘", "어제", "그저께"];

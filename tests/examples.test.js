@@ -7,7 +7,7 @@ test('examples show until 10 real reports exist, then every example dog, sightin
   const few=withExamples({...empty,dogs:Array.from({length:REAL_DOGS_TO_HIDE_EXAMPLES-1},(_,i)=>realDog(i))});
   assert.ok(few.dogs.some(d=>d.previewOnly));
   assert.ok(few.reports.some(r=>r.previewOnly));
-  const enough=withExamples({...empty,dogs:Array.from({length:REAL_DOGS_TO_HIDE_EXAMPLES},(_,i)=>realDog(i)),reports:[{id:'r',dogId:'real-0'},{id:'d',demo:true}],updates:[{id:'u',demo:true}]});
+  const enough=withExamples({...empty,dogs:Array.from({length:REAL_DOGS_TO_HIDE_EXAMPLES},(_,i)=>realDog(i)),reports:[{id:'r',dogId:'real-0'},{id:'d',previewOnly:true}],updates:[{id:'u',previewOnly:true}]});
   assert.equal(enough.dogs.length,REAL_DOGS_TO_HIDE_EXAMPLES);
   assert.ok(enough.dogs.every(d=>!d.previewOnly&&!d.demo));
   assert.deepEqual(enough.reports.map(r=>r.id),['r']);

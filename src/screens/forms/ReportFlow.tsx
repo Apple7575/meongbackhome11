@@ -8,7 +8,7 @@ import { openSheet } from "../../app/sheets.ts";
 import { COORDS, nearestRegion } from "../../domain.js";
 import { EmptyState, SkeletonRows } from "../../ui/index.tsx";
 import Flow from "./Flow.tsx";
-import { TextField, Options, QuickChips, MultiOptions, AgeField, PhotoPicker, WhenField, WhereField, whenLabel, toLocalInput } from "./fields.tsx";
+import { TextField, Options, QuickChips, MultiOptions, AgeField, PhotoPicker, ExtraPhotos, WhenField, WhereField, whenLabel, toLocalInput } from "./fields.tsx";
 import { useDraft } from "./useDraft.ts";
 import s from "./forms.module.css";
 import type { ReactNode } from "react";
@@ -24,7 +24,7 @@ interface ReportValues {
   name: string; breed: string; age: string; sex: string; color: string; size: string; accessory: string;
   region: string; time: string; location: string; description: string;
 }
-interface ReportExtra { coords: Coords; picked: boolean; address?: string; short?: string }
+interface ReportExtra { coords: Coords; picked: boolean; address?: string; short?: string; images?: string[] }
 interface Step { title: string; description: string; body: ReactNode; check?: () => string | undefined }
 // mode: new(새 신고) · from(프로필로 신고) · edit(수정) · profile(우리 집 강아지 등록)
 export default function ReportFlow({ mode, id }: { mode: Mode; id?: string }) {
@@ -47,7 +47,7 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
       location: base.location || "", description: base.description || "",
     },
     image: base.image || "",
-    extra: { coords: base.coords || COORDS[base.region || "서울"], picked: !!edit },
+    extra: { coords: base.coords || COORDS[base.region || "서울"], picked: !!edit, images: base.images || [] },
   });
   const { values: v, image, extra } = draft;
   const set = (values: Partial<ReportValues>) => draft.update({ values });
@@ -56,12 +56,16 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
   const [busy, setBusy] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const submitRef = useRef<(() => Promise<void>) | null>(null);
-  const place = () => v.location.trim() || extra.short || extra.address || "";
+  // 주소를 아직 못 찾았거나 찾지 못해도 핀 위치는 정확하므로 막지 않는다.
+  const place = () => v.location.trim() || extra.short || extra.address || "지도에 표시한 곳";
   const steps: Step[] = [
     {
       title: profileOnly ? "우리 아이 사진을 올려주세요" : "잃어버린 아이의 사진을 올려주세요",
       description: "얼굴과 털 색이 잘 보이면 이웃이 알아보기 쉬워요.",
-      body: <PhotoPicker value={image} onChange={(img) => draft.update({ image: img })} onError={setError} onBusy={setPhotoBusy} label="강아지 사진 올리기" />,
+      body: (<>
+        <PhotoPicker value={image} onChange={(img) => draft.update({ image: img })} onError={setError} onBusy={setPhotoBusy} label="강아지 사진 올리기" />
+        {image && <ExtraPhotos values={extra.images || []} onChange={(images) => draft.update({ extra: { images } })} onError={setError} onBusy={setPhotoBusy} />}
+      </>),
       check: () => {
         if (photoBusy) return "사진을 준비하고 있어요. 잠시만 기다려주세요.";
         if (!image) return "사진을 한 장 올려주세요.";
@@ -106,7 +110,7 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
             onPick={(coords) => draft.update({ values: { region: nearestRegion(coords) }, extra: { coords, picked: true, address: "", short: "" } })}
             onPlace={(place) => draft.update({ values: place?.region ? { region: place.region } : {}, extra: { address: place?.label || "", short: place?.short || "" } })} />
         ),
-        check: () => (!extra.picked ? "지도를 움직여 마지막으로 본 곳에 핀을 맞춰주세요." : !place() ? "자세한 장소를 적어주세요." : undefined),
+        check: () => (!extra.picked ? "지도를 움직여 마지막으로 본 곳에 핀을 맞춰주세요." : undefined),
       },
     ]),
     {
@@ -143,7 +147,7 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
     if (profileOnly) {
       // 프로필에는 신고용 값(시간·지역·장소·착용물)을 저장하지 않는다.
       const { time: _t, region: _r, location: _l, accessory: _a, ...rest } = values;
-      read().profiles.push({ ...rest, image, id: newId("profile") });
+      read().profiles.push({ ...rest, image, images: extra.images || [], id: newId("profile") });
       await commit();
       draft.finish();
       location.hash = "/my";
@@ -152,7 +156,7 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
     }
     const target = edit ? read().dogs.find((d) => d.id === edit.id) : null;
     const entry = {
-      ...values, id: target?.id || newId("dog"), coords: extra.coords, image,
+      ...values, id: target?.id || newId("dog"), coords: extra.coords, image, images: extra.images || [],
       time: new Date(values.time).toISOString(), status: target?.status || "missing", demo: false,
     };
     if (target) Object.assign(target, entry);

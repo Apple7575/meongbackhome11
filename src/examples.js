@@ -53,8 +53,9 @@ const updates=dogs.flatMap((dog,i)=>[
 export const REAL_DOGS_TO_HIDE_EXAMPLES=10;
 export function withExamples(state){
   const real=state.dogs.filter(d=>!d.demo&&!d.previewOnly);
+  // 화면에서 덧붙이는 예시(previewOnly)만 뺀다. 서버가 넣은 개발·테스트용 예시(demo)는 그 서버의 설정을 따른다.
   if(real.length>=REAL_DOGS_TO_HIDE_EXAMPLES)
-    return {...state,dogs:real,reports:state.reports.filter(r=>!r.demo&&!r.previewOnly),updates:(state.updates||[]).filter(u=>!u.demo&&!u.previewOnly)};
+    return {...state,dogs:state.dogs.filter(d=>!d.previewOnly),reports:state.reports.filter(r=>!r.previewOnly),updates:(state.updates||[]).filter(u=>!u.previewOnly)};
   const existing=new Set(state.dogs.filter(d=>!d.previewOnly).map(d=>d.id));
   const added=dogs.filter(d=>!existing.has(d.id));
   const addedIds=new Set(added.map(d=>d.id));
