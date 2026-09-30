@@ -26,6 +26,18 @@ test("home shows missing dogs first and lets people change the region in a botto
   await expect(page.getByRole("heading", { name: /^부산에서 찾고 있어요/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /집에 돌아온 아이들/ })).toBeVisible();
 });
+test("explore can sort by distance from the phone's location", async ({ page, context }) => {
+  // 부산 수영구 근처에 있다고 가정하면 부산 신고가 맨 위로 온다.
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 35.1532, longitude: 129.1186 });
+  await ready(page, "/#/explore");
+  await page.getByRole("button", { name: "최신순" }).click();
+  await page.getByRole("dialog", { name: "정렬" }).getByRole("button", { name: "가까운 순" }).click();
+  await expect(page.getByRole("button", { name: "가까운 순" })).toBeVisible();
+  const first = page.locator("[data-dog-row]").first();
+  await expect(first).toContainText("부산");
+  await expect(first).toContainText(/\d+(m|\.\dkm|km) ·/);
+});
 test("explore filters with easy-to-answer sheets and pages 20 at a time", async ({ page }) => {
   await ready(page, "/#/explore");
   await expect(page.getByRole("heading", { name: "찾기" })).toBeVisible();

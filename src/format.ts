@@ -7,6 +7,8 @@ export const formatTime = (t: TimeInput) => {
 };
 // 예전 신고의 '여아·남아'를 새 표현으로 보여준다.
 export const sexLabel = (sex?: string) => ({ 여아: "암컷", 남아: "수컷" } as Record<string, string>)[sex || ""] || sex || "";
+// 350m · 1.2km · 12km
+export const distanceText = (km: number) => (km < 1 ? `${Math.max(10, Math.round((km * 1000) / 10) * 10)}m` : km < 10 ? `${km.toFixed(1)}km` : `${Math.round(km)}km`);
 export const timeAgo = (t: TimeInput) => {
   const h = Math.max(0, Math.floor((Date.now() - ms(t)) / 3600000));
   return h < 1 ? "방금 전" : h < 24 ? `${h}시간 전` : `${Math.floor(h / 24)}일 전`;

@@ -4,14 +4,17 @@ import { Top, Chip, Button, EmptyState } from "../ui/index.tsx";
 import Icon from "../ui/Icon.tsx";
 import BottomSheet from "../ui/BottomSheet.tsx";
 import { DogRow, OptionSheet, RegionSheet } from "./shared.tsx";
-import { filterDogs, COORDS, escapeHTML } from "../domain.js";
+import { filterDogs, COORDS, escapeHTML, haversine } from "../domain.js";
+import { toast } from "../app/toast.ts";
+import type { Coords } from "../types.ts";
 import { withMaps } from "../app/withMaps.ts";
 import s from "./screens.module.css";
 import type { Dog } from "../types.ts";
 import type { DogFilter } from "../domain.js";
 type Filters = Required<DogFilter>;
 type FilterKey = "color" | "size" | "accessory";
-type SheetKind = "region" | "status" | "filters" | null;
+type SheetKind = "region" | "status" | "filters" | "sort" | null;
+const SORTS: [string, string][] = [["recent", "최신순"], ["near", "가까운 순"]];
 const EMPTY: Filters = { query: "", region: "전국", status: "all", color: "", size: "", accessory: "" };
 const STATUS: [string, string][] = [["all", "전체"], ["missing", "찾고 있어요"], ["reunited", "집에 돌아왔어요"]];
 const FILTERS: [FilterKey, string, string[]][] = [
@@ -87,7 +90,20 @@ export default function Explore() {
   const [limit, setLimit] = useState(20);
   const close = useCallback(() => setSheet(null), []);
   const set = (patch: Partial<Filters>) => { setF((v) => ({ ...v, ...patch })); setLimit(20); };
-  const dogs = filterDogs(db.dogs, f);
+  // 가까운 순: 이 기기의 현재 위치는 정렬에만 쓰고 저장하지 않는다.
+  const [here, setHere] = useState<Coords | null>(null);
+  const near = (value: string) => {
+    if (value !== "near") return setHere(null);
+    if (!navigator.geolocation) return toast("이 브라우저에서는 위치를 가져올 수 없어요.");
+    toast("현재 위치를 확인하고 있어요.");
+    navigator.geolocation.getCurrentPosition(
+      (p) => { setHere([p.coords.latitude, p.coords.longitude]); setLimit(20); toast("가까운 순으로 보여드려요."); },
+      () => toast("위치 권한을 허용하면 가까운 순으로 볼 수 있어요."),
+      { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 },
+    );
+  };
+  const filtered = filterDogs(db.dogs, f);
+  const dogs = here ? [...filtered].sort((a, b) => haversine(here, a.coords) - haversine(here, b.coords)) : filtered;
   const filterCount = [f.color, f.size, f.accessory].filter(Boolean).length;
   return (
     <div className={s.screen}>
@@ -101,6 +117,7 @@ export default function Explore() {
           <Chip onClick={() => setSheet("region")} expanded={sheet === "region"}>{f.region}</Chip>
           <Chip onClick={() => setSheet("status")} expanded={sheet === "status"}>{STATUS.find(([v]) => v === f.status)?.[1] ?? "전체"}</Chip>
           <Chip icon="SlidersHorizontal" onClick={() => setSheet("filters")} expanded={sheet === "filters"}>{filterCount ? `필터 ${filterCount}` : "필터"}</Chip>
+          <Chip onClick={() => setSheet("sort")} expanded={sheet === "sort"}>{here ? "가까운 순" : "최신순"}</Chip>
           <button type="button" className={s.viewToggle} onClick={() => setView((v) => (v === "list" ? "map" : "list"))} aria-label={view === "list" ? "지도로 보기" : "목록으로 보기"}>
             <Icon name={view === "list" ? "Map" : "List"} />
           </button>
@@ -112,7 +129,7 @@ export default function Explore() {
         <ExploreMap dogs={dogs} />
       ) : (
         <>
-          {dogs.slice(0, limit).map((d) => <DogRow key={d.id} dog={d} size={72} />)}
+          {dogs.slice(0, limit).map((d) => <DogRow key={d.id} dog={d} size={72} distance={here ? haversine(here, d.coords) : undefined} />)}
           {dogs.length > limit && (
             <div className={s.more}><Button variant="weak" full onClick={() => setLimit((l) => l + 20)}>더 보기</Button></div>
           )}
@@ -120,6 +137,7 @@ export default function Explore() {
       )}
       <RegionSheet open={sheet === "region"} value={f.region} onSelect={(region: string) => set({ region })} onClose={close} />
       <OptionSheet open={sheet === "status"} title="상태" options={STATUS} value={f.status} onSelect={(status: string) => set({ status })} onClose={close} />
+      <OptionSheet open={sheet === "sort"} title="정렬" options={SORTS} value={here ? "near" : "recent"} onSelect={near} onClose={close} />
       <FilterSheet open={sheet === "filters"} value={f} countFor={(d) => filterDogs(db.dogs, { ...f, ...d }).length} onApply={set} onClose={close} />
     </div>
   );
