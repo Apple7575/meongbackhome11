@@ -3,6 +3,7 @@ import { createPostgres } from "./postgres.js";
 import { randomUUID, randomBytes, scryptSync, timingSafeEqual, createHash } from "node:crypto";
 import {installMedia,createStorage} from './media.js';
 import {installShare,dataUrlBytes} from './share.js';
+import {similarDogs,similarNotice} from './match.js';
 import path from "node:path";
 import webpush from "web-push";
 import { seed } from "../src/seed.js";
@@ -400,6 +401,11 @@ export async function createApp({
               messages: []
             };
             if (dog) await notify(dog.ownerId, "새로운 목격 제보가 도착했어요", `${dog.name} · ${clean.location}`, dog.id);
+            // 어느 신고에도 연결되지 않은 제보는 근처의 비슷한 실종 신고 보호자에게 알린다.
+            else for (const { dog: d, km } of similarDogs({ ...clean, ownerId: req.user.id }, await rows("dogs"))) {
+              const n = similarNotice(d, clean, km);
+              await notify(d.ownerId, n.title, n.body, d.id);
+            }
           } else {
             const dogOwner = (await get("dogs", old.dogId))?.ownerId;
             const party = old.ownerId === req.user.id || dogOwner === req.user.id;

@@ -128,6 +128,30 @@ test("registered owner shares report with a second device; only owner can edit; 
     await f.stop();
   }
 });
+test("an unlinked sighting alerts owners of similar missing dogs nearby, not far or different ones", async () => {
+  const f = await fixture();
+  try {
+    const owner = f.client(), far = f.client(), witness = f.client();
+    await register(owner);
+    await register(far);
+    const near = dog();
+    assert.equal((await change(owner, "dogs", near)).status, 200);
+    // 부산에서 잃어버린 흰색 소형견 보호자는 서울 목격 제보 알림을 받지 않는다.
+    assert.equal((await change(far, "dogs", { ...dog(), name: "초코", region: "부산", location: "수영구", coords: [35.15, 129.11] })).status, 200);
+    // 다른 색 강아지 목격은 알리지 않는다.
+    assert.equal((await change(witness, "reports", { ...report(near), dogId: null, color: "검정색" })).status, 200);
+    assert.equal((await owner.request("/api/state")).data.notifications.length, 0);
+    assert.equal((await change(witness, "reports", { ...report(near), dogId: null })).status, 200);
+    const notices = (await owner.request("/api/state")).data.notifications;
+    assert.equal(notices.length, 1);
+    assert.equal(notices[0].title, "혹시 우리 아이일까요?");
+    assert.match(notices[0].body, /^보리와 비슷한 강아지를 \d+m 떨어진 송리단길에서 봤다는 제보가 있어요\.$/);
+    assert.equal(notices[0].dogId, near.id);
+    assert.equal((await far.request("/api/state")).data.notifications.length, 0);
+  } finally {
+    await f.stop();
+  }
+});
 test("witness → owner notification → private chat → reunion notifications reach witness and follower", async () => {
   const f = await fixture();
   try {

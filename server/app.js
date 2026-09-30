@@ -1,3 +1,4 @@
+import { similarDogs, similarNotice } from "./match.js";
 import { installShare, dataUrlBytes } from "./share.js";
 import { readFileSync } from "node:fs";
 import express from "express";
@@ -538,6 +539,12 @@ export function createApp({
                 `${dog.name} · ${clean.location}`,
                 dog.id,
               );
+            // 어느 신고에도 연결되지 않은 제보는 근처의 비슷한 실종 신고 보호자에게 알린다.
+            else
+              for (const { dog: d, km } of similarDogs({ ...clean, ownerId: req.user.id }, rows("dogs"))) {
+                const n = similarNotice(d, clean, km);
+                notify(d.ownerId, n.title, n.body, d.id);
+              }
           } else {
             const dogOwner = get("dogs", old.dogId)?.ownerId;
             const party =
