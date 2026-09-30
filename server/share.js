@@ -63,9 +63,12 @@ export function installShare({ app, getDog, readImage }) {
     const bytes = dog?.image ? await readImage(dog.image).catch(() => null) : null;
     if (!bytes) return res.sendStatus(404);
     try {
-      // 얼굴이 잘리지 않도록 눈에 띄는 부분(attention)을 중심으로 1200×630으로 자른다.
-      const jpg = await sharp(bytes, { limitInputPixels: 40000000 }).rotate()
-        .resize(1200, 630, { fit: 'cover', position: sharp.strategy.attention })
+      // 자동으로 자르면 강아지 대신 다른 물건을 고를 수 있어(실제 신고에서 확인) 사진 전체를 가운데에 두고,
+      // 남는 양옆은 같은 사진을 흐리게 깔아 1200×630을 채운다.
+      const photo = await sharp(bytes, { limitInputPixels: 40000000 }).rotate().toBuffer();
+      const background = await sharp(photo).resize(1200, 630, { fit: 'cover' }).blur(28).modulate({ brightness: 0.85 }).toBuffer();
+      const front = await sharp(photo).resize(1200, 630, { fit: 'inside' }).toBuffer();
+      const jpg = await sharp(background).composite([{ input: front, gravity: 'center' }])
         .jpeg({ quality: 82, mozjpeg: true }).toBuffer();
       res.set('Cache-Control', 'public, max-age=3600');
       res.type('image/jpeg').send(jpg);
