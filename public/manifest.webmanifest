@@ -2,7 +2,7 @@
   "id":"/", "name":"멍백홈", "short_name":"멍백홈",
   "description":"실종 강아지와 가족이 다시 만나는 곳",
   "lang":"ko", "start_url":"/#/", "scope":"/", "display":"standalone",
-  "background_color":"#fcf9f4", "theme_color":"#fcf9f4",
+  "background_color":"#ffffff", "theme_color":"#ffffff",
   "icons":[
     {"src":"/icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
     {"src":"/icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},

@@ -1,4 +1,4 @@
-const CACHE='meongback-offline-v1';
+const CACHE='meongback-offline-v2';
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.add('/offline.html')));});
 self.addEventListener('activate',event=>{event.waitUntil(Promise.all([clients.claim(),caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('meongback-offline-')&&k!==CACHE).map(k=>caches.delete(k))))]));});
 // Never cache reports, photos, account responses, or authenticated HTML.

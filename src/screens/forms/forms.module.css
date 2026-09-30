@@ -1,7 +1,7 @@
 .flow { padding: 8px var(--gutter) calc(112px + var(--safe-bottom)); }
 .progress { height: 4px; border-radius: 2px; background: var(--grey-100); overflow: hidden; }
 .progress span { display: block; height: 100%; background: var(--brand); transition: width 0.2s ease; }
-.count { margin: 12px 0 4px; font-size: var(--t7); color: var(--grey-500); }
+.count { margin: 12px 0 4px; font-size: var(--t7); color: var(--grey-600); }
 .title { margin: 0; font-size: var(--t2); line-height: var(--t2-lh); font-weight: 700; letter-spacing: -0.02em; color: var(--grey-900); }
 .desc { margin: 8px 0 0; font-size: var(--t6); line-height: var(--t6-lh); color: var(--grey-600); }
 .body { margin-top: 24px; display: flex; flex-direction: column; gap: 20px; }
@@ -27,7 +27,7 @@ textarea.input { padding: 14px 16px; min-height: 120px; resize: vertical; line-h
 .bigOption small { font-size: var(--t6); font-weight: 400; color: var(--grey-600); }
 .bigOption[aria-pressed="true"] { border: 2px solid var(--grey-900); }
 .photo { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
-  aspect-ratio: 4 / 3; border-radius: 16px; background: var(--grey-100); color: var(--grey-600); overflow: hidden; cursor: pointer;
+  aspect-ratio: 4 / 3; border-radius: 16px; background: var(--grey-100); color: var(--grey-700); overflow: hidden; cursor: pointer;
   font-size: var(--t6); }
 .photo input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -51,7 +51,7 @@ textarea.input { padding: 14px 16px; min-height: 120px; resize: vertical; line-h
 .review dt { flex: 0 0 72px; font-size: var(--t6); color: var(--grey-600); }
 .review dd { margin: 0; font-size: var(--t6); color: var(--grey-900); word-break: keep-all; }
 .notice { margin: 0; padding: 12px 14px; border-radius: var(--radius); background: var(--grey-100); font-size: var(--t6); line-height: var(--t6-lh); color: var(--grey-700); }
-.sub { margin-left: 4px; font-size: var(--t7); font-weight: 400; color: var(--grey-500); }
+.sub { margin-left: 4px; font-size: var(--t7); font-weight: 400; color: var(--grey-600); }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { position: relative; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px;
   border: 1px solid var(--grey-200); background: #fff; font-size: var(--t6); color: var(--grey-800); cursor: pointer; }
@@ -61,7 +61,7 @@ textarea.input { padding: 14px 16px; min-height: 120px; resize: vertical; line-h
 .stepper button { width: 44px; height: 44px; border: 0; border-radius: 12px; background: #fff; color: var(--grey-800); display: inline-flex; align-items: center; justify-content: center; }
 .stepper button:disabled { color: var(--grey-300); background: transparent; }
 .stepper output { font-size: var(--t4); font-weight: 700; color: var(--grey-900); }
-.stepper .stepperEmpty { font-size: var(--t5); font-weight: 400; color: var(--grey-500); }
+.stepper .stepperEmpty { font-size: var(--t5); font-weight: 400; color: var(--grey-600); }
 .when { font-size: var(--t3); font-weight: 700; color: var(--grey-900); letter-spacing: -0.02em; }
 .whenGrid { display: grid; grid-template-columns: 40px 1fr; align-items: center; gap: 12px 8px; margin-top: 8px; }
 .sublabel { font-size: var(--t6); color: var(--grey-600); }
@@ -85,7 +85,7 @@ textarea.input { padding: 14px 16px; min-height: 120px; resize: vertical; line-h
 .wheelList { position: relative; height: 220px; overflow-y: auto; scroll-snap-type: y mandatory; padding: 88px 0; scrollbar-width: none; outline: none;
   mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent); -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent); }
 .wheelList::-webkit-scrollbar { display: none; }
-.wheelItem { height: 44px; display: flex; align-items: center; justify-content: center; scroll-snap-align: center; font-size: var(--t5); color: var(--grey-500); cursor: pointer; white-space: nowrap; }
+.wheelItem { height: 44px; display: flex; align-items: center; justify-content: center; scroll-snap-align: center; font-size: var(--t5); color: var(--grey-600); cursor: pointer; white-space: nowrap; }
 .wheelItem[aria-selected="true"] { font-weight: 700; color: var(--grey-900); }
 .address { display: flex; align-items: center; gap: 8px; min-height: 56px; padding: 0 16px; border-radius: 16px; background: var(--grey-50); color: var(--brand); }
 .address strong { font-size: var(--t5); font-weight: 700; color: var(--grey-900); }

@@ -11,11 +11,11 @@
 .actions > button { flex-direction: column; gap: 4px; min-height: 64px; padding: 8px 4px; font-size: var(--t7); }
 .desc { margin: 4px var(--gutter) 8px; font-size: var(--t5); line-height: var(--t5-lh); color: var(--grey-800); }
 .map { height: 240px; margin: 0 var(--gutter); border-radius: var(--radius); overflow: hidden; background: var(--grey-100); z-index: 0; }
-.mapNote { margin: 8px var(--gutter) 4px; font-size: var(--t7); color: var(--grey-500); }
+.mapNote { margin: 8px var(--gutter) 4px; font-size: var(--t7); color: var(--grey-600); }
 .step, .stepOn { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
   font-size: var(--t6); font-weight: 700; background: var(--grey-100); color: var(--grey-700); }
 .stepOn { background: var(--brand); color: #fff; }
-.emptyLine { margin: 0; padding: 8px var(--gutter) 12px; font-size: var(--t6); color: var(--grey-500); }
+.emptyLine { margin: 0; padding: 8px var(--gutter) 12px; font-size: var(--t6); color: var(--grey-600); }
 .home { display: flex; flex-direction: column; gap: 2px; margin: 8px var(--gutter) 4px; padding: 16px; border-radius: 16px; background: var(--grey-50); }
 .home strong { font-size: var(--t5); font-weight: 700; color: var(--grey-900); }
 .home span { font-size: var(--t6); color: var(--grey-600); }

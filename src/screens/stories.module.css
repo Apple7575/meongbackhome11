@@ -1,8 +1,8 @@
 .screen { padding-bottom: 96px; }
-.empty { margin: 0; padding: 8px var(--gutter) 12px; font-size: var(--t6); color: var(--grey-500); }
+.empty { margin: 0; padding: 8px var(--gutter) 12px; font-size: var(--t6); color: var(--grey-600); }
 .story { margin: 0 var(--gutter) 16px; border-radius: 16px; background: var(--grey-50); overflow: hidden; }
 .story img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
 .story h2 { margin: 16px 16px 4px; font-size: var(--t4); line-height: var(--t4-lh); font-weight: 700; color: var(--grey-900); letter-spacing: -0.01em; }
 .story p { margin: 0 16px; font-size: var(--t5); line-height: var(--t5-lh); color: var(--grey-800); white-space: pre-line; }
-.story small { display: block; margin: 8px 16px 16px; font-size: var(--t7); color: var(--grey-500); }
+.story small { display: block; margin: 8px 16px 16px; font-size: var(--t7); color: var(--grey-700); }
 .admin { padding-bottom: 16px; }
