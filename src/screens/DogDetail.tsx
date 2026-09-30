@@ -77,8 +77,10 @@ export default function DogDetail({ id }: { id: string }) {
   };
   return (
     <div className={missing ? s.withCta : s.screen}>
+      {/* 세로 사진도 잘리지 않게 전체를 보여주고, 남는 곳은 같은 사진을 흐리게 채운다. */}
       <div className={s.photo}>
-        <img src={d.image || "/assets/mascot-home.webp"} alt={`${d.name} ${d.breed} 사진`} />
+        <img className={s.photoFill} src={d.image || "/assets/mascot-home.webp"} alt="" aria-hidden="true" />
+        <img className={s.photoMain} src={d.image || "/assets/mascot-home.webp"} alt={`${d.name} ${d.breed} 사진`} />
         <span className={s.photoBadge}><DogBadge dog={d} /></span>
       </div>
       <Top title={d.name} subtitle={[d.breed, d.age, sexLabel(d.sex) === "모름" ? "" : sexLabel(d.sex)].filter(Boolean).join(" · ")} />

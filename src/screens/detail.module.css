@@ -1,7 +1,9 @@
 .screen { padding-bottom: 8px; }
 .withCta { padding-bottom: 96px; }
-.photo { position: relative; aspect-ratio: 4 / 3; background: var(--grey-100); margin-bottom: 16px; }
-.photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo { position: relative; aspect-ratio: 4 / 3; background: var(--grey-100); margin-bottom: 16px; overflow: hidden; }
+.photo img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.photoFill { object-fit: cover; filter: blur(24px) brightness(0.9); transform: scale(1.15); }
+.photoMain { object-fit: contain; }
 .photoBadge { position: absolute; left: var(--gutter); bottom: 12px; }
 .notice { margin: 0 var(--gutter) 12px; padding: 12px 14px; border-radius: var(--radius); background: var(--grey-100);
   font-size: var(--t6); line-height: var(--t6-lh); color: var(--grey-700); }
@@ -14,7 +16,6 @@
   font-size: var(--t6); font-weight: 700; background: var(--grey-100); color: var(--grey-700); }
 .stepOn { background: var(--brand); color: #fff; }
 .emptyLine { margin: 0; padding: 8px var(--gutter) 12px; font-size: var(--t6); color: var(--grey-500); }
-.photo img { object-position: center 30%; }
 .home { display: flex; flex-direction: column; gap: 2px; margin: 8px var(--gutter) 4px; padding: 16px; border-radius: 16px; background: var(--grey-50); }
 .home strong { font-size: var(--t5); font-weight: 700; color: var(--grey-900); }
 .home span { font-size: var(--t6); color: var(--grey-600); }
