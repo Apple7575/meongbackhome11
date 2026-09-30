@@ -1,5 +1,7 @@
 @import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 :root {
+  /* 휴대폰 다크 모드의 자동 색 뒤집기를 막는다(index.html의 color-scheme과 같은 뜻). */
+  color-scheme: only light;
   --grey-50: #f9fafb; --grey-100: #f2f4f6; --grey-200: #e5e8eb; --grey-300: #d1d6db;
   --grey-400: #b0b8c1; --grey-500: #8b95a1; --grey-600: #636d7a; --grey-700: #4e5968;
   --grey-800: #333d4b; --grey-900: #191f28;

@@ -58,3 +58,10 @@ test("desktop shows redesigned screens in a centered 480px column", async ({ pag
   await ready(page, "/#/my");
   expect(Math.round((await page.locator("#app").boundingBox()).width)).toBe(480);
 });
+test("phone dark mode does not recolour the app: it declares light only and keeps the coral button", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await ready(page, "/#/report/new");
+  expect(await page.locator("meta[name=color-scheme]").getAttribute("content")).toBe("only light");
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toMatch(/^(only light|light only)$/);
+  await expect(page.getByRole("button", { name: "다음", exact: true })).toHaveCSS("background-color", "rgb(184, 85, 58)");
+});
