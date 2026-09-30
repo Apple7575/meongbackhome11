@@ -39,19 +39,24 @@ async function draw(canvas: HTMLCanvasElement, dog: Dog, format: Format) {
   ctx.fillStyle = C.title;
   font(print ? 68 : 60, 800);
   ctx.fillText(home ? "집으로 돌아왔어요" : "강아지를 찾고 있어요", 80, print ? 200 : 186, 840);
-  // 사진: 얼굴이 잘리지 않게 위쪽을 조금 더 남긴다.
+  // 사진: 잘라내면 강아지가 빠질 수 있어 사진 전체를 가운데에 두고, 남는 곳은 같은 사진을 흐리게 채운다.
   const img = new Image();
   img.src = dog.image || "/assets/mascot-home.webp";
   await img.decode();
   const top = print ? 244 : 222;
   const photoH = print ? 520 : 340;
-  const ratio = Math.max(840 / img.width, photoH / img.height);
-  const w = img.width * ratio, ih = img.height * ratio;
+  const cover = Math.max(840 / img.width, photoH / img.height);
+  const fit = Math.min(840 / img.width, photoH / img.height);
   ctx.save();
   ctx.beginPath();
   ctx.roundRect(80, top, 840, photoH, 32);
   ctx.clip();
-  ctx.drawImage(img, 500 - w / 2, top - (ih - photoH) * 0.3, w, ih);
+  ctx.fillStyle = C.box;
+  ctx.fillRect(80, top, 840, photoH);
+  ctx.filter = "blur(24px) brightness(0.9)";
+  ctx.drawImage(img, 500 - (img.width * cover) / 2, top + photoH / 2 - (img.height * cover) / 2, img.width * cover, img.height * cover);
+  ctx.filter = "none";
+  ctx.drawImage(img, 500 - (img.width * fit) / 2, top + photoH / 2 - (img.height * fit) / 2, img.width * fit, img.height * fit);
   ctx.restore();
   // 이름과 특징
   let y = top + photoH + (print ? 96 : 84);

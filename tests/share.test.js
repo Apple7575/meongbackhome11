@@ -18,7 +18,7 @@ test('share link pages carry a dog preview card, redirect to the detail screen a
     const html=await page.text();
     assert.match(html,/og:title" content="보리를 찾고 있어요"/);
     assert.match(html,/말티즈 · 흰색 · 서울 송파구 석촌호수 · 9월 29일 오후 11:27에 잃어버렸어요/);
-    assert.match(html,/og:image" content="[^"]+\/api\/og\/dog\/dog-share\.jpg"/);
+    assert.match(html,/og:image" content="[^"]+\/api\/og\/dog\/dog-share\.jpg\?v=[a-f0-9]{10}"/);
     assert.match(html,/location\.replace\("\/#\/dog\/dog-share"\)/);
     const og=await fetch(`${origin}/api/og/dog/dog-share.jpg`);
     assert.equal(og.headers.get('content-type'),'image/jpeg');

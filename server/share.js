@@ -2,6 +2,7 @@
 // 화면은 해시 주소(#/dog/…)라 미리보기 로봇이 읽지 못하므로, /d/:id 가 미리보기 태그를 담은 작은 페이지를 주고
 // 사람은 곧바로 상세 화면으로 옮겨 준다.
 import sharp from 'sharp';
+import { createHash } from 'node:crypto';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ID = /^[\w-]{1,80}$/;
@@ -42,7 +43,9 @@ export function installShare({ app, getDog, readImage }) {
     const base = origin(req);
     const target = `/#/dog/${encodeURIComponent(id)}`;
     const { title, description } = dog ? shareText(dog) : { title: '멍백홈 — 다시, 따뜻한 집으로', description: '작은 목격이 소중한 재회로. 실종 강아지를 찾고, 주변의 목격 소식을 함께 나눠요.' };
-    const image = dog?.image ? `${base}/api/og/dog/${encodeURIComponent(id)}.jpg` : `${base}/icons/icon-512.png`;
+    // 사진·그림 방식이 바뀌면 주소도 바뀌어 캐시된 옛 그림이 나오지 않는다.
+    const version = dog?.image ? createHash("sha1").update(`og2:${dog.image}`).digest("hex").slice(0, 10) : "";
+    const image = dog?.image ? `${base}/api/og/dog/${encodeURIComponent(id)}.jpg?v=${version}` : `${base}/icons/icon-512.png`;
     res.set('Cache-Control', 'public, max-age=300');
     res.type('html').send(`<!doctype html><html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
