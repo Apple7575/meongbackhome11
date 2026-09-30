@@ -2,6 +2,7 @@ import express from "express";
 import { createPostgres } from "./postgres.js";
 import { randomUUID, randomBytes, scryptSync, timingSafeEqual, createHash } from "node:crypto";
 import {installMedia,createStorage} from './media.js';
+import {installShare,dataUrlBytes} from './share.js';
 import path from "node:path";
 import webpush from "web-push";
 import { seed } from "../src/seed.js";
@@ -186,6 +187,24 @@ export async function createApp({
   app.get('/api/health', (req, res) => res.json({
     ok: true
   }));
+  const bucket = storage || createStorage();
+  // 공유 링크 미리보기는 로그인·세션 없이 읽기만 한다.
+  installShare({
+    app,
+    getDog: async id => {
+      const row = await db.prepare("SELECT json FROM docs WHERE collection='dogs' AND id=?").get(id);
+      return row ? (typeof row.json === "string" ? JSON.parse(row.json) : row.json) : null;
+    },
+    readImage: async uri => {
+      const inline = dataUrlBytes(uri);
+      if (inline) return inline;
+      const id = /^\/api\/media\/([a-f0-9-]{36})$/.exec(uri || "")?.[1];
+      const row = id && await db.prepare("SELECT path FROM media WHERE id=?").get(id);
+      if (!row) return null;
+      const { data, error } = await bucket.download(row.path);
+      return error ? null : Buffer.from(await data.arrayBuffer());
+    }
+  });
   async function session(res, uid) {
     const token = randomBytes(32).toString("hex");
     await db.prepare("INSERT INTO sessions VALUES(?,?,?)").run(hash(token), uid, Date.now() + 30 * 86400000);
@@ -219,7 +238,7 @@ export async function createApp({
     const r = await db.prepare("INSERT INTO rate_limits(key,count,reset_at) VALUES(?,1,?) ON CONFLICT(key) DO UPDATE SET count=CASE WHEN meongback.rate_limits.reset_at<? THEN 1 ELSE meongback.rate_limits.count+1 END,reset_at=CASE WHEN meongback.rate_limits.reset_at<? THEN EXCLUDED.reset_at ELSE meongback.rate_limits.reset_at END RETURNING count").get(hash(key), Date.now() + 60000, Date.now(), Date.now());
     if (r.count > max) fail(429, "잠시 후 다시 시도해주세요.");
   };
-  const media=installMedia({app,db,storage:storage||createStorage(),rate});
+  const media=installMedia({app,db,storage:bucket,rate});
   app.use('/api', (req,res,next)=>{res.on('finish',()=>{if(res.statusCode<400)defer(flushPush().catch(()=>{}));});next();});
   app.get("/api/state", async (req, res) => res.json(await snapshot(req.user)));
   app.post('/api/push/test', async (req, res) => {

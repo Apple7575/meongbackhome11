@@ -1,3 +1,5 @@
+import { installShare, dataUrlBytes } from "./share.js";
+import { readFileSync } from "node:fs";
 import express from "express";
 import { DatabaseSync } from "node:sqlite";
 import {
@@ -272,6 +274,17 @@ export function createApp({
   app.use(express.json({ limit: "10mb" }));
   // Load balancer probes must not create anonymous accounts or sessions.
   app.get('/api/health',(req,res)=>res.json({ok:true}));
+  // 공유 링크 미리보기는 로그인·세션 없이 읽기만 한다.
+  installShare({
+    app,
+    getDog: (id) => {
+      const row = db.prepare("SELECT json FROM docs WHERE collection='dogs' AND id=?").get(id);
+      return row ? JSON.parse(row.json) : null;
+    },
+    readImage: async (uri) =>
+      dataUrlBytes(uri) ||
+      (/^\/assets\/[\w.-]+\.(png|webp|jpg)$/.test(uri || "") ? readFileSync(path.resolve("public" + uri)) : null),
+  });
   function session(res, uid) {
     const token = randomBytes(32).toString("hex");
     db.prepare("INSERT INTO sessions VALUES(?,?,?)").run(

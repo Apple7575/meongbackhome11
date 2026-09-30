@@ -5,6 +5,7 @@ import Icon from "../../ui/Icon.tsx";
 import { useStore } from "../../app/useStore.ts";
 import { toast } from "../../app/toast.ts";
 import { formatTime, sexLabel, placeText } from "../../format.ts";
+import { shareUrl } from "../../share.ts";
 import type { Dog } from "../../types.ts";
 import s from "./sheets.module.css";
 type Format = "print" | "social";
@@ -90,7 +91,7 @@ async function draw(canvas: HTMLCanvasElement, dog: Dog, format: Format) {
   const qr = new Image();
   // QR 라이브러리는 전단을 만들 때만 불러온다.
   const { default: QRCode } = await import("qrcode");
-  qr.src = await QRCode.toDataURL(`${location.origin}${location.pathname}#/dog/${dog.id}`, { width: 240, margin: 1 });
+  qr.src = await QRCode.toDataURL(shareUrl(dog.id), { width: 240, margin: 1 });
   await qr.decode();
   ctx.fillStyle = "#fff";
   ctx.beginPath();

@@ -64,6 +64,8 @@ test('PostgreSQL: email verification, durable reports, photo access, revisions, 
     assert.equal((await stranger(uploaded.data.image)).status,404);
     assert.equal((await change(owner,'dogs',dog(uploaded.data.image))).status,400);
     assert.equal((await change(owner,'dogs',dog('/assets/mascot-home.webp'))).status,200);
+    // 공유 링크 미리보기는 로그인 없이 읽힌다.
+    assert.match((await stranger('/d/dog-a')).data.toString(),/og:title" content="보리를 찾고 있어요"/);
     const report={id:'report-a',dogId:'dog-a',kind:'보호 중',region:'서울',coords:[37.51234,127.12345],location:'비공개 주소',time:new Date().toISOString(),image:uploaded.data.image,heading:90};
     assert.equal((await change(witness,'reports',report)).status,200);
     assert.equal((await owner(uploaded.data.image)).status,200);

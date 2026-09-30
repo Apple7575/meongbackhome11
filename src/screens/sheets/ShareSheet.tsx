@@ -5,11 +5,12 @@ import { useStore } from "../../app/useStore.ts";
 import { toast } from "../../app/toast.ts";
 import { openSheet } from "../../app/sheets.ts";
 import { objectParticle } from "../../format.ts";
+import { shareUrl } from "../../share.ts";
 import s from "./sheets.module.css";
 export default function ShareSheet({ dogId, onClose }: { dogId: string; onClose: () => void }) {
   const dog = useStore().dogs.find((d) => d.id === dogId);
   if (!dog) return null;
-  const url = `${location.origin}${location.pathname}#/dog/${dogId}`;
+  const url = shareUrl(dogId);
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(url);

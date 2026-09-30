@@ -90,7 +90,7 @@ test("share, flag and info open as React bottom sheets with no legacy modal root
   await expect(page.locator("#modal-root")).toHaveCount(0);
   await page.getByRole("button", { name: /^공유/ }).click();
   const share = page.getByRole("dialog", { name: "소식을 함께 나눠주세요" });
-  await expect(share.locator("#share-url")).toHaveValue(/#\/dog\/demo-bori$/);
+  await expect(share.locator("#share-url")).toHaveValue(/\/d\/demo-bori$/);
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: /^문제 신고/ }).click();
   const flag = page.getByRole("dialog", { name: "문제 신고하기" });
