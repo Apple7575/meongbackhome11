@@ -31,6 +31,12 @@ test('share link pages carry a dog preview card, redirect to the detail screen a
     const unknown=await (await fetch(`${origin}/d/nope`)).text();
     assert.match(unknown,/location\.replace\("\/#\/dog\/nope"\)/);
     assert.equal((await fetch(`${origin}/api/og/dog/nope.jpg`)).status,404);
+    // 검색엔진 목록에는 홈과 실제 신고만 들어간다.
+    service.db.prepare('INSERT INTO docs VALUES(?,?,?,?,?)').run('dogs','dog-demo','owner',1,JSON.stringify({...dog,id:'dog-demo',demo:true}));
+    const sitemap=await (await fetch(`${origin}/sitemap.xml`)).text();
+    assert.match(sitemap,/<loc>https?:\/\/[^<]+\/<\/loc>/);
+    assert.match(sitemap,/\/d\/dog-share<\/loc><lastmod>2026-09-29<\/lastmod>/);
+    assert.ok(!sitemap.includes('dog-demo'));
   }finally{server.closeAllConnections();await new Promise(r=>server.close(r));service.close();}
 });
 

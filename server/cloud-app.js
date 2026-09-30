@@ -191,6 +191,7 @@ export async function createApp({
   // 공유 링크 미리보기는 로그인·세션 없이 읽기만 한다.
   installShare({
     app,
+    listDogs: async () => (await db.prepare("SELECT json FROM docs WHERE collection='dogs'").all()).map(row => typeof row.json === "string" ? JSON.parse(row.json) : row.json),
     getDog: async id => {
       const row = await db.prepare("SELECT json FROM docs WHERE collection='dogs' AND id=?").get(id);
       return row ? (typeof row.json === "string" ? JSON.parse(row.json) : row.json) : null;

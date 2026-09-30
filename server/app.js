@@ -277,6 +277,7 @@ export function createApp({
   // 공유 링크 미리보기는 로그인·세션 없이 읽기만 한다.
   installShare({
     app,
+    listDogs: () => db.prepare("SELECT json FROM docs WHERE collection='dogs'").all().map((row) => JSON.parse(row.json)),
     getDog: (id) => {
       const row = db.prepare("SELECT json FROM docs WHERE collection='dogs' AND id=?").get(id);
       return row ? JSON.parse(row.json) : null;

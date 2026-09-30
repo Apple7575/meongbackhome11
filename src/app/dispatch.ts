@@ -2,6 +2,7 @@
 import { read, api, authenticate, enablePush, refresh } from "../client-store.js";
 import { commit } from "./actions.ts";
 import { openSheet } from "./sheets.ts";
+import { nativeShare } from "../share.ts";
 import { toast } from "./toast.ts";
 import { errorText } from "../errors.ts";
 import { takeInstallPrompt, isStandalone } from "./install.ts";
@@ -82,7 +83,12 @@ async function run(action: string, button: HTMLElement) {
     case "delete-account":
       openSheet(action === "device-check" ? "device" : action === "delete-account" ? "deleteAccount" : action);
       return;
-    case "share":
+    case "share": {
+      const dog = read().dogs.find((d) => d.id === id);
+      if (dog && (await nativeShare(dog))) return;
+      openSheet("share", { dogId: id });
+      return;
+    }
     case "poster":
     case "update":
     case "reunite":

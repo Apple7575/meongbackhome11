@@ -85,7 +85,22 @@ test("members can leave a reunion story from the stories screen", async ({ page 
   await expect(sheet).toHaveCount(0);
   await expect(page.getByRole("heading", { name: title })).toBeVisible();
 });
+test("phones open the native share sheet first with the preview link", async ({ page }) => {
+  // 테스트 브라우저의 실제 공유창 대신 어떤 내용으로 불렸는지만 기록한다.
+  await page.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "share", { configurable: true, value(data) { window.__shared = data; return Promise.resolve(); } });
+    const original = window.matchMedia.bind(window);
+    window.matchMedia = (q) => (q === "(pointer: coarse)" ? { matches: true, media: q, addEventListener() {}, removeEventListener() {} } : original(q));
+  });
+  await ready(page, "/#/dog/demo-bori");
+  await page.getByRole("button", { name: /^공유/ }).click();
+  await expect.poll(() => page.evaluate(() => window.__shared?.url)).toMatch(/\/d\/demo-bori$/);
+  expect(await page.evaluate(() => window.__shared.title)).toBe("보리를 찾고 있어요 · 멍백홈");
+  await expect(page.getByRole("dialog", { name: "소식을 함께 나눠주세요" })).toHaveCount(0);
+});
 test("share, flag and info open as React bottom sheets with no legacy modal root", async ({ page }) => {
+  // 기본 공유창이 없는 환경(컴퓨터)에서는 앱의 공유 시트가 열린다.
+  await page.addInitScript(() => { Object.defineProperty(Navigator.prototype, "share", { configurable: true, value: undefined }); });
   await ready(page, "/#/dog/demo-bori");
   await expect(page.locator("#modal-root")).toHaveCount(0);
   await page.getByRole("button", { name: /^공유/ }).click();

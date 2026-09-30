@@ -30,8 +30,19 @@ export function shareText(dog) {
   return { title, description };
 }
 
-// getDog(id) → 공개해도 되는 강아지 신고, readImage(uri) → 사진 바이트(Buffer) 또는 null
-export function installShare({ app, getDog, readImage }) {
+// getDog(id) → 공개해도 되는 강아지 신고, readImage(uri) → 사진 바이트(Buffer) 또는 null,
+// listDogs() → 검색엔진에 알려줄 실제 신고 목록
+export function installShare({ app, getDog, readImage, listDogs = async () => [] }) {
+  // 검색엔진용 목록: 홈과 실제 신고의 공유 페이지(/d/:id). 예시 신고는 넣지 않는다.
+  app.get('/sitemap.xml', async (req, res) => {
+    const base = process.env.PUBLIC_ORIGIN || `${req.protocol}://${req.get('host')}`;
+    let dogs = [];
+    try { dogs = (await listDogs()).filter(d => d && ID.test(d.id) && !d.demo && !d.previewOnly); } catch {}
+    const day = t => { const d = new Date(t); return Number.isNaN(d.getTime()) ? '' : `<lastmod>${d.toISOString().slice(0, 10)}</lastmod>`; };
+    const urls = [`<url><loc>${esc(base)}/</loc></url>`, ...dogs.map(d => `<url><loc>${esc(`${base}/d/${d.id}`)}</loc>${day(d.time)}</url>`)];
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.join('')}</urlset>`);
+  });
   const origin = req => process.env.PUBLIC_ORIGIN || `${req.protocol}://${req.get('host')}`;
   const load = async id => {
     if (!ID.test(id)) return null;

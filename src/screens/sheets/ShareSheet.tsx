@@ -4,8 +4,7 @@ import Icon from "../../ui/Icon.tsx";
 import { useStore } from "../../app/useStore.ts";
 import { toast } from "../../app/toast.ts";
 import { openSheet } from "../../app/sheets.ts";
-import { objectParticle } from "../../format.ts";
-import { shareUrl } from "../../share.ts";
+import { shareUrl, shareTitle } from "../../share.ts";
 import s from "./sheets.module.css";
 export default function ShareSheet({ dogId, onClose }: { dogId: string; onClose: () => void }) {
   const dog = useStore().dogs.find((d) => d.id === dogId);
@@ -25,7 +24,7 @@ export default function ShareSheet({ dogId, onClose }: { dogId: string; onClose:
   const share = async () => {
     if (!navigator.share) return toast("이 브라우저에서는 링크 복사를 이용해주세요.");
     try {
-      await navigator.share({ title: `${dog.name}의 가족을 찾아주세요 · 멍백홈`, text: dog.location, url });
+      await navigator.share({ title: `${shareTitle(dog)} · 멍백홈`, text: dog.location, url });
     } catch (e) {
       if (!(e instanceof DOMException && e.name === "AbortError")) toast("공유 메뉴를 열지 못했어요. 링크를 복사해주세요.");
     }
@@ -37,7 +36,7 @@ export default function ShareSheet({ dogId, onClose }: { dogId: string; onClose:
         <div className={s.preview}>
           <img src={dog.image || "/assets/mascot-home.webp"} alt="" />
           <div>
-            <strong>{dog.status === "reunited" ? `${dog.name}, 집에 돌아왔어요` : `${dog.name}${objectParticle(dog.name)} 찾고 있어요`}</strong>
+            <strong>{shareTitle(dog)}</strong>
             <span>{[dog.breed, dog.location].filter(Boolean).join(" · ")}</span>
             <small>meongbackhome.com</small>
           </div>
