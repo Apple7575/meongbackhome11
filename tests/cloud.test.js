@@ -29,7 +29,7 @@ async function fixture(options={}){
     const data=res.headers.get('content-type')?.includes('application/json')?await res.json():Buffer.from(await res.arrayBuffer());
     return {status:res.status,data};
   };};
-  return {...service,client,mail,blobs,async stop(){await new Promise(r=>server.close(r));await Promise.allSettled(jobs);await service.close();}};
+  return {...service,origin,client,mail,blobs,async stop(){await new Promise(r=>server.close(r));await Promise.allSettled(jobs);await service.close();}};
 }
 const password='test-password-123';
 test('missing mail configuration leaves reads available and refuses registration before creating an unusable account',async()=>{
@@ -93,4 +93,23 @@ test('PostgreSQL: email verification, durable reports, photo access, revisions, 
     assert.equal((await witness('/api/state')).data.dogs.length,0);
     assert.equal((await witness('/api/state')).data.reports[0].dogId,null);
   }finally{await f.stop();}
+});
+
+test('daily maintenance asks owners of reports missing for two weeks whether they are still searching, once per two weeks',async()=>{
+  const f=await fixture({requireVerification:false});
+  const previous=process.env.CRON_SECRET;process.env.CRON_SECRET='test-cron';
+  try{
+    const owner=f.client();
+    assert.equal((await owner('/api/auth/register',{email:'stale@example.com',password})).status,200);
+    const old={...dog('/assets/mascot-home.webp'),id:'dog-old',time:new Date(Date.now()-20*86400000).toISOString()};
+    assert.equal((await change(owner,'dogs',old)).status,200);
+    assert.equal((await change(owner,'dogs',{...dog('/assets/mascot-home.webp'),id:'dog-new'})).status,200);
+    const run=async()=>(await (await fetch(`${f.origin}/api/maintenance`,{headers:{authorization:'Bearer test-cron'}})).json()).reminded;
+    assert.equal(await run(),1);
+    assert.equal(await run(),0);
+    const notices=(await owner('/api/state')).data.notifications;
+    assert.equal(notices.filter(n=>n.title==='보리는 아직 찾고 있나요?').length,1);
+    assert.equal(notices.find(n=>n.title==='보리는 아직 찾고 있나요?').dogId,'dog-old');
+    assert.equal((await fetch(`${f.origin}/api/maintenance`)).status,403);
+  }finally{process.env.CRON_SECRET=previous;if(previous===undefined)delete process.env.CRON_SECRET;await f.stop();}
 });

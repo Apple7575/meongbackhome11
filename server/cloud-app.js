@@ -4,6 +4,7 @@ import { randomUUID, randomBytes, scryptSync, timingSafeEqual, createHash } from
 import {installMedia,createStorage} from './media.js';
 import {installShare,dataUrlBytes} from './share.js';
 import {similarDogs,similarNotice} from './match.js';
+import {remindStale} from './stale.js';
 import path from "node:path";
 import webpush from "web-push";
 import { seed } from "../src/seed.js";
@@ -563,12 +564,14 @@ export async function createApp({
   }
   app.get('/api/maintenance',async(req,res)=>{
     if(!process.env.CRON_SECRET||req.get('authorization')!==`Bearer ${process.env.CRON_SECRET}`)return res.sendStatus(403);
+    // 2주 넘게 '찾고 있어요'인 신고의 보호자에게 아직 찾고 있는지 묻는다(알림은 바로 아래에서 보낸다).
+    const reminded=await remindStale({db,dogs:await rows('dogs'),notify});
     await flushPush();
     await media.cleanup();
     await db.prepare('DELETE FROM sessions WHERE expires<?').run(Date.now());
     await db.prepare('DELETE FROM account_tokens WHERE expires<?').run(Date.now());
     await db.prepare('DELETE FROM rate_limits WHERE reset_at<?').run(Date.now()-86400000);
-    res.json({ok:true});
+    res.json({ok:true,reminded});
   });
   app.use("/api", (req, res) => res.status(404).json({
     error: "API 경로를 찾을 수 없어요."
