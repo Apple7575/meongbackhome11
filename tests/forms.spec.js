@@ -21,14 +21,19 @@ test("report flow: next moves to the empty breed field, time wheels and pin addr
   const dateSheet = page.getByRole("dialog", { name: "날짜를 골라주세요" });
   await dateSheet.getByRole("option", { name: /어제/ }).click();
   await dateSheet.getByRole("button", { name: "확인" }).click();
-  await expect(page.locator("strong[aria-live]")).toContainText("어제");
+  await expect(page.getByRole("button", { name: /^날짜/ })).toContainText("어제");
   await page.getByRole("button", { name: /^시간/ }).click();
   const timeSheet = page.getByRole("dialog", { name: "시간을 골라주세요" });
   await timeSheet.getByRole("option", { name: "오전" }).click();
   await timeSheet.getByRole("option", { name: "9시" }).click();
   await timeSheet.getByRole("option", { name: "30분" }).click();
   await timeSheet.getByRole("button", { name: "확인" }).click();
-  await expect(page.locator("strong[aria-live]")).toHaveText("어제 오전 9:30");
+  await expect(page.getByRole("button", { name: /^시간/ })).toContainText("오전 9:30");
+  // ±버튼으로 조금씩 옮긴다.
+  await page.getByRole("button", { name: "+1시간" }).click();
+  await page.getByRole("button", { name: "−10분" }).click();
+  await expect(page.getByRole("button", { name: /^시간/ })).toContainText("오전 10:20");
+  await expect(page.getByRole("button", { name: /^날짜/ })).toContainText("어제");
   await nextStep(page);
   // 핀을 맞추면 주소가 보이고, 장소 칸을 비워도 그 주소로 넘어갈 수 있다.
   await expect(page.locator("#location-picker.leaflet-container")).toBeVisible();

@@ -93,7 +93,7 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
       {
         title: "언제 잃어버렸나요?",
         description: "대략적인 시간도 괜찮아요.",
-        body: <WhenField label="잃어버린 시간" value={v.time} onChange={(time) => set({ time })} />,
+        body: <WhenField value={v.time} onChange={(time) => set({ time })} />,
         check: () => (!v.time ? "시간을 골라주세요." : new Date(v.time) > new Date() ? "지금보다 미래일 수는 없어요." : undefined),
       },
       {

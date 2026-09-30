@@ -92,6 +92,8 @@ textarea.input { padding: 14px 16px; min-height: 120px; resize: vertical; line-h
 .addressHint { font-size: var(--t6); color: var(--grey-600); }
 .mapWrap .map { height: min(360px, 48vh); }
 /* 키보드가 떠 있을 때: 토스처럼 키보드에 붙은 꽉 찬 버튼 */
-.ctaKeyboard { padding: 0; background: none; }
-.ctaKeyboard > button { border-radius: 0; min-height: 52px; }
+.ctaKeyboard { padding: 8px var(--gutter); background: #fff; }
 .flow { scroll-padding-bottom: calc(var(--keyboard, 0px) + 96px); }
+.adjust { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.adjust .chip { justify-content: center; padding: 0 4px; }
+.adjust .chip:disabled { color: var(--grey-300); }

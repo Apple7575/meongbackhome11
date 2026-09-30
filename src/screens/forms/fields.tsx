@@ -126,18 +126,20 @@ export function MultiOptions({ label, options, value, onChange, exclusive, other
 // 나이는 숫자를 올리고 내리거나 '1살 미만'·'모르겠어요'를 고른다. 빈 값은 모름.
 export function AgeField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const years = /^(\d+)살$/.exec(value)?.[1];
-  const n = years ? Number(years) : null;
-  const step = (d: number) => onChange(`${Math.min(25, Math.max(1, (n ?? (d > 0 ? 0 : 2)) + d))}살`);
+  const n = value === "1살 미만" ? 0 : years ? Number(years) : null;
+  const step = (d: number) => {
+    const next = Math.min(25, Math.max(0, (n ?? (d > 0 ? 0 : 2)) + d));
+    onChange(next === 0 ? "1살 미만" : `${next}살`);
+  };
   return (
     <div className={s.field}>
       <span className={s.label}>나이</span>
       <div className={s.stepper}>
-        <button type="button" onClick={() => step(-1)} disabled={n !== null && n <= 1} aria-label="한 살 줄이기"><Icon name="Minus" size={20} /></button>
-        <output aria-live="polite" className={n === null ? s.stepperEmpty : ""}>{n === null ? "몇 살인가요?" : `${n}살`}</output>
+        <button type="button" onClick={() => step(-1)} disabled={n !== null && n <= 0} aria-label="한 살 줄이기"><Icon name="Minus" size={20} /></button>
+        <output aria-live="polite" className={n === null ? s.stepperEmpty : ""}>{n === null ? "몇 살인가요?" : n === 0 ? "0살 (1살 미만)" : `${n}살`}</output>
         <button type="button" onClick={() => step(1)} disabled={n !== null && n >= 25} aria-label="한 살 늘리기"><Icon name="Plus" size={20} /></button>
       </div>
       <div className={s.chips} role="group" aria-label="나이 빠른 선택">
-        <button type="button" className={s.chip} aria-pressed={value === "1살 미만"} onClick={() => onChange("1살 미만")}>1살 미만</button>
         <button type="button" className={s.chip} aria-pressed={!value} onClick={() => onChange("")}>잘 모르겠어요</button>
       </div>
     </div>
@@ -225,7 +227,8 @@ export function Wheel({ label, items, index, onChange }: { label: string; items:
 const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0"));
 const HOURS = Array.from({ length: 12 }, (_, i) => String(i === 0 ? 12 : i));
 // 언제: 자주 쓰는 '몇 분 전'을 먼저 보여주고, 날짜와 시간은 아래 시트에서 굴려 고른다.
-export function WhenField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+// 질문 제목이 이미 시간을 묻는 화면에서는 label 없이 쓴다.
+export function WhenField({ label, value, onChange }: { label?: string; value: string; onChange: (v: string) => void }) {
   const [sheet, setSheet] = useState<"date" | "time" | null>(null);
   const now = new Date();
   const current = value ? new Date(value) : now;
@@ -261,8 +264,7 @@ export function WhenField({ label, value, onChange }: { label: string; value: st
   const diff = Math.round((now.getTime() - current.getTime()) / 60000);
   return (
     <div className={s.field}>
-      <span className={s.label}>{label}</span>
-      <strong className={s.when} aria-live="polite">{whenLabel(value)}</strong>
+      {label && <span className={s.label}>{label}</span>}
       <div className={s.chips} role="group" aria-label="빠른 선택">
         {chips.map(([min, text]) => (
           <button key={min} type="button" className={s.chip} aria-pressed={!!value && Math.abs(diff - min) <= 1} onClick={() => ago(min)}>{text}</button>
@@ -273,8 +275,14 @@ export function WhenField({ label, value, onChange }: { label: string; value: st
           <span>날짜</span><strong>{dateLabel(current, daysAgo(toLocalInput(current)))}</strong><Icon name="ChevronRight" size={20} />
         </button>
         <button type="button" className={s.pickRow} onClick={openTime}>
-          <span>시간</span><strong>{clockLabel(current)}</strong><Icon name="ChevronRight" size={20} />
+          <span>시간</span><strong aria-live="polite">{clockLabel(current)}</strong><Icon name="ChevronRight" size={20} />
         </button>
+      </div>
+      <div className={s.adjust} role="group" aria-label="시간 조절">
+        {([[-60, "−1시간"], [-10, "−10분"], [10, "+10분"], [60, "+1시간"]] as const).map(([min, text]) => (
+          <button key={min} type="button" className={s.chip} disabled={min > 0 && current.getTime() + min * 60000 > now.getTime()}
+            onClick={() => commit(new Date(current.getTime() + min * 60000))}>{text}</button>
+        ))}
       </div>
       <BottomSheet open={sheet === "date"} title="날짜를 골라주세요" onClose={() => setSheet(null)}>
         <div className={s.sheetBody}>
