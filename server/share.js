@@ -56,7 +56,8 @@ export function installShare({ app, getDog, readImage, listDogs = async () => []
     const { title, description } = dog ? shareText(dog) : { title: '멍백홈 — 다시, 따뜻한 집으로', description: '작은 목격이 소중한 재회로. 실종 강아지를 찾고, 주변의 목격 소식을 함께 나눠요.' };
     // 사진·그림 방식이 바뀌면 주소도 바뀌어 캐시된 옛 그림이 나오지 않는다.
     const version = dog?.image ? createHash("sha1").update(`og2:${dog.image}`).digest("hex").slice(0, 10) : "";
-    const image = dog?.image ? `${base}/api/og/dog/${encodeURIComponent(id)}.jpg?v=${version}` : `${base}/og-home.png`;
+    const asset = /^\/assets\/[\w.-]+\.(png|webp|jpg)$/.test(dog?.image || '');
+    const image = asset ? `${base}${dog.image}` : dog?.image ? `${base}/api/og/dog/${encodeURIComponent(id)}.jpg?v=${version}` : `${base}/og-home.png`;
     res.set('Cache-Control', 'public, max-age=300');
     res.type('html').send(`<!doctype html><html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

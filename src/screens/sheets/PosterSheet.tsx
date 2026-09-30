@@ -53,9 +53,11 @@ async function draw(canvas: HTMLCanvasElement, dog: Dog, format: Format) {
   ctx.clip();
   ctx.fillStyle = C.box;
   ctx.fillRect(80, top, 840, photoH);
-  ctx.filter = "blur(24px) brightness(0.9)";
-  ctx.drawImage(img, 500 - (img.width * cover) / 2, top + photoH / 2 - (img.height * cover) / 2, img.width * cover, img.height * cover);
-  ctx.filter = "none";
+  if ("filter" in ctx) {
+    ctx.filter = "blur(24px) brightness(0.9)";
+    ctx.drawImage(img, 500 - (img.width * cover) / 2, top + photoH / 2 - (img.height * cover) / 2, img.width * cover, img.height * cover);
+    ctx.filter = "none";
+  }
   ctx.drawImage(img, 500 - (img.width * fit) / 2, top + photoH / 2 - (img.height * fit) / 2, img.width * fit, img.height * fit);
   ctx.restore();
   // 이름과 특징

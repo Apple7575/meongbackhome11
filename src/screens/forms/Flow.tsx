@@ -34,7 +34,9 @@ export default function Flow({ step, total, title, description, error, busy, nex
         root.style.setProperty("--keyboard", `${covered}px`);
         // 안드로이드는 화면 자체가 줄어 가려진 높이가 0이므로 입력칸에 초점이 있는지도 함께 본다.
         const typing = document.activeElement?.matches("input:not([type=file]):not([type=range]), textarea") ?? false;
-        setKeyboard(covered > 80 || (typing && !!vv && vv.height < screen.height * 0.6));
+        // 컴퓨터에서 창을 작게 띄운 경우를 키보드로 착각하지 않도록 터치 화면에서만 판단한다.
+        const touch = matchMedia("(pointer: coarse)").matches;
+        setKeyboard(touch && (covered > 80 || (typing && !!vv && vv.height < screen.height * 0.6)));
       });
     };
     // iOS는 키보드가 뜬 뒤 화면을 한 번 더 움직이므로 잠깐 동안 여러 번 다시 잰다.
