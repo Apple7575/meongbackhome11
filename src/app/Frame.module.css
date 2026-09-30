@@ -29,7 +29,7 @@
 .navItem[aria-current="page"] { color: var(--grey-900); font-weight: 600; }
 .reportIcon { width: 44px; height: 44px; margin-top: -18px; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--brand); color: #fff; box-shadow: 0 4px 12px rgba(232, 128, 95, 0.35);
+  background: var(--brand-strong); color: #fff; box-shadow: 0 4px 12px rgba(184, 85, 58, 0.35);
   border: 3px solid #fff; }
 .main { padding: 0; }
 .bannerButton { display: inline-flex; align-items: center; min-height: 44px; margin-left: 8px; padding: 0 12px;

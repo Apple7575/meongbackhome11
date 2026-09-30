@@ -10,7 +10,7 @@ import type { Dog } from "../../types.ts";
 import s from "./sheets.module.css";
 type Format = "print" | "social";
 const FONT = `"Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif`;
-const C = { title: "#191f28", body: "#4e5968", muted: "#8b95a1", line: "#e5e8eb", box: "#f2f4f6", brand: "#e8805f" };
+const C = { title: "#191f28", body: "#4e5968", muted: "#8b95a1", line: "#e5e8eb", box: "#f2f4f6", brand: "#a94c2f" };
 // 인쇄용(1000×1400)·SNS용(1000×1000) 전단. 앱과 같은 규칙: 흰 바탕 · 굵은 제목 하나 · 코랄은 강조에만.
 async function draw(canvas: HTMLCanvasElement, dog: Dog, format: Format) {
   const ctx = canvas.getContext("2d");
@@ -32,7 +32,7 @@ async function draw(canvas: HTMLCanvasElement, dog: Dog, format: Format) {
   ctx.beginPath();
   ctx.roundRect(80, 64, tagW, 52, 26);
   ctx.fill();
-  ctx.fillStyle = home ? "#1f8a4c" : C.brand;
+  ctx.fillStyle = home ? "#16793f" : C.brand;
   ctx.textBaseline = "middle";
   ctx.fillText(tag, 100, 91);
   ctx.textBaseline = "alphabetic";

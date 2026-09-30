@@ -9,7 +9,7 @@ function escapeHtml(value) {
 
 // 앱과 같은 규칙: 흰 바탕 · 회색 글자 · 코랄 버튼 하나 · 짧은 해요체 문구.
 // 메일 앱은 외부 CSS·웹폰트를 막는 경우가 많아 인라인 스타일과 시스템 글꼴만 쓴다.
-const COLOR = { page: '#f9fafb', card: '#ffffff', title: '#191f28', body: '#4e5968', muted: '#8b95a1', line: '#e5e8eb', brand: '#e8805f' };
+const COLOR = { page: '#f9fafb', card: '#ffffff', title: '#191f28', body: '#4e5968', muted: '#8b95a1', line: '#e5e8eb', brand: '#b8553a' };
 const FONT = "-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Pretendard','Malgun Gothic',sans-serif";
 
 export function accountEmail({ origin, token, purpose }) {

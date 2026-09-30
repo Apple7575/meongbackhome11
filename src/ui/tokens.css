@@ -3,7 +3,7 @@
   --grey-50: #f9fafb; --grey-100: #f2f4f6; --grey-200: #e5e8eb; --grey-300: #d1d6db;
   --grey-400: #b0b8c1; --grey-500: #8b95a1; --grey-600: #636d7a; --grey-700: #4e5968;
   --grey-800: #333d4b; --grey-900: #191f28;
-  --brand: #e8805f; --brand-pressed: #d96f4e; --brand-weak: #fdf0eb; --brand-text: #a94c2f;
+  --brand: #e8805f; --brand-strong: #b8553a; --brand-pressed: #a2482f; --brand-weak: #fdf0eb; --brand-text: #a94c2f;
   --green: #16793f; --green-weak: #e8f7ee;
   --t1: 1.875rem; --t1-lh: 2.5rem; --t2: 1.625rem; --t2-lh: 2.1875rem;
   --t3: 1.375rem; --t3-lh: 1.9375rem; --t4: 1.25rem; --t4-lh: 1.8125rem;

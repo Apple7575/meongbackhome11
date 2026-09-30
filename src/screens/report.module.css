@@ -22,8 +22,8 @@
 .input input { flex: 1; min-width: 0; min-height: 48px; padding: 0 14px; border: 0; border-radius: var(--radius);
   background: var(--grey-100); font-size: 1rem; color: var(--grey-900); font-family: inherit; }
 .input input:focus-visible { outline: 2px solid var(--brand); }
-.send { width: 48px; height: 48px; flex-shrink: 0; border-radius: var(--radius); background: var(--brand); color: #fff;
+.send { width: 48px; height: 48px; flex-shrink: 0; border-radius: var(--radius); background: var(--brand-strong); color: #fff;
   display: inline-flex; align-items: center; justify-content: center; }
-.mine { align-self: flex-end; background: var(--brand); color: #fff; }
+.mine { align-self: flex-end; background: var(--brand-strong); color: #fff; }
 .mine small { color: rgba(255,255,255,0.8); }
 .send:disabled { opacity: 0.4; }
