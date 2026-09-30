@@ -77,8 +77,9 @@ export type ButtonProps = ButtonLook & ButtonHTMLAttributes<HTMLButtonElement> &
 export function Button({ variant = "fill", size = "md", full, className, ...rest }: ButtonProps) {
   return <button type="button" data-variant={variant} className={cx(buttonClass({ variant, size, full }), className)} {...rest} />;
 }
-export function ButtonLink({ href, variant = "fill", size = "md", full, children }: ButtonLook & AnchorHTMLAttributes<HTMLAnchorElement>) {
-  return <a href={href} data-variant={variant} className={buttonClass({ variant, size, full })}>{children}</a>;
+// target·rel·aria-label 같은 속성도 링크에 그대로 넘긴다(외부 링크를 새 탭으로 열 때 필요).
+export function ButtonLink({ href, variant = "fill", size = "md", full, children, ...rest }: ButtonLook & AnchorHTMLAttributes<HTMLAnchorElement>) {
+  return <a {...rest} href={href} data-variant={variant} className={buttonClass({ variant, size, full })}>{children}</a>;
 }
 export function BottomCTA(props: ButtonProps) {
   return (
