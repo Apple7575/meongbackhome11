@@ -61,6 +61,8 @@ function ExploreMap({ dogs }: { dogs: Dog[] }) {
         dogs.forEach((d) =>
           marker(map, d.coords, "♥").bindPopup(`<a href="#/dog/${d.id}"><b>${escapeHTML(d.name)}</b> · ${escapeHTML(d.breed)}<br>${escapeHTML(d.location)}</a>`),
         );
+        // 여러 마리면 모든 핀이 보이게 맞춘다(아래 목록 손잡이만큼 아래쪽 여백을 더 둔다).
+        if (dogs.length > 1) map.fitBounds(dogs.map((d) => d.coords), { paddingTopLeft: [40, 40], paddingBottomRight: [40, 100], maxZoom: 13 });
         return () => map.remove();
       }),
     [ids],

@@ -33,3 +33,5 @@
   max-height: 60%; overflow: auto; }
 .mapPanelToggle { width: 100%; min-height: 48px; font-size: var(--t6); font-weight: 600; color: var(--grey-800); }
 .sheetActions { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; padding: 8px var(--gutter) 0; }
+/* 아래 목록 손잡이(48px)에 확대 버튼·지도 출처가 가리지 않게 올린다. */
+.map :global(.leaflet-bottom) { bottom: 60px; }

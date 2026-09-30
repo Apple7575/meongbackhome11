@@ -3,6 +3,7 @@ import type { Coords, Report } from "./types.ts";
 export interface MapHandle {
   remove(): void;
   setView(center: Coords, zoom: number): void;
+  fitBounds(points: Coords[], options?: { paddingTopLeft?: [number, number]; paddingBottomRight?: [number, number]; maxZoom?: number }): void;
 }
 export interface MarkerHandle {
   bindPopup(html: string): MarkerHandle;
