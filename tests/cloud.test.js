@@ -69,6 +69,9 @@ test('PostgreSQL: email verification, durable reports, photo access, revisions, 
     const report={id:'report-a',dogId:'dog-a',kind:'보호 중',region:'서울',coords:[37.51234,127.12345],location:'비공개 주소',time:new Date().toISOString(),image:uploaded.data.image,heading:90};
     assert.equal((await change(witness,'reports',report)).status,200);
     assert.equal((await owner(uploaded.data.image)).status,200);
+    // 목록 썸네일용 작은 사진도 같은 권한으로만 받는다.
+    assert.equal((await owner(`${uploaded.data.image}?w=192`)).status,200);
+    assert.equal((await stranger(`${uploaded.data.image}?w=192`)).status,404);
     assert.equal((await stranger(uploaded.data.image)).status,404);
     const state=(await stranger('/api/state')).data;
     assert.equal(state.realtimeMode,'poll');assert.equal(state.storageMode,'supabase');

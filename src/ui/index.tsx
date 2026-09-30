@@ -1,4 +1,5 @@
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
+import { thumbSrc } from "../thumb.ts";
 import Icon from "./Icon.tsx";
 import type { IconName } from "./Icon.tsx";
 import s from "./ui.module.css";
@@ -109,7 +110,7 @@ export function Divider() {
   return <div className={s.band} role="presentation" />;
 }
 export function Thumb({ src, size = 56 }: { src?: string; size?: 56 | 72 }) {
-  return <img className={s.thumb} src={src || "/assets/mascot-home.webp"} alt="" width={size} height={size} loading="lazy" />;
+  return <img className={s.thumb} src={thumbSrc(src)} alt="" width={size} height={size} loading="lazy" decoding="async" />;
 }
 export function IconCircle({ name, tone = "grey" }: { name: IconName; tone?: "grey" | "coral" }) {
   return (

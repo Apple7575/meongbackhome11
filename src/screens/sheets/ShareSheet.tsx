@@ -5,6 +5,7 @@ import { useStore } from "../../app/useStore.ts";
 import { toast } from "../../app/toast.ts";
 import { openSheet } from "../../app/sheets.ts";
 import { shareUrl, shareTitle } from "../../share.ts";
+import { thumbSrc } from "../../thumb.ts";
 import s from "./sheets.module.css";
 export default function ShareSheet({ dogId, onClose }: { dogId: string; onClose: () => void }) {
   const dog = useStore().dogs.find((d) => d.id === dogId);
@@ -34,7 +35,7 @@ export default function ShareSheet({ dogId, onClose }: { dogId: string; onClose:
       <div className={s.body}>
         <p className={s.intro}>받은 사람은 가입 없이 보고 바로 제보할 수 있어요.</p>
         <div className={s.preview}>
-          <img src={dog.image || "/assets/mascot-home.webp"} alt="" />
+          <img src={thumbSrc(dog.image)} alt="" />
           <div>
             <strong>{shareTitle(dog)}</strong>
             <span>{[dog.breed, dog.location].filter(Boolean).join(" · ")}</span>

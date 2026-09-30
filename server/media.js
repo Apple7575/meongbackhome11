@@ -42,7 +42,13 @@ export function installMedia({app,db,storage,rate}){
     if(!permitted)return res.sendStatus(404);
     const {data,error}=await storage.download(media.path);
     if(error)return res.sendStatus(404);
-    res.type('image/webp').send(Buffer.from(await data.arrayBuffer()));
+    let bytes=Buffer.from(await data.arrayBuffer());
+    // 목록 썸네일용 작은 사진(허용한 크기만)
+    const width=Number(req.query.w);
+    if([192,640].includes(width))bytes=await sharp(bytes).resize(width,width,{fit:'inside',withoutEnlargement:true}).webp({quality:72}).toBuffer();
+    // 사진 주소는 한 번 정해지면 내용이 바뀌지 않는다. 권한이 있는 사람의 기기에만 보관한다(private).
+    res.set('Cache-Control','private, max-age=86400');
+    res.type('image/webp').send(bytes);
   });
   return {
     async validate(image,uid,previous){
