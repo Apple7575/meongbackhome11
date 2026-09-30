@@ -13,6 +13,9 @@ export const joinValues = values => [...new Set(values.map(v => String(v).trim()
 export const sharesValue = (a,b) => { const set = new Set(valuesOf(a)); return valuesOf(b).some(v => set.has(v)); };
 // 지도에서 고른 지점과 가장 가까운 시·도. 경계 근처는 틀릴 수 있어 화면에서 바꿀 수 있게 둔다.
 export const nearestRegion = point => Object.keys(COORDS).reduce((best, r) => haversine(point, COORDS[r]) < haversine(point, COORDS[best]) ? r : best, '서울');
+// '서울특별시'·'전라북도'·'전북특별자치도' 같은 시·도 이름을 앱의 지역 이름으로 바꾼다.
+const LONG_REGIONS = { 충청북도:'충북', 충청남도:'충남', 전라북도:'전북', 전라남도:'전남', 경상북도:'경북', 경상남도:'경남' };
+export const regionFromAddress = name => LONG_REGIONS[name] || Object.keys(COORDS).find(r => String(name || '').startsWith(r)) || '';
 export function haversine(a,b) {
   const r = Math.PI/180, dLat=(b[0]-a[0])*r, dLng=(b[1]-a[1])*r;
   const h=Math.sin(dLat/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dLng/2)**2;

@@ -8,7 +8,8 @@ export const credentials = () => ({
 });
 export async function ready(page, path = "/") {
   await page.goto(path);
-  await expect(page.getByRole("navigation", { name: "하단 메뉴" })).toBeVisible();
+  // 상세 화면은 하단 메뉴를 숨기므로 상단 바로 준비를 확인한다.
+  await expect(page.locator("header").first()).toBeVisible();
   await expect
     .poll(() => page.evaluate(() => document.querySelector("#connection-banner")?.hidden))
     .toBe(true);
@@ -27,9 +28,14 @@ export async function openLogin(page) {
   await page.getByRole("main").getByRole("button", { name: /^로그인/ }).first().click();
   await expect(page.locator("#account-form")).toBeVisible();
 }
-export const nextStep = (page) => page.getByRole("button", { name: "다음", exact: true }).click();
+// 핀 주소 찾기(OpenStreetMap)는 외부 서비스라 테스트에서는 정해진 답을 돌려준다.
+export const fakeAddress = (page) =>
+  page.route("https://nominatim.openstreetmap.org/**", (route) =>
+    route.fulfill({ json: { address: { city: "서울특별시", borough: "송파구", quarter: "잠실동", road: "석촌호수로" } } }));
+export const nextStep =(page) => page.getByRole("button", { name: "다음", exact: true }).click();
 // 새 실종 신고 흐름(사진 → 이름·견종 → 특징 → 언제 → 어디서 → 설명)을 확인 단계 직전까지 채운다.
 export async function fillReport(page, { name, breed = "말티즈", photo = "public/assets/dog-maltese.png" }) {
+  await fakeAddress(page);
   await page.locator("input[name=photo]").setInputFiles(photo);
   await expect(page.getByAltText("고른 사진")).toBeVisible();
   await nextStep(page);
@@ -48,6 +54,7 @@ export async function fillReport(page, { name, breed = "말티즈", photo = "pub
 }
 // 목격 제보 흐름(어디서 → 언제·상황 → 방향 → 사진·특징)을 확인 단계 직전까지 채운다.
 export async function fillSighting(page, { place }) {
+  await fakeAddress(page);
   await page.locator("input[name=location]").fill(place);
   await expect(page.locator("#sighting-picker.leaflet-container")).toBeVisible();
   await page.locator("#sighting-picker").click({ position: { x: 140, y: 100 } });

@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { placeText } from "../../format.ts";
 import { useStore } from "../../app/useStore.ts";
 import { commit } from "../../app/actions.ts";
 import { read, id as newId } from "../../client-store.js";
@@ -23,7 +24,7 @@ interface ReportValues {
   name: string; breed: string; age: string; sex: string; color: string; size: string; accessory: string;
   region: string; time: string; location: string; description: string;
 }
-interface ReportExtra { coords: Coords; picked: boolean }
+interface ReportExtra { coords: Coords; picked: boolean; address?: string; short?: string }
 interface Step { title: string; description: string; body: ReactNode; check?: () => string | undefined }
 // mode: new(새 신고) · from(프로필로 신고) · edit(수정) · profile(우리 집 강아지 등록)
 export default function ReportFlow({ mode, id }: { mode: Mode; id?: string }) {
@@ -55,6 +56,7 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
   const [busy, setBusy] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const submitRef = useRef<(() => Promise<void>) | null>(null);
+  const place = () => v.location.trim() || extra.short || extra.address || "";
   const steps: Step[] = [
     {
       title: profileOnly ? "우리 아이 사진을 올려주세요" : "잃어버린 아이의 사진을 올려주세요",
@@ -98,13 +100,13 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
         title: "마지막으로 본 곳은 어디인가요?",
         description: "정확한 지점일수록 목격 제보를 연결하기 쉬워요.",
         body: (
-          <WhereField mapId="location-picker" region={v.region} location={v.location} placeholder="예: 석촌호수 동호 입구 편의점 앞"
-            coords={extra.coords} picked={extra.picked} onMessage={toast}
-            onRegion={(region) => extra.picked ? set({ region }) : draft.update({ values: { region }, extra: { coords: COORDS[region], picked: false } })}
+          <WhereField mapId="location-picker" location={v.location} placeholder="예: 석촌호수 동호 입구 편의점 앞"
+            coords={extra.coords} picked={extra.picked} address={extra.address || ""} onMessage={toast}
             onLocation={(location) => set({ location })}
-            onPick={(coords) => draft.update({ values: { region: nearestRegion(coords) }, extra: { coords, picked: true } })} />
+            onPick={(coords) => draft.update({ values: { region: nearestRegion(coords) }, extra: { coords, picked: true, address: "", short: "" } })}
+            onPlace={(place) => draft.update({ values: place?.region ? { region: place.region } : {}, extra: { address: place?.label || "", short: place?.short || "" } })} />
         ),
-        check: () => (!v.location.trim() ? "장소를 적어주세요." : !extra.picked ? "지도를 움직여 마지막으로 본 곳에 핀을 맞춰주세요." : undefined),
+        check: () => (!extra.picked ? "지도를 움직여 마지막으로 본 곳에 핀을 맞춰주세요." : !place() ? "자세한 장소를 적어주세요." : undefined),
       },
     ]),
     {
@@ -122,7 +124,7 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
           {image && <img src={image} alt="등록할 사진" />}
           <dl>
             {[["이름", v.name], ["견종", v.breed], ["특징", [v.sex === "모름" ? "성별 모름" : v.sex, v.color, v.size, v.age, !profileOnly && v.accessory].filter(Boolean).join(" · ")],
-              ...(profileOnly ? [] : [["시간", whenLabel(v.time)], ["장소", `${v.region} · ${v.location}`]]), ["설명", v.description]]
+              ...(profileOnly ? [] : [["시간", whenLabel(v.time)], ["장소", placeText(v.region, place())]]), ["설명", v.description]]
               .filter(([, x]) => x).map(([k, x]) => <div key={k}><dt>{k}</dt><dd>{x}</dd></div>)}
           </dl>
         </div>
@@ -131,7 +133,7 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
     },
   ];
   const submit = async () => {
-    const values = { ...v, name: v.name.trim(), breed: v.breed.trim(), location: v.location.trim(), description: v.description.trim() };
+    const values = { ...v, name: v.name.trim(), breed: v.breed.trim(), location: place(), description: v.description.trim() };
     if (!profileOnly && !read().user?.registered) {
       openSheet("auth", { after: () => submitRef.current?.() });
       return;

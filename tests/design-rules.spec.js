@@ -47,7 +47,10 @@ test("detail, stories and account pages render inside the React frame", async ({
   ]) {
     await ready(page, path);
     await expect(check()).toBeVisible();
-    await expect(page.getByRole("navigation", { name: "하단 메뉴" })).toBeVisible();
+    // 상세 화면은 뒤로 가기가 있는 한 단계 깊은 화면이라 하단 메뉴를 숨긴다.
+    const nav = page.getByRole("navigation", { name: "하단 메뉴" });
+    if (path.startsWith("/#/dog/")) await expect(nav).toHaveCount(0);
+    else await expect(nav).toBeVisible();
   }
 });
 test("desktop shows redesigned screens in a centered 480px column", async ({ page }, info) => {

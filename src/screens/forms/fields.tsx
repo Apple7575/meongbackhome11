@@ -5,7 +5,10 @@ import Icon from "../../ui/Icon.tsx";
 import { readPhoto } from "../../photo.ts";
 import { withMaps } from "../../app/withMaps.ts";
 import type { Maps } from "../../app/withMaps.ts";
-import { REGIONS, headingLabel, valuesOf, joinValues } from "../../domain.js";
+import { headingLabel, valuesOf, joinValues } from "../../domain.js";
+import BottomSheet from "../../ui/BottomSheet.tsx";
+import { reverseGeocode } from "../../geocode.ts";
+import type { Place } from "../../geocode.ts";
 import type { Coords } from "../../types.ts";
 import { errorText } from "../../errors.ts";
 import s from "./forms.module.css";
@@ -174,77 +177,151 @@ export function PhotoPicker({ value, onChange, onError, onBusy, label = "사진 
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 const daysAgo = (value: string) => Math.round((startOfDay(new Date()) - startOfDay(new Date(value))) / 86400000);
 const DAY_NAMES = ["오늘", "어제", "그저께"];
+const WEEK = ["일", "월", "화", "수", "목", "금", "토"];
+const dateLabel = (d: Date, ago: number) =>
+  `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEK[d.getDay()]})${ago >= 0 && ago < 3 ? ` · ${DAY_NAMES[ago]}` : ""}`;
+const clockLabel = (d: Date) => d.toLocaleTimeString("ko-KR", { hour: "numeric", minute: "2-digit" });
 export function whenLabel(value: string) {
   if (!value) return "시간을 골라주세요";
   const d = new Date(value);
   const ago = daysAgo(value);
-  const day = ago >= 0 && ago < 3 ? DAY_NAMES[ago] : `${d.getMonth() + 1}월 ${d.getDate()}일`;
-  return `${day} ${d.toLocaleTimeString("ko-KR", { hour: "numeric", minute: "2-digit" })}`;
+  return `${ago >= 0 && ago < 3 ? DAY_NAMES[ago] : `${d.getMonth() + 1}월 ${d.getDate()}일`} ${clockLabel(d)}`;
 }
-// 언제: 자주 쓰는 '몇 분 전'을 먼저 보여주고, 필요하면 날짜와 시각을 따로 고른다.
-// 시각은 휴대폰 기본 시간 선택기(휠·시계)를 쓴다.
+const ITEM = 44;
+// 휴대폰 알람 앱처럼 위아래로 굴려 고르는 목록. 가운데 줄이 고른 값이다.
+export function Wheel({ label, items, index, onChange }: { label: string; items: string[]; index: number; onChange: (i: number) => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => {
+    if (ref.current) ref.current.scrollTop = index * ITEM;
+  }, []);
+  const settle = () => {
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      const el = ref.current;
+      if (!el) return;
+      const i = Math.max(0, Math.min(items.length - 1, Math.round(el.scrollTop / ITEM)));
+      if (i !== index) onChange(i);
+    }, 90);
+  };
+  const pick = (i: number) => {
+    ref.current?.scrollTo({ top: i * ITEM, behavior: "smooth" });
+    onChange(i);
+  };
+  return (
+    <div className={s.wheel}>
+      <div ref={ref} className={s.wheelList} role="listbox" aria-label={label} tabIndex={0} onScroll={settle}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowDown" && index < items.length - 1) { e.preventDefault(); pick(index + 1); }
+          if (e.key === "ArrowUp" && index > 0) { e.preventDefault(); pick(index - 1); }
+        }}>
+        {items.map((it, i) => (
+          <div key={it + i} role="option" aria-selected={i === index} className={s.wheelItem} onClick={() => pick(i)}>{it}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0"));
+const HOURS = Array.from({ length: 12 }, (_, i) => String(i === 0 ? 12 : i));
+// 언제: 자주 쓰는 '몇 분 전'을 먼저 보여주고, 날짜와 시간은 아래 시트에서 굴려 고른다.
 export function WhenField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const [sheet, setSheet] = useState<"date" | "time" | null>(null);
+  const now = new Date();
+  const current = value ? new Date(value) : now;
   const ago = (min: number) => onChange(toLocalInput(Date.now() - min * 60000));
   // 미래가 되면 지금으로 맞춘다.
-  const setAt = (date: string, time: string) => {
-    const next = `${date}T${time || "12:00"}`;
-    onChange(new Date(next) > new Date() ? toLocalInput() : next);
+  const commit = (d: Date) => onChange(d > new Date() ? toLocalInput() : toLocalInput(d));
+  // 날짜 시트: 오늘부터 30일 전까지
+  const days = Array.from({ length: 31 }, (_, n) => new Date(startOfDay(now) - n * 86400000));
+  const [dayIndex, setDayIndex] = useState(0);
+  const [ampm, setAmpm] = useState(0);
+  const [hour, setHour] = useState(0);
+  const [minute, setMinute] = useState(0);
+  const openDate = () => { setDayIndex(Math.max(0, Math.min(30, daysAgo(toLocalInput(current))))); setSheet("date"); };
+  const openTime = () => {
+    setAmpm(current.getHours() >= 12 ? 1 : 0);
+    setHour(current.getHours() % 12);
+    setMinute(Math.min(11, Math.round(current.getMinutes() / 5)));
+    setSheet("time");
   };
-  const date = value.slice(0, 10);
-  const time = value.slice(11, 16);
-  const day = value ? daysAgo(value) : -1;
-  const dayOf = (n: number) => toLocalInput(Date.now() - n * 86400000).slice(0, 10);
-  const today = toLocalInput().slice(0, 10);
+  const saveDate = () => {
+    const d = new Date(days[dayIndex]);
+    d.setHours(current.getHours(), current.getMinutes());
+    commit(d);
+    setSheet(null);
+  };
+  const saveTime = () => {
+    const d = new Date(current);
+    d.setHours(hour + ampm * 12, minute * 5, 0, 0);
+    commit(d);
+    setSheet(null);
+  };
+  const chips = [[0, "방금"], [30, "30분 전"], [60, "1시간 전"], [180, "3시간 전"]] as const;
+  const diff = Math.round((now.getTime() - current.getTime()) / 60000);
   return (
     <div className={s.field}>
       <span className={s.label}>{label}</span>
       <strong className={s.when} aria-live="polite">{whenLabel(value)}</strong>
       <div className={s.chips} role="group" aria-label="빠른 선택">
-        {([[0, "방금"], [30, "30분 전"], [60, "1시간 전"], [180, "3시간 전"]] as const).map(([min, text]) => (
-          <button key={min} type="button" className={s.chip} onClick={() => ago(min)}>{text}</button>
+        {chips.map(([min, text]) => (
+          <button key={min} type="button" className={s.chip} aria-pressed={!!value && Math.abs(diff - min) <= 1} onClick={() => ago(min)}>{text}</button>
         ))}
       </div>
-      <div className={s.whenGrid}>
-        <span className={s.sublabel}>날짜</span>
-        <div className={s.chips} role="group" aria-label="날짜">
-          {DAY_NAMES.map((name, n) => (
-            <button key={name} type="button" className={s.chip} aria-pressed={day === n} onClick={() => setAt(dayOf(n), time)}>{name}</button>
-          ))}
-          <label className={s.chip} data-on={day > 2}>
-            {day > 2 ? `${new Date(value).getMonth() + 1}월 ${new Date(value).getDate()}일` : "다른 날"}
-            <input type="date" className={s.overlay} max={today} value={date} aria-label="다른 날짜 고르기"
-              onChange={(e) => e.target.value && setAt(e.target.value, time)} />
-          </label>
-        </div>
-        <span className={s.sublabel}>시각</span>
-        <input className={`${s.input} ${s.timeInput}`} type="time" name="time" value={time} aria-label="시각"
-          onChange={(e) => e.target.value && setAt(date || today, e.target.value)} />
+      <div className={s.pickRows}>
+        <button type="button" className={s.pickRow} onClick={openDate}>
+          <span>날짜</span><strong>{dateLabel(current, daysAgo(toLocalInput(current)))}</strong><Icon name="ChevronRight" size={20} />
+        </button>
+        <button type="button" className={s.pickRow} onClick={openTime}>
+          <span>시간</span><strong>{clockLabel(current)}</strong><Icon name="ChevronRight" size={20} />
+        </button>
       </div>
+      <BottomSheet open={sheet === "date"} title="날짜를 골라주세요" onClose={() => setSheet(null)}>
+        <div className={s.sheetBody}>
+          <div className={s.wheels}>
+            <Wheel label="날짜" items={days.map((d, n) => dateLabel(d, n))} index={dayIndex} onChange={setDayIndex} />
+          </div>
+          <Button size="lg" full onClick={saveDate}>확인</Button>
+        </div>
+      </BottomSheet>
+      <BottomSheet open={sheet === "time"} title="시간을 골라주세요" onClose={() => setSheet(null)}>
+        <div className={s.sheetBody}>
+          <div className={s.wheels}>
+            <Wheel label="오전 오후" items={["오전", "오후"]} index={ampm} onChange={setAmpm} />
+            <Wheel label="시" items={HOURS.map((h) => `${h}시`)} index={hour} onChange={setHour} />
+            <Wheel label="분" items={MINUTES.map((m) => `${m}분`)} index={minute} onChange={setMinute} />
+          </div>
+          <Button size="lg" full onClick={saveTime}>확인</Button>
+        </div>
+      </BottomSheet>
     </div>
   );
 }
 interface WhereFieldProps {
   mapId: string;
-  region: string;
-  onRegion: (region: string) => void;
   location: string;
   onLocation: (location: string) => void;
   placeholder: string;
   coords: Coords;
   heading?: number | null;
   picked: boolean;
+  address: string;
   onPick: (point: Coords) => void;
+  onPlace: (place: Place | null) => void;
   onMessage: (message: string) => void;
 }
-// 어디서: 지도가 먼저. 가운데 핀에 맞춰 지도를 움직이면 지점과 지역이 정해진다.
+// 어디서: 지도가 먼저. 가운데 핀에 맞춰 지도를 움직이면 주소와 지역이 자동으로 정해진다.
 // 지도는 이 단계가 보이는 동안만 만든다.
-export function WhereField({ mapId, region, onRegion, location, onLocation, placeholder, coords, heading = null, picked, onPick, onMessage }: WhereFieldProps) {
+export function WhereField({ mapId, location, onLocation, placeholder, coords, heading = null, picked, address, onPick, onPlace, onMessage }: WhereFieldProps) {
   const ref = useRef<HTMLDivElement>(null);
   const picker = useRef<ReturnType<Maps["directionPicker"]> | null>(null);
   const latest = useRef({ coords, heading });
   latest.current = { coords, heading };
   const pickRef = useRef(onPick);
   pickRef.current = onPick;
+  const placeRef = useRef(onPlace);
+  placeRef.current = onPlace;
+  const [looking, setLooking] = useState(false);
   useEffect(
     () =>
       withMaps(({ directionPicker }) => {
@@ -263,6 +340,20 @@ export function WhereField({ mapId, region, onRegion, location, onLocation, plac
   useEffect(() => {
     picker.current?.set(coords, heading);
   }, [coords, heading]);
+  // 핀을 멈추고 잠시 뒤 주소를 찾는다.
+  const key = picked ? `${coords[0].toFixed(5)},${coords[1].toFixed(5)}` : "";
+  useEffect(() => {
+    if (!key) return;
+    let alive = true;
+    setLooking(true);
+    const timer = setTimeout(async () => {
+      const place = await reverseGeocode(coords);
+      if (!alive) return;
+      setLooking(false);
+      placeRef.current(place);
+    }, 600);
+    return () => { alive = false; clearTimeout(timer); };
+  }, [key]);
   const here = () => {
     if (!navigator.geolocation) return onMessage("이 브라우저에서는 위치를 가져올 수 없어요. 지도를 움직여 골라주세요.");
     onMessage("현재 위치를 확인하고 있어요.");
@@ -277,24 +368,23 @@ export function WhereField({ mapId, region, onRegion, location, onLocation, plac
   };
   return (
     <>
-      <div className={s.field}>
-        <div className={s.mapWrap}>
-          <div id={mapId} ref={ref} className={s.map} aria-label="지점 고르기 지도. 지도를 움직이거나 눌러서 핀을 맞춰주세요" />
-          <span className={s.centerPin} aria-hidden="true"><Icon name="MapPin" size={40} /></span>
-          <button type="button" className={s.locate} onClick={here}><Icon name="LocateFixed" size={18} />내 위치</button>
-        </div>
-        <p className={s.hint} role="status">
-          {picked ? "핀 위치로 정했어요. 더 정확하게 맞춰도 돼요." : "지도를 움직여 핀을 강아지를 본 곳에 맞춰주세요."}
-        </p>
+      <div className={s.mapWrap}>
+        <div id={mapId} ref={ref} className={s.map} aria-label="지점 고르기 지도. 지도를 움직이거나 눌러서 핀을 맞춰주세요" />
+        <span className={s.centerPin} aria-hidden="true"><Icon name="MapPin" size={40} /></span>
+        <button type="button" className={s.locate} onClick={here}><Icon name="LocateFixed" size={18} />내 위치</button>
       </div>
-      <TextField label="어디쯤인가요?" name="location" value={location} onChange={onLocation} maxLength={150} placeholder={placeholder}
-        hint="가게·건물·공원 입구처럼 이웃이 알아볼 수 있는 이름을 적어주세요." />
-      <label className={s.field}>
-        <span className={s.label}>지역 <small className={s.sub}>핀 위치로 자동으로 골라요</small></span>
-        <select className={s.input} name="region" value={region} onChange={(e) => onRegion(e.target.value)}>
-          {REGIONS.slice(1).map((r) => <option key={r}>{r}</option>)}
-        </select>
-      </label>
+      <div className={s.address} role="status">
+        <Icon name="MapPin" size={20} />
+        {!picked ? (
+          <span className={s.addressHint}>지도를 움직여 핀을 강아지를 본 곳에 맞춰주세요</span>
+        ) : looking ? (
+          <span className={s.addressHint}>주소를 찾고 있어요…</span>
+        ) : (
+          <strong>{address || "핀 위치를 정했어요"}</strong>
+        )}
+      </div>
+      <TextField label="자세한 장소" name="location" value={location} onChange={onLocation} maxLength={150} placeholder={placeholder}
+        hint="가게·건물·출구 번호처럼 이웃이 알아볼 수 있게 적어주세요. 비워 두면 위 주소를 써요." />
     </>
   );
 }

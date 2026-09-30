@@ -30,3 +30,11 @@
 .page img { width: 96px; height: 96px; object-fit: contain; align-self: center; }
 .page h1 { margin: 0; font-size: var(--t2); line-height: var(--t2-lh); font-weight: 700; color: var(--grey-900); letter-spacing: -0.02em; }
 .status { margin: 0; min-height: 1.4em; font-size: var(--t6); color: var(--grey-800); }
+.optionLeft { justify-content: flex-start; text-align: left; padding: 0 16px; }
+.preview { display: flex; gap: 12px; align-items: center; padding: 12px; border-radius: 16px; background: var(--grey-50); }
+.preview img { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; object-position: center 30%; flex-shrink: 0; }
+.preview > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.preview strong { font-size: var(--t5); color: var(--grey-900); }
+.preview span { font-size: var(--t6); color: var(--grey-600); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.preview small { font-size: var(--t7); color: var(--grey-500); }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); border: 0; opacity: 0; }

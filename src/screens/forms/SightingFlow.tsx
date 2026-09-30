@@ -1,10 +1,10 @@
 import { useState } from "react";
+import { objectParticle, placeText } from "../../format.ts";
 import { useStore } from "../../app/useStore.ts";
 import { commit } from "../../app/actions.ts";
 import { read, id as newId } from "../../client-store.js";
 import { toast } from "../../app/toast.ts";
 import { COORDS, nearestRegion } from "../../domain.js";
-import { objectParticle } from "../../format.ts";
 import Flow from "./Flow.tsx";
 import { TextField, Options, BigOptions, PhotoPicker, WhenField, WhereField, DirectionField, whenLabel, toLocalInput } from "./fields.tsx";
 import { useDraft } from "./useDraft.ts";
@@ -17,7 +17,7 @@ interface SightingValues {
   kind: string; region: string; time: string; location: string; directionMode: DirectionMode;
   color: string; size: string; description: string;
 }
-interface SightingExtra { coords: Coords; picked: boolean; heading: number | null }
+interface SightingExtra { coords: Coords; picked: boolean; heading: number | null; address?: string; short?: string }
 interface Step { title: string; description: string; body: ReactNode; check?: () => string | undefined }
 export default function SightingFlow({ dogId }: { dogId?: string }) {
   const db = useStore();
@@ -38,18 +38,19 @@ function SightingForm({ dog, dogId }: { dog?: Dog | null; dogId?: string }) {
   const [busy, setBusy] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const heading = extra.heading ?? 0;
+  const place = () => v.location.trim() || extra.short || extra.address || "";
   const steps: Step[] = [
     {
       title: dog ? `${dog.name}${objectParticle(dog.name)} 본 곳은 어디인가요?` : "강아지를 본 곳은 어디인가요?",
       description: "내 위치가 아니라 강아지를 본 지점을 골라주세요.",
       body: (
-        <WhereField mapId="sighting-picker" region={v.region} location={v.location} placeholder="예: 석촌호수 동호 북쪽 산책로 벤치 앞"
-          coords={extra.coords} heading={v.directionMode === "moving" ? heading : null} picked={extra.picked} onMessage={toast}
-          onRegion={(region) => extra.picked ? set({ region }) : draft.update({ values: { region }, extra: { coords: COORDS[region], picked: false } })}
+        <WhereField mapId="sighting-picker" location={v.location} placeholder="예: 석촌호수 동호 북쪽 산책로 벤치 앞"
+          coords={extra.coords} heading={v.directionMode === "moving" ? heading : null} picked={extra.picked} address={extra.address || ""} onMessage={toast}
           onLocation={(location) => set({ location })}
-          onPick={(coords) => draft.update({ values: { region: nearestRegion(coords) }, extra: { coords, picked: true } })} />
+          onPick={(coords) => draft.update({ values: { region: nearestRegion(coords) }, extra: { coords, picked: true, address: "", short: "" } })}
+          onPlace={(place) => draft.update({ values: place?.region ? { region: place.region } : {}, extra: { address: place?.label || "", short: place?.short || "" } })} />
       ),
-      check: () => (!v.location.trim() ? "장소를 적어주세요." : !extra.picked ? "지도를 움직여 강아지를 본 곳에 핀을 맞춰주세요." : undefined),
+      check: () => (!extra.picked ? "지도를 움직여 강아지를 본 곳에 핀을 맞춰주세요." : !place() ? "자세한 장소를 적어주세요." : undefined),
     },
     {
       title: "언제, 어떤 상황이었나요?",
@@ -89,7 +90,7 @@ function SightingForm({ dog, dogId }: { dog?: Dog | null; dogId?: string }) {
         <div className={s.review}>
           {image && <img src={image} alt="제보 사진" />}
           <dl>
-            {[["상황", v.kind], ["시간", whenLabel(v.time)], ["장소", `${v.region} · ${v.location}`],
+            {[["상황", v.kind], ["시간", whenLabel(v.time)], ["장소", placeText(v.region, place())],
               ["방향", v.directionMode === "moving" ? `${heading}°` : v.directionMode === "still" ? "머물러 있었어요" : "모름"], ["설명", v.description]]
               .filter(([, x]) => x).map(([k, x]) => <div key={k}><dt>{k}</dt><dd>{x}</dd></div>)}
           </dl>
@@ -102,7 +103,7 @@ function SightingForm({ dog, dogId }: { dog?: Dog | null; dogId?: string }) {
     const report: Report = {
       id: newId("sighting"), dogId: dog?.id || null, kind: v.kind, region: v.region, coords: extra.coords,
       heading: v.directionMode === "moving" ? heading : null, stationary: v.directionMode === "still",
-      location: v.location.trim(), time: new Date(v.time).toISOString(), description: v.description.trim(), image,
+      location: place(), time: new Date(v.time).toISOString(), description: v.description.trim(), image,
       color: dog ? dog.color : v.color, size: dog ? dog.size : v.size, status: "확인 전", messages: [], demo: false,
     };
     read().reports.unshift(report);

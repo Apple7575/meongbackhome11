@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chronologicalSightings, headingLabel, haversine, filterDogs, matchCandidates, arrowEnd, escapeHTML, valuesOf, joinValues, nearestRegion } from '../src/domain.js';
+import { chronologicalSightings, headingLabel, haversine, filterDogs, matchCandidates, arrowEnd, escapeHTML, valuesOf, joinValues, nearestRegion, regionFromAddress } from '../src/domain.js';
 import { relativeTime, dayGroup, objectParticle, subjectParticle } from '../src/format.ts';
 
 test('relative time, day groups and Korean object particle', () => {
@@ -46,6 +46,7 @@ test('multi-value colors and accessories match individually and the nearest regi
   const dogs=[{region:'서울',color:'흰색, 갈색',accessory:'목줄, 인식표',status:'missing',name:'a',breed:'b',location:'',description:''}];
   assert.equal(filterDogs(dogs,{color:'갈색'}).length,1);assert.equal(filterDogs(dogs,{accessory:'인식표'}).length,1);assert.equal(filterDogs(dogs,{color:'회색'}).length,0);
   assert.deepEqual(valuesOf(' 흰색 ,갈색,'),['흰색','갈색']);assert.equal(joinValues(['흰색','','흰색','검정색']),'흰색, 검정색');
+  assert.equal(regionFromAddress('서울특별시'),'서울');assert.equal(regionFromAddress('전라북도'),'전북');assert.equal(regionFromAddress('전북특별자치도'),'전북');assert.equal(regionFromAddress('Tokyo'),'');
   assert.equal(nearestRegion([35.16,129.06]),'부산');assert.equal(nearestRegion([37.56,126.97]),'서울');
 });
 test('user-controlled text cannot inject HTML attributes or markup',()=>{

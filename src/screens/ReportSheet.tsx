@@ -53,7 +53,7 @@ export default function ReportSheet({ id, onClose }: { id: string; onClose: () =
         </div>
         <h3 className={s.title}>{r.location}</h3>
         <p className={s.meta}>{formatTime(r.time)} · {movement(r)}</p>
-        <p className={s.desc}>{r.description || "추가 설명이 없어요."}</p>
+        {r.description && <p className={s.desc}>{r.description}</p>}
       </div>
       {r.canManage && (
         <>

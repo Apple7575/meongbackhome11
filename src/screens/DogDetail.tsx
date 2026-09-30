@@ -5,7 +5,7 @@ import Icon from "../ui/Icon.tsx";
 import { DogBadge } from "./shared.tsx";
 import { movement } from "./ReportSheet.tsx";
 import { chronologicalSightings, matchCandidates } from "../domain.js";
-import { formatTime } from "../format.ts";
+import { formatTime, sexLabel, subjectParticle, placeText } from "../format.ts";
 import { withMaps } from "../app/withMaps.ts";
 import s from "./detail.module.css";
 import type { Dog, Report } from "../types.ts";
@@ -81,7 +81,7 @@ export default function DogDetail({ id }: { id: string }) {
         <img src={d.image || "/assets/mascot-home.webp"} alt={`${d.name} ${d.breed} 사진`} />
         <span className={s.photoBadge}><DogBadge dog={d} /></span>
       </div>
-      <Top title={d.name} subtitle={[d.breed, d.age, d.sex].filter(Boolean).join(" · ")} />
+      <Top title={d.name} subtitle={[d.breed, d.age, sexLabel(d.sex) === "모름" ? "" : sexLabel(d.sex)].filter(Boolean).join(" · ")} />
       {d.previewOnly && <p className={s.notice}>체험용 예시 신고예요. 실제 실종 신고가 아니에요.</p>}
       <div className={s.actions}>
         <Button variant="weak" size="sm" data-action="share" data-id={d.id}><Icon name="Share2" size={18} />공유</Button>
@@ -95,11 +95,32 @@ export default function DogDetail({ id }: { id: string }) {
           {missing && <Button variant="weak" size="sm" data-action="reunite" data-id={d.id}>찾았어요</Button>}
         </div>
       )}
+      {!missing && (
+        <div className={s.home}>
+          <strong>{d.name}{subjectParticle(d.name)} 집에 돌아왔어요</strong>
+          <span>함께 찾아주신 이웃분들 고마워요.</span>
+        </div>
+      )}
       <ListHeader title="정보" />
-      <ListRow left={<IconCircle name="MapPin" />} title={d.location} description="마지막으로 본 곳" />
-      <ListRow left={<IconCircle name="Clock3" />} title={formatTime(d.time)} description="실종 시간" />
-      <ListRow left={<IconCircle name="Search" />} title={[d.color, d.size, d.accessory].filter(Boolean).join(" · ")} description="털 색 · 크기 · 착용물" />
-      {d.description && <p className={s.desc}>{d.description}</p>}
+      <dl className={s.facts}>
+        {([
+          ["마지막으로 본 곳", placeText(d.region, d.location)],
+          ["잃어버린 때", formatTime(d.time)],
+          ["털 색", d.color],
+          ["크기", d.size],
+          ["착용물", d.accessory],
+          ["성별", sexLabel(d.sex)],
+          ["나이", d.age],
+        ] as const).filter(([, v]) => v).map(([k, v]) => (
+          <div key={k}><dt>{k}</dt><dd>{v}</dd></div>
+        ))}
+      </dl>
+      {d.description && (
+        <>
+          <ListHeader title="특징" />
+          <p className={s.desc}>{d.description}</p>
+        </>
+      )}
       {d.exampleProfile && (
         <>
           <ListHeader title="알아보는 단서" />
@@ -134,17 +155,21 @@ export default function DogDetail({ id }: { id: string }) {
       ) : (
         <p className={s.emptyLine}>아직 목격 제보가 없어요. 첫 단서를 기다리고 있어요.</p>
       )}
-      <ListHeader title="수색 상황" action={d.canManage && <Button variant="weak" size="sm" data-action="update" data-id={d.id}>남기기</Button>} />
+      {(missing || updates.length > 0) && <ListHeader title="수색 상황" action={d.canManage && <Button variant="weak" size="sm" data-action="update" data-id={d.id}>남기기</Button>} />}
       {updates.length ? (
         updates.map((u) => <ListRow key={u.id} title={u.text} description={formatTime(u.time)} />)
-      ) : (
+      ) : missing ? (
         <p className={s.emptyLine}>아직 공유된 수색 상황이 없어요.</p>
+      ) : null}
+      {missing && (
+        <>
+          <ListHeader title="함께 확인할 제보" />
+          {candidates.map((r) => (
+            <ListRow key={r.id} as="button" data-action="report-detail" data-id={r.id} left={<IconCircle name="MapPin" />} title={r.location} description={`${r.distance.toFixed(1)}km · ${formatTime(r.time)}`} />
+          ))}
+          <ListRow as="button" data-action="public-data" left={<IconCircle name="Building2" />} title="보호소 공고도 확인해 보세요" description="보호소에 들어온 아이일 수도 있어요" />
+        </>
       )}
-      <ListHeader title="함께 확인할 제보" />
-      {candidates.map((r) => (
-        <ListRow key={r.id} as="button" data-action="report-detail" data-id={r.id} left={<IconCircle name="MapPin" />} title={r.location} description={`${r.distance.toFixed(1)}km · ${formatTime(r.time)}`} />
-      ))}
-      <ListRow as="button" data-action="public-data" left={<IconCircle name="Building2" />} title="보호소 공고도 확인해 보세요" description="보호소에 들어온 아이일 수도 있어요" />
       {missing && <BottomCTA data-action="sighting" data-id={d.id}>이 아이를 봤어요</BottomCTA>}
     </div>
   );

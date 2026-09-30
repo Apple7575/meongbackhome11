@@ -4,6 +4,7 @@ import Icon from "../../ui/Icon.tsx";
 import { useStore } from "../../app/useStore.ts";
 import { toast } from "../../app/toast.ts";
 import { openSheet } from "../../app/sheets.ts";
+import { objectParticle } from "../../format.ts";
 import s from "./sheets.module.css";
 export default function ShareSheet({ dogId, onClose }: { dogId: string; onClose: () => void }) {
   const dog = useStore().dogs.find((d) => d.id === dogId);
@@ -14,8 +15,10 @@ export default function ShareSheet({ dogId, onClose }: { dogId: string; onClose:
       await navigator.clipboard.writeText(url);
       toast("링크를 복사했어요.");
     } catch {
-      document.querySelector<HTMLInputElement>("#share-url")?.select();
-      toast("링크를 선택했어요. 직접 복사해주세요.");
+      // 클립보드 권한이 없으면 숨겨 둔 입력칸으로 복사한다.
+      const input = document.querySelector<HTMLInputElement>("#share-url");
+      input?.select();
+      toast(document.execCommand?.("copy") ? "링크를 복사했어요." : "링크를 복사하지 못했어요. 공유하기를 이용해주세요.");
     }
   };
   const share = async () => {
@@ -29,14 +32,19 @@ export default function ShareSheet({ dogId, onClose }: { dogId: string; onClose:
   return (
     <BottomSheet open title="소식을 함께 나눠주세요" onClose={onClose}>
       <div className={s.body}>
-        <p className={s.intro}>{dog.name}의 소식이 더 많은 이웃에게 닿을 수 있게요. 받은 사람은 가입 없이 보고 제보할 수 있어요.</p>
-        <label className={s.field}>
-          <span className={s.label}>신고 링크</span>
-          <input id="share-url" className={s.input} readOnly value={url} />
-        </label>
+        <p className={s.intro}>받은 사람은 가입 없이 보고 바로 제보할 수 있어요.</p>
+        <div className={s.preview}>
+          <img src={dog.image || "/assets/mascot-home.webp"} alt="" />
+          <div>
+            <strong>{dog.status === "reunited" ? `${dog.name}, 집에 돌아왔어요` : `${dog.name}${objectParticle(dog.name)} 찾고 있어요`}</strong>
+            <span>{[dog.breed, dog.location].filter(Boolean).join(" · ")}</span>
+            <small>meongbackhome.com</small>
+          </div>
+        </div>
+        <input id="share-url" className={s.srOnly} readOnly value={url} tabIndex={-1} aria-label="신고 링크" />
         <Button size="lg" full onClick={copy}><Icon name="Copy" size={20} />링크 복사</Button>
         <div className={s.pair}>
-          <Button variant="weak" onClick={share}><Icon name="Share2" size={20} />공유 메뉴</Button>
+          <Button variant="weak" onClick={share}><Icon name="Share2" size={20} />공유하기</Button>
           <Button variant="weak" onClick={() => { onClose(); openSheet("poster", { dogId }); }}><Icon name="QrCode" size={20} />QR 전단</Button>
         </div>
       </div>

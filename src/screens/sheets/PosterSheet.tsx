@@ -4,65 +4,109 @@ import { Button } from "../../ui/index.tsx";
 import Icon from "../../ui/Icon.tsx";
 import { useStore } from "../../app/useStore.ts";
 import { toast } from "../../app/toast.ts";
-import { formatTime } from "../../format.ts";
+import { formatTime, sexLabel, placeText } from "../../format.ts";
 import type { Dog } from "../../types.ts";
 import s from "./sheets.module.css";
 type Format = "print" | "social";
-// 인쇄용(1000×1400)·SNS용(1000×1000) 전단을 그린다. QR은 이 신고로 연결된다.
+const FONT = `"Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif`;
+const C = { title: "#191f28", body: "#4e5968", muted: "#8b95a1", line: "#e5e8eb", box: "#f2f4f6", brand: "#e8805f" };
+// 인쇄용(1000×1400)·SNS용(1000×1000) 전단. 앱과 같은 규칙: 흰 바탕 · 굵은 제목 하나 · 코랄은 강조에만.
 async function draw(canvas: HTMLCanvasElement, dog: Dog, format: Format) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
+  const print = format === "print";
   canvas.width = 1000;
-  canvas.height = format === "print" ? 1400 : 1000;
+  canvas.height = print ? 1400 : 1000;
   const h = canvas.height;
-  ctx.fillStyle = "#fffaf3";
+  await document.fonts?.load(`700 40px Pretendard`).catch(() => undefined);
+  const font = (size: number, weight = 400) => (ctx.font = `${weight} ${size}px ${FONT}`);
+  const home = dog.status === "reunited";
+  ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, 1000, h);
-  ctx.fillStyle = "#e88161";
-  ctx.fillRect(0, 0, 1000, 18);
-  ctx.textAlign = "center";
-  ctx.fillStyle = "#413a34";
-  ctx.font = "bold 58px sans-serif";
-  ctx.fillText(dog.status === "reunited" ? "집으로 돌아왔어요!" : "우리 아이를 찾고 있어요", 500, 110);
-  ctx.fillStyle = "#917d6e";
-  ctx.font = "24px sans-serif";
-  ctx.fillText("멍백홈 · 작은 관심이 소중한 재회로", 500, 158);
+  // 상태 표시와 제목
+  font(28, 700);
+  const tag = home ? "재회" : "실종";
+  const tagW = ctx.measureText(tag).width + 40;
+  ctx.fillStyle = home ? "#e8f6ee" : "#fdeee8";
+  ctx.beginPath();
+  ctx.roundRect(80, 64, tagW, 52, 26);
+  ctx.fill();
+  ctx.fillStyle = home ? "#1f8a4c" : C.brand;
+  ctx.textBaseline = "middle";
+  ctx.fillText(tag, 100, 91);
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = C.title;
+  font(print ? 68 : 60, 800);
+  ctx.fillText(home ? "집으로 돌아왔어요" : "강아지를 찾고 있어요", 80, print ? 200 : 186, 840);
+  // 사진: 얼굴이 잘리지 않게 위쪽을 조금 더 남긴다.
   const img = new Image();
   img.src = dog.image || "/assets/mascot-home.webp";
   await img.decode();
-  const photoH = format === "print" ? 630 : 400;
-  const ratio = Math.max(820 / img.width, photoH / img.height);
+  const top = print ? 244 : 222;
+  const photoH = print ? 520 : 340;
+  const ratio = Math.max(840 / img.width, photoH / img.height);
+  const w = img.width * ratio, ih = img.height * ratio;
   ctx.save();
   ctx.beginPath();
-  ctx.roundRect(90, 200, 820, photoH, 24);
+  ctx.roundRect(80, top, 840, photoH, 32);
   ctx.clip();
-  ctx.drawImage(img, 500 - (img.width * ratio) / 2, 200 + (photoH - img.height * ratio) / 2, img.width * ratio, img.height * ratio);
+  ctx.drawImage(img, 500 - w / 2, top - (ih - photoH) * 0.3, w, ih);
   ctx.restore();
-  const y = 200 + photoH;
-  ctx.font = "bold 48px sans-serif";
-  ctx.fillStyle = "#413a34";
-  ctx.fillText(dog.name, 500, y + 70, 820);
-  ctx.font = "26px sans-serif";
-  ctx.fillText(`${dog.breed} · ${dog.sex || "성별 모름"} · ${dog.age || "나이 모름"}`, 500, y + 114, 820);
-  ctx.font = "24px sans-serif";
-  ctx.fillText(dog.location, 500, y + 160, 820);
-  ctx.font = "22px sans-serif";
-  ctx.fillStyle = "#8a7c70";
-  ctx.fillText(formatTime(dog.time), 500, y + 202);
+  // 이름과 특징
+  let y = top + photoH + (print ? 96 : 84);
+  ctx.fillStyle = C.title;
+  font(print ? 64 : 56, 800);
+  ctx.fillText(dog.name, 80, y, 840);
+  y += print ? 52 : 46;
+  font(30);
+  ctx.fillStyle = C.body;
+  ctx.fillText([dog.breed, sexLabel(dog.sex) === "모름" ? "" : sexLabel(dog.sex), dog.age, dog.color].filter(Boolean).join(" · "), 80, y, 840);
+  const rows: [string, string][] = [["마지막으로 본 곳", placeText(dog.region, dog.location, " ")]];
+  if (print) rows.push([home ? "잃어버렸던 때" : "잃어버린 때", formatTime(dog.time)]);
+  y += print ? 30 : 22;
+  for (const [k, v] of rows) {
+    ctx.fillStyle = C.line;
+    ctx.fillRect(80, y, 840, 2);
+    y += print ? 58 : 50;
+    font(28);
+    ctx.fillStyle = C.muted;
+    ctx.textAlign = "left";
+    ctx.fillText(k, 80, y);
+    font(30, 700);
+    ctx.fillStyle = C.title;
+    ctx.textAlign = "right";
+    ctx.fillText(v, 920, y, 560);
+    ctx.textAlign = "left";
+    y += print ? 30 : 24;
+  }
+  // QR 안내
+  const boxH = print ? 210 : 170;
+  const boxY = h - boxH - (print ? 48 : 36);
+  ctx.fillStyle = C.box;
+  ctx.beginPath();
+  ctx.roundRect(80, boxY, 840, boxH, 28);
+  ctx.fill();
+  const qrSize = boxH - 50;
   const qr = new Image();
   // QR 라이브러리는 전단을 만들 때만 불러온다.
   const { default: QRCode } = await import("qrcode");
-  qr.src = await QRCode.toDataURL(`${location.origin}${location.pathname}#/dog/${dog.id}`, { width: 180, margin: 1 });
+  qr.src = await QRCode.toDataURL(`${location.origin}${location.pathname}#/dog/${dog.id}`, { width: 240, margin: 1 });
   await qr.decode();
-  ctx.drawImage(qr, 760, h - 200, 150, 150);
-  ctx.textAlign = "left";
-  ctx.font = "bold 28px sans-serif";
-  ctx.fillStyle = "#c76748";
-  ctx.fillText("보셨다면, 소식을 남겨주세요.", 90, h - 139, 640);
-  ctx.font = "20px sans-serif";
-  ctx.fillStyle = "#83776b";
-  ctx.fillText("QR을 스캔하면 신고 내용을 볼 수 있어요.", 90, h - 99, 640);
-  ctx.font = "17px sans-serif";
-  ctx.fillText("멍백홈 · 소중한 관심에 감사합니다.", 90, h - 50);
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.roundRect(104, boxY + 18, qrSize + 14, qrSize + 14, 16);
+  ctx.fill();
+  ctx.drawImage(qr, 111, boxY + 25, qrSize, qrSize);
+  const tx = 111 + qrSize + 44;
+  ctx.fillStyle = C.title;
+  font(print ? 34 : 30, 700);
+  ctx.fillText(home ? "QR로 재회 소식을 볼 수 있어요" : "보셨다면 QR로 알려주세요", tx, boxY + boxH / 2 - 22, 920 - tx - 24);
+  font(print ? 26 : 24);
+  ctx.fillStyle = C.body;
+  ctx.fillText(home ? "함께 찾아주셔서 고마워요" : "사진 한 장, 위치 한 번이면 충분해요", tx, boxY + boxH / 2 + 22, 920 - tx - 24);
+  font(print ? 24 : 22, 700);
+  ctx.fillStyle = C.brand;
+  ctx.fillText("멍백홈 meongbackhome.com", tx, boxY + boxH / 2 + 62, 920 - tx - 24);
 }
 export default function PosterSheet({ dogId, onClose }: { dogId: string; onClose: () => void }) {
   const dog = useStore().dogs.find((d) => d.id === dogId);
@@ -89,7 +133,7 @@ export default function PosterSheet({ dogId, onClose }: { dogId: string; onClose
           ))}
         </div>
         <canvas id="poster-canvas" ref={canvas} className={s.poster} aria-label="실종 강아지 공유 전단" />
-        <p className={s.intro}>QR은 이 신고의 최신 소식으로 연결돼요.</p>
+        <p className={s.intro}>QR을 찍으면 이 신고의 최신 소식으로 연결돼요. 인쇄용은 A4에 맞춰져 있어요.</p>
         <Button size="lg" full onClick={download}><Icon name="Download" size={20} />이미지 다운로드</Button>
       </div>
     </BottomSheet>

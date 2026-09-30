@@ -73,3 +73,25 @@ textarea.input { padding: 14px 16px; min-height: 120px; resize: vertical; line-h
 .centerPin svg { fill: var(--brand); }
 .locate { position: absolute; left: 12px; bottom: 12px; z-index: 1; display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 14px;
   border: 0; border-radius: 999px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.16); font-size: var(--t6); font-weight: 600; color: var(--grey-900); }
+.pickRows { display: flex; flex-direction: column; margin-top: 8px; border-radius: 16px; background: var(--grey-50); }
+.pickRow { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 0 12px 0 16px; border: 0; background: none; text-align: left; color: var(--grey-400); }
+.pickRow + .pickRow { border-top: 1px solid var(--grey-100); }
+.pickRow span { width: 40px; font-size: var(--t6); color: var(--grey-600); }
+.pickRow strong { flex: 1; font-size: var(--t5); font-weight: 600; color: var(--grey-900); }
+.sheetBody { display: flex; flex-direction: column; gap: 16px; padding: 0 var(--gutter) calc(16px + var(--safe-bottom)); }
+.wheels { position: relative; display: flex; gap: 4px; height: 220px; }
+.wheels::before { content: ""; position: absolute; left: 0; right: 0; top: 88px; height: 44px; border-radius: 12px; background: var(--grey-100); pointer-events: none; }
+.wheel { position: relative; flex: 1; min-width: 0; }
+.wheelList { position: relative; height: 220px; overflow-y: auto; scroll-snap-type: y mandatory; padding: 88px 0; scrollbar-width: none; outline: none;
+  mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent); -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent); }
+.wheelList::-webkit-scrollbar { display: none; }
+.wheelItem { height: 44px; display: flex; align-items: center; justify-content: center; scroll-snap-align: center; font-size: var(--t5); color: var(--grey-500); cursor: pointer; white-space: nowrap; }
+.wheelItem[aria-selected="true"] { font-weight: 700; color: var(--grey-900); }
+.address { display: flex; align-items: center; gap: 8px; min-height: 56px; padding: 0 16px; border-radius: 16px; background: var(--grey-50); color: var(--brand); }
+.address strong { font-size: var(--t5); font-weight: 700; color: var(--grey-900); }
+.addressHint { font-size: var(--t6); color: var(--grey-600); }
+.mapWrap .map { height: min(360px, 48vh); }
+/* 키보드가 떠 있을 때: 토스처럼 키보드에 붙은 꽉 찬 버튼 */
+.ctaKeyboard { padding: 0; background: none; }
+.ctaKeyboard > button { border-radius: 0; min-height: 52px; }
+.flow { scroll-padding-bottom: calc(var(--keyboard, 0px) + 96px); }

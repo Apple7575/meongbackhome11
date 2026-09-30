@@ -64,12 +64,13 @@ export function FlagSheet({ dogId, onClose }: { dogId: string; onClose: () => vo
       <form id="flag-form" className={`${s.body} ${s.form}`} onSubmit={submit} noValidate>
         <div className={s.grid} role="group" aria-label="신고 이유" style={{ gridTemplateColumns: "1fr" }}>
           {REASONS.map((r) => (
-            <button key={r} type="button" className={s.option} aria-pressed={reason === r} onClick={() => setReason(r)}>{r}</button>
+            <button key={r} type="button" className={`${s.option} ${s.optionLeft}`} aria-pressed={reason === r} onClick={() => setReason(r)}>{r}</button>
           ))}
         </div>
         <label className={s.field}>
           <span className={s.label}>더 알려줄 내용 (선택)</span>
-          <textarea className={s.input} name="detail" rows={3} maxLength={1000} value={detail} onChange={(e) => setDetail(e.target.value)} style={{ padding: "14px 16px" }} />
+          <textarea className={s.input} name="detail" rows={3} maxLength={1000} value={detail} onChange={(e) => setDetail(e.target.value)} style={{ padding: "14px 16px" }}
+            placeholder="예: 같은 강아지가 두 번 올라와 있어요. 연락처로 돈을 요구했어요." />
         </label>
         <p className={s.intro}>접수한 내용은 운영자에게만 전달돼요.</p>
         {error && <p className={s.error} role="alert">{error}</p>}

@@ -53,6 +53,8 @@ const PATTERNS: [RegExp, AnyComponent][] = [
 ];
 // 폼을 쓰는 동안에는 하단 메뉴를 숨기고 상단에 닫기만 둔다.
 export const isFlow = (route: string) => /^\/(report|profile|sighting)\//.test(route);
+// 상세 화면은 뒤로 가기가 있는 한 단계 깊은 화면이라 하단 메뉴를 숨긴다.
+export const isDetail = (route: string) => route.startsWith("/dog/");
 function NotFound() {
   return <EmptyState title="페이지를 찾을 수 없어요" description="홈으로 돌아가 다시 시작해주세요." action={<ButtonLink href="#/" variant="weak">홈으로</ButtonLink>} />;
 }
@@ -87,7 +89,7 @@ export default function App() {
   }, [route]);
   const Sheet = sheet && SHEETS[sheet.name];
   return (
-    <div className={s.app} data-shell="react">
+    <div className={s.app} data-shell="react" data-nav={isFlow(route) || isDetail(route) ? "off" : undefined}>
       <TopBar route={route} store={store} />
       <ConnectionBanner connection={store.connection} />
       <main id="main" className={s.main}>
@@ -96,7 +98,7 @@ export default function App() {
           <Screen key={route.split("?")[0]} {...params} />
         </Suspense>
       </main>
-      {!isFlow(route) && <BottomNav route={route} />}
+      {!isFlow(route) && !isDetail(route) && <BottomNav route={route} />}
       {reportId && <ReportSheet id={reportId} onClose={() => setReportId(null)} />}
       {sheet && Sheet && <Sheet {...sheet.props} onClose={() => setSheet(null)} />}
     </div>

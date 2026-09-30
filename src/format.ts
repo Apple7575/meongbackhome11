@@ -1,7 +1,12 @@
 type TimeInput = string | number | Date;
 const ms = (t: TimeInput) => new Date(t).getTime();
-export const formatTime = (t: TimeInput) =>
-  new Date(t).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+// '9월 29일 오후 11:27'
+export const formatTime = (t: TimeInput) => {
+  const d = new Date(t);
+  return `${d.getMonth() + 1}월 ${d.getDate()}일 ${d.toLocaleTimeString("ko-KR", { hour: "numeric", minute: "2-digit" })}`;
+};
+// 예전 신고의 '여아·남아'를 새 표현으로 보여준다.
+export const sexLabel = (sex?: string) => ({ 여아: "암컷", 남아: "수컷" } as Record<string, string>)[sex || ""] || sex || "";
 export const timeAgo = (t: TimeInput) => {
   const h = Math.max(0, Math.floor((Date.now() - ms(t)) / 3600000));
   return h < 1 ? "방금 전" : h < 24 ? `${h}시간 전` : `${Math.floor(h / 24)}일 전`;
@@ -26,3 +31,6 @@ const hasBatchim = (name: string) => {
 };
 export const subjectParticle = (name: string) => (hasBatchim(name) ? "이" : "가");
 export const objectParticle = (name: string) => (hasBatchim(name) ? "을" : "를");
+// '서울' + '서울 송파구 …'처럼 장소에 지역이 이미 들어 있으면 한 번만 쓴다.
+export const placeText = (region?: string, location?: string, sep = " · ") =>
+  region && location?.startsWith(region) ? location : [region, location].filter(Boolean).join(sep);
