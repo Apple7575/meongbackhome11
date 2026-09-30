@@ -49,7 +49,12 @@ const updates=dogs.flatMap((dog,i)=>[
 ].map((u,j)=>({...u,id:`${dog.id}-update-${j}`,dogId:dog.id,demo:true,previewOnly:true})));
 
 // Display fixtures never become real reports or replace server-owned records.
+// 실제 신고가 이만큼 쌓이면 예시는 더 보여주지 않는다.
+export const REAL_DOGS_TO_HIDE_EXAMPLES=10;
 export function withExamples(state){
+  const real=state.dogs.filter(d=>!d.demo&&!d.previewOnly);
+  if(real.length>=REAL_DOGS_TO_HIDE_EXAMPLES)
+    return {...state,dogs:real,reports:state.reports.filter(r=>!r.demo&&!r.previewOnly),updates:(state.updates||[]).filter(u=>!u.demo&&!u.previewOnly)};
   const existing=new Set(state.dogs.filter(d=>!d.previewOnly).map(d=>d.id));
   const added=dogs.filter(d=>!existing.has(d.id));
   const addedIds=new Set(added.map(d=>d.id));
