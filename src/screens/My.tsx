@@ -66,7 +66,7 @@ export default function My() {
       ))}
       <ListRow as="button" data-action="profile" left={<IconCircle name="Plus" />} title="강아지 등록하기" description="미리 저장해두면 빠르게 신고할 수 있어요" />
       <Divider />
-      <ListHeader title={`저장한 소식 ${saved.length}`} />
+      <ListHeader title={saved.length ? `저장한 소식 ${saved.length}` : "저장한 소식"} />
       {saved.length ? saved.map((d) => <DogRow key={d.id} dog={d} />) : <p className={s.emptyLine}>하트를 누른 강아지가 여기에 모여요</p>}
     </div>
   );

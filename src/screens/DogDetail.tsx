@@ -91,8 +91,8 @@ export default function DogDetail({ id }: { id: string }) {
       </div>
       {d.canManage && (
         <div className={s.actions}>
-          <Button variant="weak" size="sm" data-action="edit-dog" data-id={d.id}><Icon name="Pencil" size={18} />수정</Button>
-          {missing && <Button variant="weak" size="sm" data-action="reunite" data-id={d.id}>찾았어요</Button>}
+          <Button variant="weak" size="sm" data-action="edit-dog" data-id={d.id}><Icon name="Pencil" size={18} />신고 수정</Button>
+          {missing && <Button variant="weak" size="sm" data-action="update" data-id={d.id}><Icon name="Clock3" size={18} />수색 상황 남기기</Button>}
         </div>
       )}
       {!missing && (
@@ -109,7 +109,7 @@ export default function DogDetail({ id }: { id: string }) {
           ["털 색", d.color],
           ["크기", d.size],
           ["착용물", d.accessory],
-          ["성별", sexLabel(d.sex)],
+          ["성별", sexLabel(d.sex) === "모름" ? "" : sexLabel(d.sex)],
           ["나이", d.age],
         ] as const).filter(([, v]) => v).map(([k, v]) => (
           <div key={k}><dt>{k}</dt><dd>{v}</dd></div>
@@ -130,13 +130,13 @@ export default function DogDetail({ id }: { id: string }) {
         </>
       )}
       <ListHeader
-        title={`목격 기록 ${reports.length}`}
+        title={reports.length ? `목격 기록 ${reports.length}` : "목격 기록"}
         action={reports.length > 1 && (
           <Button variant="weak" size="sm" onClick={playing ? () => setPlaying(false) : play}>{playing ? "멈추기" : "순서대로 보기"}</Button>
         )}
       />
       <SightingMap dog={d} reports={reports} selected={selected} onSelect={(rid: string) => { setPlaying(false); setSelected(rid); }} />
-      <p className={s.mapNote}>점선은 목격 순서예요. 실제 이동 경로가 아니에요.</p>
+      {reports.length > 1 && <p className={s.mapNote}>점선은 목격 순서예요. 실제 이동 경로가 아니에요.</p>}
       {reports.length ? (
         reports.map((r, i) => (
           <ListRow
@@ -170,7 +170,9 @@ export default function DogDetail({ id }: { id: string }) {
           <ListRow as="button" data-action="public-data" left={<IconCircle name="Building2" />} title="보호소 공고도 확인해 보세요" description="보호소에 들어온 아이일 수도 있어요" />
         </>
       )}
-      {missing && <BottomCTA data-action="sighting" data-id={d.id}>이 아이를 봤어요</BottomCTA>}
+      {missing && (d.canManage
+        ? <BottomCTA data-action="reunite" data-id={d.id}>찾았어요</BottomCTA>
+        : <BottomCTA data-action="sighting" data-id={d.id}>이 아이를 봤어요</BottomCTA>)}
     </div>
   );
 }

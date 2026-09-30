@@ -47,8 +47,7 @@ export default function AuthSheet({ after, onClose }: { after?: () => void; onCl
     <BottomSheet open title={register ? "회원가입" : "로그인"} onClose={onClose}>
       <div className={s.body}>
         <div className="auth-intro">
-          <p className={s.intro}>{after ? "작성한 신고는 이 기기에 저장돼 있어요. 로그인하면 이어서 등록할 수 있어요." : "로그인하면 내 신고와 제보를 한곳에서 볼 수 있어요."}</p>
-          {after && <p className={s.next}>처음 가입하면 이메일 인증 후 신고할 수 있어요.</p>}
+          <p className={s.intro}>{after ? "작성한 신고는 이 기기에 저장돼 있어요. 로그인하면 이어서 등록하고, 처음이면 가입 후 메일 인증을 마치면 돼요." : "로그인하면 내 신고와 제보를 한곳에서 볼 수 있어요."}</p>
         </div>
         <div className={s.tabs} role="group" aria-label="로그인 또는 회원가입">
           {[["login", "로그인"], ["register", "회원가입"]].map(([m, label]) => (
