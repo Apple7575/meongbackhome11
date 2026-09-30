@@ -23,8 +23,8 @@ export function DeviceSheet({ onClose }: { onClose: () => void }) {
     );
   };
   const rows: [string, string][] = [
-    ["안전한 연결", isSecureContext ? "사용 가능" : "HTTPS 주소로 들어와주세요"],
-    ["웹앱 실행", isStandalone() ? "홈 화면에서 실행 중" : "브라우저에서 이용 중"],
+    ["보안 연결", isSecureContext ? "안전하게 연결돼 있어요" : "주소가 https로 시작하는지 확인해주세요"],
+    ["실행 방식", isStandalone() ? "홈 화면에서 실행 중" : "브라우저에서 이용 중"],
     ["알림 권한", "Notification" in window ? PERMISSION[Notification.permission] : "홈 화면에 추가한 뒤 확인해주세요"],
   ];
   return (

@@ -85,11 +85,11 @@ export default function ReportSheet({ id, onClose }: { id: string; onClose: () =
         <div className={s.chat}>
           <p className={s.hint}>보호자와 제보한 이웃만 볼 수 있어요.</p>
           {(r.messages || []).map((m, i) => (
-            <p key={i} className={s.bubble} data-chat-bubble="">{m.text}<small>{formatTime(m.time)}</small></p>
+            <p key={i} className={m.senderId && m.senderId === db.user?.id ? `${s.bubble} ${s.mine}` : s.bubble} data-chat-bubble="">{m.text}<small>{formatTime(m.time)}</small></p>
           ))}
-          <form id="message-form" className={s.input} onSubmit={send}>
-            <input name="message" value={text} onChange={(e) => setText(e.target.value)} aria-label="메시지" placeholder="궁금한 점을 남겨보세요" maxLength={1000} required />
-            <button type="submit" className={s.send} aria-label="메시지 보내기"><Icon name="Send" size={20} /></button>
+          <form id="message-form" className={s.input} onSubmit={send} noValidate>
+            <input name="message" value={text} onChange={(e) => setText(e.target.value)} aria-label="메시지" placeholder="궁금한 점을 남겨보세요" maxLength={1000} />
+            <button type="submit" className={s.send} aria-label="메시지 보내기" disabled={!text.trim()}><Icon name="Send" size={20} /></button>
           </form>
         </div>
       ) : r.previewOnly && r.exampleConversation?.length ? (

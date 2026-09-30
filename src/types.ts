@@ -29,6 +29,8 @@ export interface Dog {
 export interface Message {
   text: string;
   time: string;
+  // 서버가 붙이는 보낸 사람. 내 말풍선을 오른쪽에 보여줄 때 쓴다.
+  senderId?: string;
 }
 export interface Report {
   id: string;
