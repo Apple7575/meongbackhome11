@@ -20,6 +20,22 @@ export default function Flow({ step, total, title, description, error, busy, nex
   useEffect(() => {
     window.scrollTo({ top: 0 });
   }, [step]);
+  // 키보드가 올라오면 하단 버튼을 키보드 바로 위로 올린다.
+  // 안드로이드는 viewport의 interactive-widget으로 화면이 줄어 0이 되고, iOS는 가려진 높이만큼 올린다.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const root = document.documentElement;
+    const fit = () => root.style.setProperty("--keyboard", `${Math.max(0, Math.round(innerHeight - vv.height - vv.offsetTop))}px`);
+    vv.addEventListener("resize", fit);
+    vv.addEventListener("scroll", fit);
+    fit();
+    return () => {
+      vv.removeEventListener("resize", fit);
+      vv.removeEventListener("scroll", fit);
+      root.style.removeProperty("--keyboard");
+    };
+  }, []);
   return (
     <form className={s.flow} noValidate onSubmit={(e) => { e.preventDefault(); onNext(); }}>
       <div className={s.progress} role="progressbar" aria-label="진행" aria-valuemin={1} aria-valuemax={total} aria-valuenow={step + 1}>

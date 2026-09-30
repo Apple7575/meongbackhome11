@@ -29,7 +29,7 @@ export function TextField({ label, name, value, onChange, multiline, hint, ...re
       {multiline ? (
         <textarea className={s.input} name={name} value={value ?? ""} onChange={change} maxLength={rest.maxLength} placeholder={rest.placeholder} />
       ) : (
-        <input className={s.input} name={name} value={value ?? ""} onChange={change} {...rest} />
+        <input className={s.input} name={name} value={value ?? ""} onChange={change} enterKeyHint="next" {...rest} />
       )}
       {hint && <span className={s.hint}>{hint}</span>}
     </label>

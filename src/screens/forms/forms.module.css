@@ -6,7 +6,7 @@
 .desc { margin: 8px 0 0; font-size: var(--t6); line-height: var(--t6-lh); color: var(--grey-600); }
 .body { margin-top: 24px; display: flex; flex-direction: column; gap: 20px; }
 .error { margin: 16px 0 0; font-size: var(--t6); color: #f04452; }
-.cta { position: fixed; left: 50%; transform: translateX(-50%); bottom: 0; z-index: 600; width: min(100%, var(--column));
+.cta { position: fixed; left: 50%; transform: translateX(-50%); bottom: var(--keyboard, 0px); z-index: 600; width: min(100%, var(--column));
   display: flex; gap: 8px; padding: 12px var(--gutter) calc(12px + var(--safe-bottom));
   background: linear-gradient(rgba(255,255,255,0), #fff 24%); }
 .cta > :last-child { flex: 1; }
