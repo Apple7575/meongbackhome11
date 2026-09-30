@@ -120,17 +120,41 @@ export default function PosterSheet({ dogId, onClose }: { dogId: string; onClose
   const dog = useStore().dogs.find((d) => d.id === dogId);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [format, setFormat] = useState<Format>("print");
+  // 다 그린 전단은 이미지로 보여준다. 휴대폰에서 이미지를 길게 누르면 '사진에 저장'이 뜬다.
+  const [preview, setPreview] = useState("");
   useEffect(() => {
     if (!dog || !canvas.current) return;
-    draw(canvas.current, dog, format).catch(() => toast("전단 이미지를 만들지 못했어요. 다시 시도해주세요."));
+    let url = "";
+    setPreview("");
+    draw(canvas.current, dog, format)
+      .then(() => new Promise<Blob | null>((r) => canvas.current?.toBlob(r, "image/png")))
+      .then((blob) => { if (blob) setPreview((url = URL.createObjectURL(blob))); })
+      .catch(() => toast("전단 이미지를 만들지 못했어요. 다시 시도해주세요."));
+    return () => { if (url) URL.revokeObjectURL(url); };
   }, [dog?.id, format]);
   if (!dog) return null;
+  const name = `멍백홈-${dog.name}-${format}.png`;
   const download = () => {
     if (!canvas.current) return;
     const a = document.createElement("a");
     a.href = canvas.current.toDataURL("image/png");
-    a.download = `멍백홈-${dog.name}-${format}.png`;
+    a.download = name;
     a.click();
+  };
+  // 웹은 사진첩에 바로 쓸 수 없어서, 휴대폰에서는 파일을 담아 공유창을 연다(아이폰 '이미지 저장', 안드로이드 갤러리·카카오톡).
+  const touch = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
+  const probe = typeof File === "function" ? new File([], name, { type: "image/png" }) : null;
+  const canSaveToPhotos = touch && !!probe && typeof navigator.canShare === "function" && navigator.canShare({ files: [probe] });
+  const save = async () => {
+    if (!canvas.current) return;
+    if (!canSaveToPhotos) return download();
+    const blob = await new Promise<Blob | null>((r) => canvas.current?.toBlob(r, "image/png"));
+    if (!blob) return download();
+    try {
+      await navigator.share({ files: [new File([blob], name, { type: "image/png" })], title: `${dog.name} 전단 · 멍백홈` });
+    } catch (e) {
+      if (!(e instanceof DOMException && e.name === "AbortError")) download();
+    }
   };
   return (
     <BottomSheet open title="QR 전단 만들기" onClose={onClose}>
@@ -140,9 +164,10 @@ export default function PosterSheet({ dogId, onClose }: { dogId: string; onClose
             <button key={v} type="button" className={s.option} aria-pressed={format === v} onClick={() => setFormat(v)}>{label}</button>
           ))}
         </div>
-        <canvas id="poster-canvas" ref={canvas} className={s.poster} aria-label="실종 강아지 공유 전단" />
-        <p className={s.intro}>QR을 찍으면 이 신고의 최신 소식으로 연결돼요. 인쇄용은 A4에 맞춰져 있어요.</p>
-        <Button size="lg" full onClick={download}><Icon name="Download" size={20} />이미지 다운로드</Button>
+        <canvas id="poster-canvas" ref={canvas} className={s.poster} aria-label="실종 강아지 공유 전단" hidden={!!preview} />
+        {preview && <img className={s.poster} src={preview} alt={`${dog.name} 실종 전단`} />}
+        <p className={s.intro}>QR을 찍으면 이 신고의 최신 소식으로 연결돼요. {touch ? "이미지를 길게 눌러도 사진에 저장할 수 있어요." : "인쇄용은 A4에 맞춰져 있어요."}</p>
+        <Button size="lg" full onClick={save}><Icon name="Download" size={20} />{canSaveToPhotos ? "사진 앱에 저장하기" : "이미지 다운로드"}</Button>
       </div>
     </BottomSheet>
   );

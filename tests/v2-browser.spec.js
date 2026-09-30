@@ -176,6 +176,8 @@ test("guest writes a report first and is asked to sign in only at submit, keepin
 test("saved profile becomes a report and uploaded image can be exported as QR poster", async ({
   page,
 }) => {
+  // 전단 테스트는 다운로드 경로를 확인하므로, 테스트 브라우저의 파일 공유는 끈다.
+  await page.addInitScript(() => { Object.defineProperty(Navigator.prototype, "canShare", { configurable: true, value: undefined }); });
   await account(page);
   await page.goto("/#/my");
   await page.getByRole("button", { name: /강아지 등록하기/ }).click();

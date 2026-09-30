@@ -110,6 +110,22 @@ test("phones open the native share sheet first with the preview link", async ({ 
   expect(await page.evaluate(() => window.__shared.title)).toBe("보리를 찾고 있어요 · 멍백홈");
   await expect(page.getByRole("dialog", { name: "소식을 함께 나눠주세요" })).toHaveCount(0);
 });
+test("on phones the poster is saved through the share sheet as an image file (to Photos)", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, "canShare", { configurable: true, value: () => true });
+    Object.defineProperty(Navigator.prototype, "share", { configurable: true, value(data) { window.__shared = data; return Promise.resolve(); } });
+    const original = window.matchMedia.bind(window);
+    window.matchMedia = (q) => (q === "(pointer: coarse)" ? { matches: true, media: q, addEventListener() {}, removeEventListener() {} } : original(q));
+  });
+  await ready(page, "/#/dog/demo-bori");
+  await page.getByRole("button", { name: /^QR 전단/ }).click();
+  const sheet = page.getByRole("dialog", { name: "QR 전단 만들기" });
+  // 다 그려지면 길게 눌러 저장할 수 있는 이미지로 보인다.
+  await expect(sheet.getByRole("img", { name: "보리 실종 전단" })).toBeVisible();
+  await sheet.getByRole("button", { name: "사진 앱에 저장하기" }).click();
+  await expect.poll(() => page.evaluate(() => window.__shared?.files?.[0]?.type)).toBe("image/png");
+  expect(await page.evaluate(() => window.__shared.files[0].name)).toBe("멍백홈-보리-print.png");
+});
 test("share, flag and info open as React bottom sheets with no legacy modal root", async ({ page }) => {
   // 기본 공유창이 없는 환경(컴퓨터)에서는 앱의 공유 시트가 열린다.
   await page.addInitScript(() => { Object.defineProperty(Navigator.prototype, "share", { configurable: true, value: undefined }); });
