@@ -156,12 +156,8 @@ test("share, flag and info open as React bottom sheets with no legacy modal root
   await flag.getByRole("button", { name: "중복 신고" }).click();
   await expect(flag.getByRole("button", { name: "중복 신고" })).toHaveAttribute("aria-pressed", "true");
   await page.keyboard.press("Escape");
-  // 보호소 공고는 앱을 떠나지 않도록 새 탭으로 연다.
-  await page.locator("[data-action=public-data]").first().click();
-  const shelter = page.getByRole("dialog", { name: "보호소 공고도 확인해 보세요" }).getByRole("link", { name: "보호소 공고 보러 가기" });
-  await expect(shelter).toHaveAttribute("target", "_blank");
-  await expect(shelter).toHaveAttribute("rel", "noopener noreferrer");
-  await page.keyboard.press("Escape");
+  // 보호소 공고는 우리 앱의 보호소 화면(그 지역)으로 간다.
+  await expect(page.getByRole("link", { name: /서울 보호소 공고 모두 보기/ })).toHaveAttribute("href", "#/shelter?region=%EC%84%9C%EC%9A%B8");
   await page.goto("/#/my/settings");
   await page.getByRole("button", { name: /서비스 안내/ }).click();
   await expect(page.getByRole("dialog", { name: "멍백홈 안내" })).toBeVisible();

@@ -123,3 +123,23 @@ export interface Store {
   user: User | null;
   connection: Connection;
 }
+// 공공데이터에서 받아 온 개: 보호소에 들어온 개(shelter) 또는 다른 곳에 낸 분실 신고(lostext)
+export interface PublicDog {
+  id: string;
+  source: "shelter" | "lostext";
+  breed: string;
+  color: string;
+  sex: string;
+  age: string;
+  weight?: string;
+  place: string;
+  area: string;
+  region: string;
+  happenedAt: string | null;
+  noticeNo?: string;
+  noticeEnd?: string | null;
+  state?: string;
+  mark: string;
+  photos: string[];
+  care?: { name: string; tel: string; addr: string };
+}

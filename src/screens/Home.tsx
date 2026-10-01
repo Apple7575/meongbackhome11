@@ -50,6 +50,7 @@ export default function Home() {
       )}
       {missing.length > 5 && <ListRow href="#/explore" title="전체 보기" />}
       <Divider />
+      <ListRow href="#/shelter" left={<IconCircle name="Building2" />} title="보호소에 들어온 아이" description="전국 보호소 공고와 다른 곳의 분실 신고를 매일 받아와요" />
       <ListRow href="#/stories" left={<IconCircle name="Heart" />} title={`집에 돌아온 아이들 ${reunited}마리`} description="함께 찾아서 다시 만났어요" />
       <RegionSheet open={sheet} value={region} onSelect={setPicked} onClose={close} />
     </div>

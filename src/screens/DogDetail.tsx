@@ -8,6 +8,8 @@ import { chronologicalSightings, matchCandidates } from "../domain.js";
 import { formatTime, sexLabel, subjectParticle, placeText } from "../format.ts";
 import { withMaps } from "../app/withMaps.ts";
 import { thumbSrc } from "../thumb.ts";
+import { PublicDogRow } from "./Shelter.tsx";
+import type { PublicDog } from "../types.ts";
 import s from "./detail.module.css";
 import type { Dog, Report } from "../types.ts";
 interface SightingMapProps {
@@ -47,6 +49,15 @@ export default function DogDetail({ id, report }: { id: string; report?: string 
   const [selected, setSelected] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const [shown, setShown] = useState(0);
+  // 찾고 있는 아이와 닮은, 보호소에 들어온 아이(공공데이터를 우리 서버가 매일 받아 둔다)
+  const [similar, setSimilar] = useState<PublicDog[]>([]);
+  const lookFor = db.dogs.find((x) => x.id === id && x.status !== "reunited" && !x.demo && !x.previewOnly);
+  useEffect(() => {
+    if (!lookFor) return;
+    let alive = true;
+    fetch(`/api/public/similar/${encodeURIComponent(id)}`).then((r) => (r.ok ? r.json() : { items: [] })).then((d) => alive && setSimilar(d.items || [])).catch(() => {});
+    return () => { alive = false; };
+  }, [id, !!lookFor]);
   // 알림에서 들어오면 그 목격 제보를 바로 열고, 주소의 ?report= 는 지운다(뒤로 가기 때 다시 열리지 않게).
   useEffect(() => {
     if (!report) return;
@@ -184,11 +195,17 @@ export default function DogDetail({ id, report }: { id: string; report?: string 
       ) : null}
       {missing && (
         <>
+          {similar.length > 0 && (
+            <>
+              <ListHeader title={`보호소에 들어온 비슷한 아이 ${similar.length}`} />
+              {similar.map((item) => <PublicDogRow key={item.id} item={item} />)}
+            </>
+          )}
           <ListHeader title="함께 확인할 제보" />
           {candidates.map((r) => (
             <ListRow key={r.id} as="button" data-action="report-detail" data-id={r.id} left={<IconCircle name="MapPin" />} title={r.location} description={`${r.distance.toFixed(1)}km · ${formatTime(r.time)}`} />
           ))}
-          <ListRow as="button" data-action="public-data" left={<IconCircle name="Building2" />} title="보호소 공고도 확인해 보세요" description="보호소에 들어온 아이일 수도 있어요" />
+          <ListRow href={`#/shelter?region=${encodeURIComponent(d.region)}`} left={<IconCircle name="Building2" />} title={`${d.region} 보호소 공고 모두 보기`} description="보호소에 들어온 아이일 수도 있어요" />
         </>
       )}
       {missing && (d.canManage

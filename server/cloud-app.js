@@ -6,6 +6,7 @@ import {installShare,dataUrlBytes} from './share.js';
 import {similarDogs,similarNotice} from './match.js';
 import {remindStale} from './stale.js';
 import {installSuggest} from './suggest.js';
+import {installPublicData} from './publicdata.js';
 import path from "node:path";
 import webpush from "web-push";
 import { seed } from "../src/seed.js";
@@ -44,6 +45,7 @@ function selected(obj, keys) {
 }
 const collections = ["dogs", "reports", "profiles", "stories", "updates", "moderation"];
 export async function createApp({
+  publicFetch = fetch,
   database,
   storage,
   defer = promise => promise.catch(() => {}),
@@ -191,6 +193,8 @@ export async function createApp({
   app.get('/api/health', (req, res) => res.json({
     ok: true
   }));
+  // 공공데이터(보호소에 들어온 개·다른 곳의 분실 신고): 로그인·세션 없이 읽는다.
+  const publicData = installPublicData({ app, db, rows, notify, defer, fetchImpl: publicFetch });
   const bucket = storage || createStorage();
   // 공유 링크 미리보기는 로그인·세션 없이 읽기만 한다.
   installShare({
@@ -569,12 +573,14 @@ export async function createApp({
     if(!process.env.CRON_SECRET||req.get('authorization')!==`Bearer ${process.env.CRON_SECRET}`)return res.sendStatus(403);
     // 2주 넘게 '찾고 있어요'인 신고의 보호자에게 아직 찾고 있는지 묻는다(알림은 바로 아래에서 보낸다).
     const reminded=await remindStale({db,dogs:await rows('dogs'),notify});
+    // 공공데이터를 하루 한 번은 꼭 새로 받는다(실패해도 다른 정리는 계속).
+    const publicSync=await publicData.sync({force:true}).catch(e=>({error:e.message}));
     await flushPush();
     await media.cleanup();
     await db.prepare('DELETE FROM sessions WHERE expires<?').run(Date.now());
     await db.prepare('DELETE FROM account_tokens WHERE expires<?').run(Date.now());
     await db.prepare('DELETE FROM rate_limits WHERE reset_at<?').run(Date.now()-86400000);
-    res.json({ok:true,reminded});
+    res.json({ok:true,reminded,publicSync});
   });
   app.use("/api", (req, res) => res.status(404).json({
     error: "API 경로를 찾을 수 없어요."
@@ -597,6 +603,7 @@ export async function createApp({
     app,
     db,
     flushPush,
+    publicData,
     async close() {
 
       await db.close();

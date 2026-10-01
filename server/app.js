@@ -1,3 +1,4 @@
+import { installPublicData } from "./publicdata.js";
 import { installSuggest } from "./suggest.js";
 import { similarDogs, similarNotice } from "./match.js";
 import { installShare, dataUrlBytes } from "./share.js";
@@ -74,6 +75,7 @@ const collections = [
   "moderation",
 ];
 export function createApp({
+  publicFetch = fetch,
   databasePath = "data/meongback.sqlite",
   examples = true,
   pushSender,
@@ -277,6 +279,8 @@ export function createApp({
   app.use(express.json({ limit: "10mb" }));
   // Load balancer probes must not create anonymous accounts or sessions.
   app.get('/api/health',(req,res)=>res.json({ok:true}));
+  // 공공데이터(보호소에 들어온 개·다른 곳의 분실 신고): 로그인·세션 없이 읽는다.
+  const publicData = installPublicData({ app, db, rows, notify, fetchImpl: publicFetch });
   // 공유 링크 미리보기는 로그인·세션 없이 읽기만 한다.
   installShare({
     app,
@@ -798,6 +802,7 @@ export function createApp({
     app,
     db,
     flushPush,
+    publicData,
     close() {
       clearInterval(pushTimer);
       for (const set of streams.values()) for (const res of set) res.end();

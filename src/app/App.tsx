@@ -16,6 +16,7 @@ import Settings from "../screens/Settings.tsx";
 import DogDetail from "../screens/DogDetail.tsx";
 // 자주 쓰지 않는 화면은 들어갈 때 불러온다(첫 화면을 가볍게).
 const Stories = lazy(() => import("../screens/Stories.tsx"));
+const Shelter = lazy(() => import("../screens/Shelter.tsx"));
 const Admin = lazy(() => import("../screens/Admin.tsx"));
 const ReportFlow = lazy(() => import("../screens/forms/ReportFlow.tsx"));
 const SightingFlow = lazy(() => import("../screens/forms/SightingFlow.tsx"));
@@ -31,6 +32,7 @@ import InfoSheet from "../screens/sheets/InfoSheet.tsx";
 import { UpdateSheet, FlagSheet } from "../screens/sheets/TextSheets.tsx";
 import { DeviceSheet, DeleteAccountSheet, SuccessSheet } from "../screens/sheets/AccountSheets.tsx";
 import SuggestSheet from "../screens/sheets/SuggestSheet.tsx";
+import PublicDogSheet from "../screens/sheets/PublicDogSheet.tsx";
 import { EmptyState, ButtonLink, SkeletonRows } from "../ui/index.tsx";
 import s from "./Frame.module.css";
 // openSheet(name, props)로 여는 시트들. 화면·시트마다 props가 달라 표는 느슨한 타입으로 둔다.
@@ -38,7 +40,7 @@ type AnyComponent = ComponentType<any> | LazyExoticComponent<ComponentType<any>>
 const SHEETS: Record<SheetName, AnyComponent> = {
   auth: AuthSheet, notifications: NotificationsSheet, areas: AreasSheet, reunite: ReuniteSheet, story: StorySheet,
   share: ShareSheet, poster: PosterSheet, update: UpdateSheet, flag: FlagSheet, info: InfoSheet,
-  device: DeviceSheet, deleteAccount: DeleteAccountSheet, success: SuccessSheet, suggest: SuggestSheet,
+  device: DeviceSheet, deleteAccount: DeleteAccountSheet, success: SuccessSheet, suggest: SuggestSheet, publicDog: PublicDogSheet,
 };
 export const SCREENS: Record<string, AnyComponent> = {
   "/": Home, "/explore": Explore, "/sightings": Sightings, "/my": My, "/my/settings": Settings,
@@ -52,6 +54,7 @@ const PATTERNS: [RegExp, AnyComponent][] = [
   [/^\/(?<mode>profile)\/new$/, ReportFlow],
   [/^\/sighting\/new(?:\/(?<dogId>[^/]+))?$/, SightingFlow],
   [/^\/account\/(?<kind>[a-z]+)(?:\?(?<query>.*))?$/, AccountPage],
+  [/^\/shelter(?:\?region=(?<region>[^&]+))?$/, Shelter],
 ];
 // 폼을 쓰는 동안에는 하단 메뉴를 숨기고 상단에 닫기만 둔다.
 export const isFlow = (route: string) => /^\/(report|profile|sighting)\//.test(route);

@@ -1,7 +1,7 @@
 import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: "./tests",
-  testMatch: ["v2-browser.spec.js","account-browser.spec.js","mobile-browser.spec.js","shell.spec.js","design-rules.spec.js","forms.spec.js","a11y.spec.js"],
+  testMatch: ["v2-browser.spec.js","account-browser.spec.js","mobile-browser.spec.js","shell.spec.js","design-rules.spec.js","forms.spec.js","a11y.spec.js","public.spec.js"],
   fullyParallel: false,
   workers: 1,
   use: {
