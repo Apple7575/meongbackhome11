@@ -20,11 +20,13 @@ export interface IconProps {
   name: IconName;
   size?: number;
   className?: string;
+  // 선택된 상태(저장한 하트 등)는 안을 채운다.
+  filled?: boolean;
 }
-export default function Icon({ name, size = 24, className }: IconProps) {
+export default function Icon({ name, size = 24, className, filled }: IconProps) {
   const [, attrs, children = []] = ICONS[name];
   return (
-    <svg {...camel(attrs)} width={size} height={size} strokeWidth={1.8} className={className} aria-hidden="true" focusable="false">
+    <svg {...camel(attrs)} {...(filled ? { fill: "currentColor" } : {})} width={size} height={size} strokeWidth={1.8} className={className} aria-hidden="true" focusable="false">
       {children.map(([tag, a], i) => createElement(tag, { ...camel(a), key: i }))}
     </svg>
   );

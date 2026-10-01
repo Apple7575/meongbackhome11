@@ -1,5 +1,5 @@
 // 버튼의 data-action(과 data-id·data-profile)을 한 곳에서 처리한다. 화면은 속성만 붙이면 된다.
-import { read, api, authenticate, enablePush, refresh } from "../client-store.js";
+import { read, api, enablePush, refresh } from "../client-store.js";
 import { commit } from "./actions.ts";
 import { openSheet } from "./sheets.ts";
 import { nativeShare } from "../share.ts";
@@ -47,8 +47,8 @@ async function run(action: string, button: HTMLElement) {
       return;
     }
     case "logout":
-      await authenticate("logout");
-      toast("로그아웃했어요.");
+      // 바로 나가지 않고 확인 시트에서 한 번 더 묻는다.
+      openSheet("logout");
       return;
     case "push":
       await enablePush();

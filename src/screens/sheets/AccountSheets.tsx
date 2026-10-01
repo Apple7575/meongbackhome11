@@ -6,7 +6,7 @@ import { Button } from "../../ui/index.tsx";
 import { useStore } from "../../app/useStore.ts";
 import { toast } from "../../app/toast.ts";
 import { isStandalone } from "../../app/install.ts";
-import { api, initialize } from "../../client-store.js";
+import { api, initialize, authenticate } from "../../client-store.js";
 import { clearAllDrafts } from "../../drafts.ts";
 import { errorText } from "../../errors.ts";
 import s from "./sheets.module.css";
@@ -38,6 +38,32 @@ export function DeviceSheet({ onClose }: { onClose: () => void }) {
         <p className={s.intro}>현재 위치는 이 화면에서만 확인하고 저장하지 않아요. 나침반은 목격 제보의 방향 단계에서 현장 방향과 비교해보세요.</p>
         <Button size="lg" full data-action="push">새 목격 소식 알림 받기</Button>
         <Button variant="weak" full data-action="push-test">테스트 알림 받기</Button>
+      </div>
+    </BottomSheet>
+  );
+}
+// 로그아웃 확인: 누르자마자 나가지 않고 한 번 묻는다.
+export function LogoutSheet({ onClose }: { onClose: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const logout = async () => {
+    setBusy(true);
+    try {
+      await authenticate("logout");
+      toast("로그아웃했어요.");
+      onClose();
+      location.hash = "/my";
+    } catch (e) {
+      toast(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <BottomSheet open title="로그아웃할까요?" onClose={onClose}>
+      <div className={s.body}>
+        <p className={s.intro}>이 휴대폰에서만 로그아웃돼요. 쓰던 신고는 이 기기에 그대로 남아 있어요.</p>
+        <Button size="lg" full disabled={busy} onClick={logout}>로그아웃</Button>
+        <Button variant="weak" size="lg" full onClick={onClose}>취소</Button>
       </div>
     </BottomSheet>
   );

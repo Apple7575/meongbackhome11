@@ -3,7 +3,7 @@ import { useState } from "react";
 import { OptionSheet } from "./shared.tsx";
 import { THEMES, getTheme, setTheme } from "../app/theme.ts";
 import type { Theme } from "../app/theme.ts";
-import { Top, ListHeader, ListRow, Divider, IconCircle } from "../ui/index.tsx";
+import { Top, ListHeader, ListRow, Divider, IconCircle, Badge } from "../ui/index.tsx";
 import s from "./screens.module.css";
 export default function Settings() {
   const [theme, setThemeState] = useState<Theme>(getTheme());
@@ -11,11 +11,14 @@ export default function Settings() {
   const pick = (value: string) => { setTheme(value as Theme); setThemeState(value as Theme); };
   const db = useStore();
   const user = db.user;
+  // 이 휴대폰에서 알림을 허용했는지(허용했으면 서버 구독도 함께 켜 둔다)
+  const pushOn = typeof Notification !== "undefined" && Notification.permission === "granted";
   return (
     <div className={s.screen}>
       <Top title="설정" />
       <ListHeader title="알림" />
-      <ListRow as="button" data-action="push" left={<IconCircle name="Bell" />} title="새 목격 소식 알림 받기" description="내 신고에 제보가 오면 바로 알려드려요" />
+      <ListRow as="button" data-action="push" left={<IconCircle name="Bell" />} title="새 목격 소식 알림" description="내 신고에 제보가 오면 바로 알려드려요"
+        right={<Badge tone={pushOn ? "coral" : "grey"}>{pushOn ? "켜짐" : "꺼짐"}</Badge>} />
       <ListRow as="button" data-action="areas" left={<IconCircle name="MapPin" />} title="관심 지역" description={db.areas.length ? db.areas.join(", ") : "새 실종 소식을 받을 동네를 골라요"} />
       <Divider />
       <ListHeader title="화면" />
@@ -32,7 +35,7 @@ export default function Settings() {
       {user?.registered && (
         <>
           <Divider />
-          <ListRow as="button" data-action="logout" title="로그아웃" />
+          <ListRow as="button" data-action="logout" title="로그아웃" right={null} />
           <ListRow as="button" data-action="delete-account" title="계정 삭제" tone="muted" />
         </>
       )}

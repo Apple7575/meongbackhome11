@@ -178,7 +178,24 @@ test("my home puts reports first and keeps logout in settings", async ({ page })
   await expect(page.getByRole("main").getByRole("button", { name: "로그아웃" })).toHaveCount(0);
   await page.getByRole("link", { name: "설정" }).click();
   await expect(page).toHaveURL(/#\/my\/settings$/);
-  await expect(page.getByRole("button", { name: /새 목격 소식 알림 받기/ })).toBeVisible();
+  // 알림 줄은 켜짐/꺼짐 상태를 보여준다.
+  await expect(page.getByRole("button", { name: /새 목격 소식 알림.*(켜짐|꺼짐)/ })).toBeVisible();
+  // 로그아웃은 바로 실행되지 않고 한 번 확인한다.
   await page.getByRole("button", { name: "로그아웃" }).click();
+  const confirm = page.getByRole("dialog", { name: "로그아웃할까요?" });
+  await expect(confirm).toBeVisible();
+  await confirm.getByRole("button", { name: "로그아웃" }).click();
   await expect.poll(() => page.evaluate(async () => (await (await fetch("/api/state")).json()).user?.registered)).toBeFalsy();
+});
+test("saving a dog fills the heart in coral", async ({ page }) => {
+  await ready(page, "/#/dog/demo-bori");
+  const save = page.getByRole("button", { name: /^저장/ });
+  if ((await save.getAttribute("aria-pressed")) === "true") await save.click();
+  await expect(save).toHaveAttribute("aria-pressed", "false");
+  expect(await save.locator("svg").getAttribute("fill")).toBe("none");
+  await save.click();
+  await expect(save).toHaveAttribute("aria-pressed", "true");
+  await expect(save).toContainText("저장됨");
+  expect(await save.locator("svg").getAttribute("fill")).toBe("currentColor");
+  await expect(save.locator("svg")).toHaveCSS("color", "rgb(232, 128, 95)");
 });

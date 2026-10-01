@@ -117,7 +117,7 @@ export default function DogDetail({ id, report }: { id: string; report?: string 
       {d.previewOnly && <p className={s.notice}>체험용 예시 신고예요. 실제 실종 신고가 아니에요.</p>}
       <div className={s.actions}>
         <Button variant="weak" size="sm" data-action="share" data-id={d.id}><Icon name="Share2" size={18} />공유</Button>
-        <Button variant="weak" size="sm" data-action="save" data-id={d.id} aria-pressed={saved}><Icon name="Heart" size={18} />{saved ? "저장됨" : "저장"}</Button>
+        <Button variant="weak" size="sm" data-action="save" data-id={d.id} aria-pressed={saved}><Icon name="Heart" size={18} filled={saved} className={saved ? s.saved : undefined} />{saved ? "저장됨" : "저장"}</Button>
         <Button variant="weak" size="sm" data-action="poster" data-id={d.id}><Icon name="QrCode" size={18} />QR 전단</Button>
         <Button variant="weak" size="sm" data-action="flag" data-id={d.id}><Icon name="Flag" size={18} />문제 신고</Button>
       </div>

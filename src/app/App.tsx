@@ -30,7 +30,7 @@ import ShareSheet from "../screens/sheets/ShareSheet.tsx";
 import PosterSheet from "../screens/sheets/PosterSheet.tsx";
 import InfoSheet from "../screens/sheets/InfoSheet.tsx";
 import { UpdateSheet, FlagSheet } from "../screens/sheets/TextSheets.tsx";
-import { DeviceSheet, DeleteAccountSheet, SuccessSheet } from "../screens/sheets/AccountSheets.tsx";
+import { DeviceSheet, DeleteAccountSheet, SuccessSheet, LogoutSheet } from "../screens/sheets/AccountSheets.tsx";
 import SuggestSheet from "../screens/sheets/SuggestSheet.tsx";
 import PublicDogSheet from "../screens/sheets/PublicDogSheet.tsx";
 import { EmptyState, ButtonLink, SkeletonRows } from "../ui/index.tsx";
@@ -40,7 +40,7 @@ type AnyComponent = ComponentType<any> | LazyExoticComponent<ComponentType<any>>
 const SHEETS: Record<SheetName, AnyComponent> = {
   auth: AuthSheet, notifications: NotificationsSheet, areas: AreasSheet, reunite: ReuniteSheet, story: StorySheet,
   share: ShareSheet, poster: PosterSheet, update: UpdateSheet, flag: FlagSheet, info: InfoSheet,
-  device: DeviceSheet, deleteAccount: DeleteAccountSheet, success: SuccessSheet, suggest: SuggestSheet, publicDog: PublicDogSheet,
+  device: DeviceSheet, deleteAccount: DeleteAccountSheet, success: SuccessSheet, suggest: SuggestSheet, publicDog: PublicDogSheet, logout: LogoutSheet,
 };
 export const SCREENS: Record<string, AnyComponent> = {
   "/": Home, "/explore": Explore, "/sightings": Sightings, "/my": My, "/my/settings": Settings,
