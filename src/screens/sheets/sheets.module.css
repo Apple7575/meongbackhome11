@@ -48,3 +48,5 @@
 .kakao { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; border-radius: 12px;
   background: #fee500; color: rgba(0, 0, 0, 0.85); font-size: var(--t5); font-weight: 600; text-decoration: none; }
 .or { margin: 4px 0 0; text-align: center; font-size: var(--t7); color: var(--grey-600); }
+.consent { margin: 0; font-size: var(--t7); color: var(--grey-600); text-align: center; }
+.consent a { color: var(--grey-800); text-decoration: underline; }

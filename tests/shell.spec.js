@@ -126,19 +126,37 @@ test("phones open the native share sheet first with the preview link", async ({ 
   expect(await page.evaluate(() => window.__shared.title)).toBe("보리를 찾고 있어요 · 멍백홈");
   await expect(page.getByRole("dialog", { name: "소식을 함께 나눠주세요" })).toHaveCount(0);
 });
-test("on phones the poster is saved through the share sheet as an image file (to Photos)", async ({ page }) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(Navigator.prototype, "canShare", { configurable: true, value: () => true });
-    Object.defineProperty(Navigator.prototype, "share", { configurable: true, value(data) { window.__shared = data; return Promise.resolve(); } });
-    const original = window.matchMedia.bind(window);
-    window.matchMedia = (q) => (q === "(pointer: coarse)" ? { matches: true, media: q, addEventListener() {}, removeEventListener() {} } : original(q));
-  });
+// 휴대폰처럼: 터치 화면 + 파일 공유 가능
+const phone = () => () => {
+  Object.defineProperty(Navigator.prototype, "canShare", { configurable: true, value: () => true });
+  Object.defineProperty(Navigator.prototype, "share", { configurable: true, value(data) { window.__shared = data; return Promise.resolve(); } });
+  const original = window.matchMedia.bind(window);
+  window.matchMedia = (q) => (q === "(pointer: coarse)" ? { matches: true, media: q, addEventListener() {}, removeEventListener() {} } : original(q));
+};
+test.describe("iPhone", () => {
+  test.use({ userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1" });
+test("on iPhone the poster button says save or send, matching the share sheet it opens", async ({ page }) => {
+  await page.addInitScript(phone());
+  await ready(page, "/#/dog/demo-bori");
+  await page.getByRole("button", { name: /^QR 전단/ }).click();
+  const sheet = page.getByRole("dialog", { name: "QR 전단 만들기" });
+  await expect(sheet.getByRole("img", { name: "보리 실종 전단" })).toBeVisible({ timeout: 15000 });
+  await expect(sheet.getByText(/공유 창에서 '이미지 저장'을 누르면 사진 앱에 들어가요/)).toBeVisible();
+  await sheet.getByRole("button", { name: "저장하거나 보내기" }).click();
+  await expect.poll(() => page.evaluate(() => window.__shared?.files?.[0]?.type), { timeout: 15000 }).toBe("image/png");
+});
+});
+test("on Android the poster has separate save and send buttons", async ({ page }) => {
+  await page.addInitScript(phone());
   await ready(page, "/#/dog/demo-bori");
   await page.getByRole("button", { name: /^QR 전단/ }).click();
   const sheet = page.getByRole("dialog", { name: "QR 전단 만들기" });
   // 다 그려지면 길게 눌러 저장할 수 있는 이미지로 보인다.
   await expect(sheet.getByRole("img", { name: "보리 실종 전단" })).toBeVisible({ timeout: 15000 });
-  await sheet.getByRole("button", { name: "사진 앱에 저장하기" }).click();
+  const download = page.waitForEvent("download");
+  await sheet.getByRole("button", { name: "이미지 저장", exact: true }).click();
+  expect((await download).suggestedFilename()).toBe("멍백홈-보리-print.png");
+  await sheet.getByRole("button", { name: "카톡 등으로 보내기" }).click();
   await expect.poll(() => page.evaluate(() => window.__shared?.files?.[0]?.type), { timeout: 15000 }).toBe("image/png");
   expect(await page.evaluate(() => window.__shared.files[0].name)).toBe("멍백홈-보리-print.png");
 });

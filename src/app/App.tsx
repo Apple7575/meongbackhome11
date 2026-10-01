@@ -17,6 +17,7 @@ import DogDetail from "../screens/DogDetail.tsx";
 // 자주 쓰지 않는 화면은 들어갈 때 불러온다(첫 화면을 가볍게).
 const Stories = lazy(() => import("../screens/Stories.tsx"));
 const Shelter = lazy(() => import("../screens/Shelter.tsx"));
+const Privacy = lazy(() => import("../screens/Privacy.tsx"));
 const Admin = lazy(() => import("../screens/Admin.tsx"));
 const ReportFlow = lazy(() => import("../screens/forms/ReportFlow.tsx"));
 const SightingFlow = lazy(() => import("../screens/forms/SightingFlow.tsx"));
@@ -44,7 +45,7 @@ const SHEETS: Record<SheetName, AnyComponent> = {
 };
 export const SCREENS: Record<string, AnyComponent> = {
   "/": Home, "/explore": Explore, "/sightings": Sightings, "/my": My, "/my/settings": Settings,
-  "/stories": Stories, "/admin": Admin,
+  "/stories": Stories, "/admin": Admin, "/privacy": Privacy,
 };
 const PATTERNS: [RegExp, AnyComponent][] = [
   // ?report=ID 가 붙으면 그 목격 제보를 바로 연다(알림에서 들어올 때).

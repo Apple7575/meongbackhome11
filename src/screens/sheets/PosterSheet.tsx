@@ -141,13 +141,16 @@ export default function PosterSheet({ dogId, onClose }: { dogId: string; onClose
     a.download = name;
     a.click();
   };
-  // 웹은 사진첩에 바로 쓸 수 없어서, 휴대폰에서는 파일을 담아 공유창을 연다(아이폰 '이미지 저장', 안드로이드 갤러리·카카오톡).
+  // 웹은 사진첩에 바로 쓸 수 없다. 기기마다 실제로 일어나는 일과 버튼 이름을 맞춘다.
+  // - 안드로이드: 다운로드하면 '다운로드' 폴더에 저장돼 갤러리에 보인다. 보내기는 따로.
+  // - 아이폰: 사진 앱에 넣는 길은 공유창의 '이미지 저장'(또는 이미지 길게 누르기)뿐이라 '저장하거나 보내기'로 안내한다.
+  // - 컴퓨터: 다운로드
   const touch = typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
+  const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const probe = typeof File === "function" ? new File([], name, { type: "image/png" }) : null;
-  const canSaveToPhotos = touch && !!probe && typeof navigator.canShare === "function" && navigator.canShare({ files: [probe] });
-  const save = async () => {
+  const canShareFile = touch && !!probe && typeof navigator.canShare === "function" && navigator.canShare({ files: [probe] });
+  const share = async () => {
     if (!canvas.current) return;
-    if (!canSaveToPhotos) return download();
     const blob = await new Promise<Blob | null>((r) => canvas.current?.toBlob(r, "image/png"));
     if (!blob) return download();
     try {
@@ -156,6 +159,7 @@ export default function PosterSheet({ dogId, onClose }: { dogId: string; onClose
       if (!(e instanceof DOMException && e.name === "AbortError")) download();
     }
   };
+  const saveDone = () => { download(); if (touch) toast("이미지를 저장했어요. 갤러리의 '다운로드'에서 볼 수 있어요."); };
   return (
     <BottomSheet open title="QR 전단 만들기" onClose={onClose}>
       <div className={s.body}>
@@ -166,8 +170,18 @@ export default function PosterSheet({ dogId, onClose }: { dogId: string; onClose
         </div>
         <canvas id="poster-canvas" ref={canvas} className={s.poster} aria-label="실종 강아지 공유 전단" hidden={!!preview} />
         {preview && <img className={s.poster} src={preview} alt={`${dog.name} 실종 전단`} />}
-        <p className={s.intro}>QR을 찍으면 이 신고의 최신 소식으로 연결돼요. {touch ? "이미지를 길게 눌러도 사진에 저장할 수 있어요." : "인쇄용은 A4에 맞춰져 있어요."}</p>
-        <Button size="lg" full onClick={save}><Icon name="Download" size={20} />{canSaveToPhotos ? "사진 앱에 저장하기" : "이미지 다운로드"}</Button>
+        <p className={s.intro}>
+          QR을 찍으면 이 신고의 최신 소식으로 연결돼요.{" "}
+          {ios ? "공유 창에서 '이미지 저장'을 누르면 사진 앱에 들어가요. 이미지를 길게 눌러 저장해도 돼요." : touch ? "이미지를 길게 눌러도 저장할 수 있어요." : "인쇄용은 A4에 맞춰져 있어요."}
+        </p>
+        {ios && canShareFile ? (
+          <Button size="lg" full onClick={share}><Icon name="Download" size={20} />저장하거나 보내기</Button>
+        ) : (
+          <>
+            <Button size="lg" full onClick={saveDone}><Icon name="Download" size={20} />{touch ? "이미지 저장" : "이미지 다운로드"}</Button>
+            {canShareFile && <Button variant="weak" size="lg" full onClick={share}><Icon name="Share2" size={20} />카톡 등으로 보내기</Button>}
+          </>
+        )}
       </div>
     </BottomSheet>
   );

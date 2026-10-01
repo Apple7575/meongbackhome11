@@ -136,18 +136,18 @@ textarea:focus-visible {
   pointer-events: none;
   opacity: 0.65;
 }.is-saving:after {
-  content: "안전하게 저장하고 있어요…";
+  /* 저장 중 안내: 알림 문구(토스트)와 같은 모양으로 화면 위쪽에 띄워 아래 버튼을 가리지 않는다. */
+  content: "저장하고 있어요…";
   position: fixed;
-  bottom: 25px;
+  top: calc(var(--top-h) + 8px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 3000;
-  border-radius: 30px;
-  padding: 12px 22px;
-  background: #4b5843;
+  border-radius: var(--radius);
+  padding: 12px 18px;
+  background: var(--toast);
   color: #fff;
-  font-size: 12px;
-  box-shadow: 0 5px 15px #26312020;
+  font-size: var(--t6);
   white-space: nowrap;
 }.selected-pin {
   z-index: 1000 !important;

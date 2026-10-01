@@ -76,6 +76,10 @@ test("a report can carry two extra photos and the detail page switches between t
   await expect(gallery.getByRole("button")).toHaveCount(3);
   await gallery.getByRole("button", { name: "사진 3 보기" }).click();
   await expect(page.getByAltText("세장 말티즈 사진 3/3")).toBeVisible();
+  // 등록을 마친 뒤 뒤로 가면 다 쓴 설문이 아니라 신고 전 화면(홈)으로 간다.
+  await page.goBack();
+  await expect(page).not.toHaveURL(/report\/new/);
+  await expect(page.getByRole("navigation", { name: "하단 메뉴" })).toBeVisible();
 });
 
 test("after an unlinked sighting the witness picks the dog they think they saw and that owner is alerted", async ({ page, browser }) => {

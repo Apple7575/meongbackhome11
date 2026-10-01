@@ -1,0 +1,11 @@
+/* 약관·방침 같은 긴 글: 읽기 편한 글자 크기와 줄 간격, 표는 가로로 넘치지 않게 */
+.legal { padding: 0 var(--gutter) 32px; color: var(--grey-800); font-size: var(--t6); line-height: 1.7; }
+.legal > :global(header), .legal > div:first-child { margin: 0 calc(var(--gutter) * -1); }
+.legal h2 { margin: 28px 0 8px; font-size: var(--t5); font-weight: 700; color: var(--grey-900); }
+.legal p { margin: 8px 0; }
+.legal ul { margin: 8px 0; padding-left: 20px; }
+.legal li { margin: 4px 0; }
+.legal b { color: var(--grey-900); }
+.legal table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: var(--t7); table-layout: fixed; }
+.legal th, .legal td { padding: 8px; border-bottom: 1px solid var(--grey-200); text-align: left; vertical-align: top; word-break: keep-all; overflow-wrap: anywhere; }
+.legal th { color: var(--grey-600); font-weight: 600; background: var(--grey-50); }

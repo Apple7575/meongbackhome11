@@ -95,3 +95,11 @@ test("the sightings tab reopens in the view used last (list by default)", async 
   await page.reload();
   await expect(page.locator("[data-sighting-row]").first()).toBeVisible();
 });
+test("the privacy policy is reachable from settings and covers what we collect, keep and share", async ({ page }) => {
+  await ready(page, "/#/my/settings");
+  await page.getByRole("link", { name: /개인정보처리방침/ }).click();
+  await expect(page.getByRole("heading", { name: "개인정보처리방침", level: 1 })).toBeVisible();
+  for (const h of ["1. 모으는 정보", "3. 보관 기간과 지우는 방법", "6. 맡겨서 처리하는 곳(처리 위탁·국외 이전)", "13. 개인정보 보호책임자·문의"])
+    await expect(page.getByRole("heading", { name: h })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});

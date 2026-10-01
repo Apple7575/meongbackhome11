@@ -150,7 +150,8 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
       read().profiles.push({ ...rest, image, images: extra.images || [], id: newId("profile") });
       await commit();
       draft.finish();
-      location.hash = "/my";
+      // 다 쓴 작성 화면으로 뒤로 가지 않도록 방문 기록을 바꿔치기한다.
+      location.replace("#/my");
       toast("우리 아이 프로필을 저장했어요.");
       return;
     }
@@ -163,7 +164,8 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
     else read().dogs.unshift(entry);
     await commit();
     draft.finish();
-    location.hash = `/dog/${entry.id}`;
+    // 다 쓴 작성 화면으로 뒤로 가지 않도록 방문 기록을 바꿔치기한다(뒤로 가면 신고 전 화면).
+    location.replace(`#/dog/${entry.id}`);
     if (!target) setTimeout(() => openSheet("success", { dogId: entry.id }), 80);
     toast(target ? "신고를 고쳤어요." : "신고가 등록됐어요. 이제 이웃에게 알려주세요.");
   };

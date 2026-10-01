@@ -30,7 +30,7 @@ export default function Settings() {
       <Divider />
       <ListHeader title="안내" />
       <ListRow as="button" data-action="about" left={<IconCircle name="Info" />} title="서비스 안내" />
-      <ListRow as="button" data-action="privacy" left={<IconCircle name="ShieldCheck" />} title="개인정보 안내" />
+      <ListRow href="#/privacy" left={<IconCircle name="ShieldCheck" />} title="개인정보처리방침" description="어떤 정보를 왜, 얼마나 보관하는지" />
       {user?.role === "admin" && <ListRow href="#/admin" left={<IconCircle name="Building2" />} title="운영 화면" />}
       {user?.registered && (
         <>

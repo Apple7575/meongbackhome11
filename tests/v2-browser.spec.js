@@ -210,6 +210,7 @@ test("saved profile becomes a report and uploaded image can be exported as QR po
     "1000",
   );
   const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "이미지 다운로드" }).click();
+  // 터치 화면이면 "이미지 저장", 컴퓨터면 "이미지 다운로드"
+  await page.getByRole("button", { name: /^이미지 (다운로드|저장)$/ }).click();
   expect((await download).suggestedFilename()).toContain("social");
 });

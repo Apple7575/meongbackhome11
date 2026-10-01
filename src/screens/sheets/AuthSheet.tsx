@@ -60,6 +60,7 @@ export default function AuthSheet({ after, onClose }: { after?: () => void; onCl
               <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#000" d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.8 5.3 4.6 6.7l-1 3.6c-.1.3.3.6.6.4l4.3-2.8c.5.1 1 .1 1.5.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>
               카카오로 3초 만에 시작하기
             </a>
+            <p className={s.consent}>카카오로 시작하면 <a href="#/privacy" onClick={onClose}>개인정보처리방침</a>에 동의하는 것으로 봐요.</p>
             <p className={s.or}>또는 이메일로</p>
           </>
         )}
@@ -75,6 +76,7 @@ export default function AuthSheet({ after, onClose }: { after?: () => void; onCl
           {register && field("비밀번호 확인", "passwordConfirm", "password", { minLength: 10, maxLength: 200, autoComplete: "new-password", placeholder: "비밀번호 다시 입력" })}
           {error && <p className={`${s.error} form-error`} role="alert">{error}</p>}
           <Button type="submit" size="lg" full disabled={busy}>{busy ? (register ? "가입하고 있어요…" : "로그인하고 있어요…") : register ? "회원가입" : "로그인"}</Button>
+                  {register && <p className={s.consent}>가입하면 <a href="#/privacy" onClick={onClose}>개인정보처리방침</a>에 동의하는 것으로 봐요.</p>}
         </form>
         {!register && <a className={s.link} href="#/account/forgot">비밀번호를 잊으셨나요?</a>}
       </div>

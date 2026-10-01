@@ -111,7 +111,8 @@ function SightingForm({ dog, dogId }: { dog?: Dog | null; dogId?: string }) {
     read().reports.unshift(report);
     await commit();
     draft.finish();
-    location.hash = dog ? `/dog/${dog.id}` : "/sightings";
+    // 다 쓴 작성 화면으로 뒤로 가지 않도록 방문 기록을 바꿔치기한다.
+    location.replace(dog ? `#/dog/${dog.id}` : "#/sightings");
     toast("소중한 제보가 전달됐어요. 고마워요.");
     // 어느 신고에도 연결하지 않은 제보라면, 근처에서 찾고 있는 아이 중 닮은 아이를 고르게 한다.
     const saved = read().reports.find((x) => x.id === report.id);
