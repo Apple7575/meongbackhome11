@@ -58,10 +58,15 @@ test("desktop shows redesigned screens in a centered 480px column", async ({ pag
   await ready(page, "/#/my");
   expect(Math.round((await page.locator("#app").boundingBox()).width)).toBe(480);
 });
-test("phone dark mode does not recolour the app: it declares light only and keeps the coral button", async ({ page }) => {
+test("phone dark mode gets the app's own dark theme (no browser inversion) and keeps the coral button", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "dark" });
   await ready(page, "/#/report/new");
-  expect(await page.locator("meta[name=color-scheme]").getAttribute("content")).toBe("only light");
-  expect(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toMatch(/^(only light|light only)$/);
+  // 앱이 다크 화면을 직접 제공한다고 알려서 브라우저가 색을 뒤집지 않게 한다.
+  expect(await page.locator("meta[name=color-scheme]").getAttribute("content")).toBe("light dark");
+  await expect(page.locator("#app")).toHaveCSS("background-color", "rgb(23, 23, 28)");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCSS("color", "rgb(255, 255, 255)");
   await expect(page.getByRole("button", { name: "다음", exact: true })).toHaveCSS("background-color", "rgb(184, 85, 58)");
+  // 밝은 모드는 그대로 흰 바탕
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect(page.locator("#app")).toHaveCSS("background-color", "rgb(255, 255, 255)");
 });

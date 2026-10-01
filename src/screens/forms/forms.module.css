@@ -8,7 +8,7 @@
 .error { margin: 16px 0 0; font-size: var(--t6); color: #f04452; }
 .cta { position: fixed; left: 50%; transform: translateX(-50%); bottom: var(--keyboard, 0px); z-index: 600; width: min(100%, var(--column));
   display: flex; gap: 8px; padding: 12px var(--gutter) calc(12px + var(--safe-bottom));
-  background: linear-gradient(rgba(255,255,255,0), #fff 24%); }
+  background: linear-gradient(rgba(var(--bg-rgb),0), var(--bg) 24%); }
 .cta > :last-child { flex: 1; }
 .cta > :first-child:not(:last-child) { flex: 0 0 30%; }
 .field { display: flex; flex-direction: column; gap: 8px; }
@@ -18,11 +18,11 @@
 textarea.input { padding: 14px 16px; min-height: 120px; resize: vertical; line-height: 1.5; }
 .input:focus-visible { outline: 2px solid var(--brand); outline-offset: 0; }
 .options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.option { min-height: 48px; padding: 0 8px; border-radius: var(--radius); border: 1px solid var(--grey-200); background: #fff;
+.option { min-height: 48px; padding: 0 8px; border-radius: var(--radius); border: 1px solid var(--grey-200); background: var(--bg);
   font-size: var(--t6); color: var(--grey-800); }
 .option[aria-pressed="true"] { border-color: var(--grey-900); font-weight: 700; color: var(--grey-900); background: var(--grey-50); }
 .bigOptions { display: flex; flex-direction: column; gap: 8px; }
-.bigOption { min-height: 64px; padding: 12px 16px; border-radius: var(--radius); border: 1px solid var(--grey-200); background: #fff;
+.bigOption { min-height: 64px; padding: 12px 16px; border-radius: var(--radius); border: 1px solid var(--grey-200); background: var(--bg);
   text-align: left; display: flex; flex-direction: column; justify-content: center; gap: 2px; font-size: var(--t5); font-weight: 600; color: var(--grey-900); }
 .bigOption small { font-size: var(--t6); font-weight: 400; color: var(--grey-600); }
 .bigOption[aria-pressed="true"] { border: 2px solid var(--grey-900); }
@@ -32,7 +32,7 @@ textarea.input { padding: 14px 16px; min-height: 120px; resize: vertical; line-h
 .photo input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .photoBusy::after { content: "사진을 준비하고 있어요"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,0.8); color: var(--grey-800); }
+  background: rgba(var(--bg-rgb),0.8); color: var(--grey-800); }
 .quick { display: flex; gap: 8px; flex-wrap: wrap; }
 .map { height: 260px; border-radius: var(--radius); overflow: hidden; background: var(--grey-100); z-index: 0; }
 .mapHead { display: flex; align-items: center; justify-content: space-between; }
@@ -54,11 +54,11 @@ textarea.input { padding: 14px 16px; min-height: 120px; resize: vertical; line-h
 .sub { margin-left: 4px; font-size: var(--t7); font-weight: 400; color: var(--grey-600); }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { position: relative; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px;
-  border: 1px solid var(--grey-200); background: #fff; font-size: var(--t6); color: var(--grey-800); cursor: pointer; }
+  border: 1px solid var(--grey-200); background: var(--bg); font-size: var(--t6); color: var(--grey-800); cursor: pointer; }
 .chip[aria-pressed="true"], .chip[data-on="true"] { border-color: var(--grey-900); font-weight: 700; color: var(--grey-900); background: var(--grey-50); }
 .overlay { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .stepper { display: flex; align-items: center; justify-content: space-between; min-height: 56px; padding: 0 6px; border-radius: var(--radius); background: var(--grey-100); }
-.stepper button { width: 44px; height: 44px; border: 0; border-radius: 12px; background: #fff; color: var(--grey-800); display: inline-flex; align-items: center; justify-content: center; }
+.stepper button { width: 44px; height: 44px; border: 0; border-radius: 12px; background: var(--bg); color: var(--grey-800); display: inline-flex; align-items: center; justify-content: center; }
 .stepper button:disabled { color: var(--grey-300); background: transparent; }
 .stepper output { font-size: var(--t4); font-weight: 700; color: var(--grey-900); }
 .stepper .stepperEmpty { font-size: var(--t5); font-weight: 400; color: var(--grey-600); }
@@ -72,7 +72,7 @@ textarea.input { padding: 14px 16px; min-height: 120px; resize: vertical; line-h
   color: #fff; filter: drop-shadow(0 3px 4px rgba(0,0,0,0.25)); }
 .centerPin svg { fill: var(--brand); }
 .locate { position: absolute; left: 12px; bottom: 12px; z-index: 1; display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 14px;
-  border: 0; border-radius: 999px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.16); font-size: var(--t6); font-weight: 600; color: var(--grey-900); }
+  border: 0; border-radius: 999px; background: var(--bg); box-shadow: 0 2px 8px rgba(0,0,0,0.16); font-size: var(--t6); font-weight: 600; color: var(--grey-900); }
 .pickRows { display: flex; flex-direction: column; margin-top: 8px; border-radius: 16px; background: var(--grey-50); }
 .pickRow { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 0 12px 0 16px; border: 0; background: none; text-align: left; color: var(--grey-400); }
 .pickRow + .pickRow { border-top: 1px solid var(--grey-100); }
@@ -92,7 +92,7 @@ textarea.input { padding: 14px 16px; min-height: 120px; resize: vertical; line-h
 .addressHint { font-size: var(--t6); color: var(--grey-600); }
 .mapWrap .map { height: min(360px, 48vh); }
 /* 키보드가 떠 있을 때: 토스처럼 키보드에 붙은 꽉 찬 버튼 */
-.ctaKeyboard { padding: 8px var(--gutter); background: #fff; }
+.ctaKeyboard { padding: 8px var(--gutter); background: var(--bg); }
 .flow { scroll-padding-bottom: calc(var(--keyboard, 0px) + 96px); }
 .adjust { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .adjust .chip { justify-content: center; padding: 0 4px; }

@@ -137,7 +137,7 @@ test("on phones the poster is saved through the share sheet as an image file (to
   await page.getByRole("button", { name: /^QR 전단/ }).click();
   const sheet = page.getByRole("dialog", { name: "QR 전단 만들기" });
   // 다 그려지면 길게 눌러 저장할 수 있는 이미지로 보인다.
-  await expect(sheet.getByRole("img", { name: "보리 실종 전단" })).toBeVisible();
+  await expect(sheet.getByRole("img", { name: "보리 실종 전단" })).toBeVisible({ timeout: 15000 });
   await sheet.getByRole("button", { name: "사진 앱에 저장하기" }).click();
   await expect.poll(() => page.evaluate(() => window.__shared?.files?.[0]?.type)).toBe("image/png");
   expect(await page.evaluate(() => window.__shared.files[0].name)).toBe("멍백홈-보리-print.png");

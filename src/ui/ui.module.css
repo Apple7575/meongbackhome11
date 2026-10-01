@@ -34,14 +34,14 @@
 .full { width: 100%; }
 .bottomCta { position: fixed; left: 50%; transform: translateX(-50%); z-index: 550;
   bottom: calc(var(--nav-h) + var(--safe-bottom)); width: min(100%, var(--column));
-  padding: 12px var(--gutter); background: linear-gradient(rgba(255,255,255,0), #fff 30%); }
+  padding: 12px var(--gutter); background: linear-gradient(rgba(var(--bg-rgb),0), var(--bg) 30%); }
 .badge { display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 6px;
   font-size: var(--t7); line-height: 1; font-weight: 600; white-space: nowrap; }
 .grey { background: var(--grey-100); color: var(--grey-700); }
 .coral { background: var(--brand-weak); color: var(--brand-text); }
 .green { background: var(--green-weak); color: var(--green); }
 .chip { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 12px;
-  border-radius: 999px; border: 1px solid var(--grey-200); background: #fff; color: var(--grey-800);
+  border-radius: 999px; border: 1px solid var(--grey-200); background: var(--bg); color: var(--grey-800);
   font-size: var(--t6); font-weight: 500; white-space: nowrap; }
 .band { height: 12px; background: var(--grey-50); margin: 12px 0; }
 .thumb { border-radius: var(--radius); object-fit: cover; background: var(--grey-100); }
@@ -64,7 +64,7 @@
 }
 .sheetBackdrop { position: fixed; inset: 0; z-index: 900; background: rgba(0, 0, 0, 0.4);
   display: flex; align-items: flex-end; justify-content: center; }
-.sheet { width: min(100%, var(--column)); max-height: 85dvh; overflow: auto; background: #fff;
+.sheet { width: min(100%, var(--column)); max-height: 85dvh; overflow: auto; background: var(--bg);
   border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
   padding-bottom: calc(16px + var(--safe-bottom)); }
 .handle { height: 28px; display: flex; align-items: center; justify-content: center; touch-action: none; }

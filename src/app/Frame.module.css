@@ -3,7 +3,7 @@
   position: sticky; top: 0; z-index: 500; height: var(--top-h);
   padding: env(safe-area-inset-top, 0px) 8px 0 var(--gutter);
   display: flex; align-items: center; justify-content: space-between;
-  background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px);
+  background: rgba(var(--bg-rgb), 0.96); backdrop-filter: blur(12px);
 }
 .brand { display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
   font-size: var(--t4); font-weight: 700; color: var(--grey-900); letter-spacing: -0.02em; }
@@ -14,13 +14,13 @@
   align-items: center; justify-content: center; color: var(--grey-800); border-radius: var(--radius); }
 .iconButton:active { background: var(--grey-100); }
 .dot { position: absolute; top: 10px; right: 10px; width: 8px; height: 8px;
-  border-radius: 50%; background: var(--brand); border: 2px solid #fff; }
+  border-radius: 50%; background: var(--brand); border: 2px solid var(--bg); }
 .nav {
   position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); z-index: 600;
   width: min(100%, var(--column));
   display: grid; grid-template-columns: repeat(5, 1fr); align-items: end;
   padding: 6px 4px calc(6px + var(--safe-bottom));
-  background: rgba(255, 255, 255, 0.97); border-top: 1px solid var(--grey-200);
+  background: rgba(var(--bg-rgb), 0.97); border-top: 1px solid var(--grey-200);
   backdrop-filter: blur(12px);
 }
 .navItem { min-height: 52px; display: flex; flex-direction: column; align-items: center;
@@ -30,10 +30,10 @@
 .reportIcon { width: 44px; height: 44px; margin-top: -18px; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--brand-strong); color: #fff; box-shadow: 0 4px 12px rgba(184, 85, 58, 0.35);
-  border: 3px solid #fff; }
+  border: 3px solid var(--bg); }
 .main { padding: 0; }
 .bannerButton { display: inline-flex; align-items: center; min-height: 44px; margin-left: 8px; padding: 0 12px;
-  border-radius: var(--radius); background: #fff; font-size: var(--t6); font-weight: 600; color: var(--grey-900); }
+  border-radius: var(--radius); background: var(--bg); font-size: var(--t6); font-weight: 600; color: var(--grey-900); }
 .banner { margin: 0 var(--gutter) 8px; padding: 12px 16px; border-radius: var(--radius);
   background: var(--grey-100); color: var(--grey-800); font-size: var(--t6); line-height: var(--t6-lh); }
 .app[data-nav="off"] { --nav-h: 0px; }

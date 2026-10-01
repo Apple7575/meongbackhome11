@@ -7,7 +7,7 @@
 .meta { margin: 0 0 8px; font-size: var(--t6); color: var(--grey-600); }
 .desc { margin: 0; font-size: var(--t5); line-height: var(--t5-lh); color: var(--grey-800); }
 .options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 0 var(--gutter) 8px; }
-.option { min-height: 48px; border-radius: var(--radius); border: 1px solid var(--grey-200); background: #fff;
+.option { min-height: 48px; border-radius: var(--radius); border: 1px solid var(--grey-200); background: var(--bg);
   font-size: var(--t6); color: var(--grey-800); }
 .option[aria-pressed="true"] { border-color: var(--grey-900); font-weight: 700; color: var(--grey-900); }
 .links { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 var(--gutter) 8px; }

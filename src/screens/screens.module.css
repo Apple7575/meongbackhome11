@@ -10,7 +10,7 @@
 .count { font-size: var(--t7); font-weight: 600; color: var(--brand-text); }
 .more { padding: 8px var(--gutter) 16px; }
 .optionGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 8px var(--gutter) 16px; }
-.option { min-height: 48px; border-radius: var(--radius); border: 1px solid var(--grey-200); background: #fff;
+.option { min-height: 48px; border-radius: var(--radius); border: 1px solid var(--grey-200); background: var(--bg);
   font-size: var(--t6); color: var(--grey-800); }
 .option[aria-pressed="true"] { border-color: var(--grey-900); font-weight: 700; color: var(--grey-900); }
 .optionLabel { margin: 16px var(--gutter) 0; font-size: var(--t6); font-weight: 700; color: var(--grey-800); }
@@ -18,7 +18,7 @@
 .ownerBody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .ownerTitle { margin: 0; font-size: var(--t4); line-height: var(--t4-lh); font-weight: 700; color: var(--grey-900); letter-spacing: -0.01em; }
 .ownerDesc { margin: 0 0 12px; font-size: var(--t6); line-height: var(--t6-lh); color: var(--grey-600); }
-.sticky { position: sticky; top: var(--top-h); z-index: 400; background: #fff; padding: 0 var(--gutter) 8px; }
+.sticky { position: sticky; top: var(--top-h); z-index: 400; background: var(--bg); padding: 0 var(--gutter) 8px; }
 .search { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 14px;
   border-radius: var(--radius); background: var(--grey-100); color: var(--grey-700); }
 .search input { flex: 1; min-width: 0; align-self: stretch; min-height: 48px; border: 0; background: none;
@@ -28,7 +28,7 @@
   align-items: center; justify-content: center; border-radius: var(--radius); color: var(--grey-800); }
 .map { position: relative; height: calc(100dvh - var(--top-h) - var(--nav-h) - 180px); min-height: 320px; }
 .map > div:first-child { position: absolute; inset: 0; }
-.mapPanel { position: absolute; left: 0; right: 0; bottom: 0; z-index: 450; background: #fff;
+.mapPanel { position: absolute; left: 0; right: 0; bottom: 0; z-index: 450; background: var(--bg);
   border-radius: var(--sheet-radius) var(--sheet-radius) 0 0; box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
   max-height: 60%; overflow: auto; }
 .mapPanelToggle { width: 100%; min-height: 48px; font-size: var(--t6); font-weight: 600; color: var(--grey-800); }
