@@ -75,3 +75,4 @@
   .sheet { animation: rise 0.22s ease-out; }
   @keyframes rise { from { transform: translateY(24px); opacity: 0.6; } }
 }
+.chip[aria-pressed="true"] { border-color: var(--grey-900); background: var(--grey-50); color: var(--grey-900); font-weight: 700; }

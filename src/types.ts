@@ -66,6 +66,8 @@ export interface Notice {
   time: string;
   read: boolean;
   dogId?: string | null;
+  // 목격자가 골라 보낸 알림이면 그 제보를 바로 연다
+  reportId?: string;
 }
 export interface Profile {
   id: string;

@@ -16,6 +16,22 @@ export const nearestRegion = point => Object.keys(COORDS).reduce((best, r) => ha
 // '서울특별시'·'전라북도'·'전북특별자치도' 같은 시·도 이름을 앱의 지역 이름으로 바꾼다.
 const LONG_REGIONS = { 충청북도:'충북', 충청남도:'충남', 전라북도:'전북', 전라남도:'전남', 경상북도:'경북', 경상남도:'경남' };
 export const regionFromAddress = name => LONG_REGIONS[name] || Object.keys(COORDS).find(r => String(name || '').startsWith(r)) || '';
+// 목격자가 "이 아이 같아요"를 고를 후보: 근처(기본 10km)에서 목격 전에 잃어버린 실종 신고.
+// 털 색·크기가 맞을수록, 가까울수록 앞에 둔다. 판단은 사진을 본 목격자가 한다.
+export function nearbyMissing(report, dogs, { maxKm = 10, limit = 6, isOwn = () => false } = {}) {
+  if (!Array.isArray(report?.coords)) return [];
+  const seen = new Date(report.time).getTime();
+  return dogs
+    .filter(d => d.status === 'missing' && !d.demo && !d.previewOnly && !isOwn(d) && Array.isArray(d.coords) && !(new Date(d.time).getTime() > seen))
+    .map(d => {
+      const km = haversine(d.coords, report.coords);
+      const score = (sharesValue(report.color, d.color) ? 2 : 0) + (report.size && report.size === d.size ? 1 : 0) - km / 10;
+      return { dog: d, km, score };
+    })
+    .filter(m => m.km <= maxKm)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+}
 export function haversine(a,b) {
   const r = Math.PI/180, dLat=(b[0]-a[0])*r, dLng=(b[1]-a[1])*r;
   const h=Math.sin(dLat/2)**2+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dLng/2)**2;

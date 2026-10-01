@@ -55,6 +55,22 @@ test("explore filters with easy-to-answer sheets and pages 20 at a time", async 
   await page.getByRole("button", { name: "목록으로 보기" }).click();
   await expect(page.locator(".leaflet-container")).toHaveCount(0);
 });
+test("sightings near me are sorted by distance and can be browsed on a map", async ({ page, context }) => {
+  // 서울 송파구 근처에 있다고 가정한다(예시 목격 소식이 이 근처에 있다).
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 37.5145, longitude: 127.1059 });
+  await ready(page, "/#/sightings");
+  await page.getByRole("button", { name: "내 근처" }).click();
+  await expect(page.getByRole("button", { name: "내 근처 5km" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("main").getByRole("heading", { name: "내 근처 5km" })).toBeVisible();
+  const first = page.locator("[data-sighting-row]").first();
+  await expect(first).toContainText(/^.*?(\d+m|\d+\.\dkm|\d+km) ·/);
+  await page.getByRole("button", { name: "지도로 보기" }).click();
+  await expect(page.locator(".leaflet-container")).toBeVisible();
+  // 다른 테스트가 만든 제보 핀이 겹칠 수 있어 핀에 직접 클릭 이벤트를 보낸다.
+  await page.locator(".leaflet-marker-icon").first().dispatchEvent("click");
+  await expect(page.getByRole("dialog", { name: "목격 제보" })).toBeVisible();
+});
 test("sightings are grouped by day, paged, and have one thumb-reach action", async ({ page }) => {
   await ready(page, "/#/sightings");
   await expect(page.getByRole("heading", { name: "목격 소식" })).toBeVisible();

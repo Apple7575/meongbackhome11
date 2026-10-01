@@ -19,7 +19,7 @@ export function similarDogs(report, dogs, { maxKm = 5, limit = 5 } = {}) {
 }
 
 // 이름 끝 글자에 받침이 있으면 '과', 없으면 '와'
-const withParticle = name => {
+export const withParticle = name => {
   const code = String(name).trim().slice(-1).charCodeAt(0) - 0xac00;
   return `${name}${code >= 0 && code <= 11171 && code % 28 !== 0 ? '과' : '와'}`;
 };

@@ -142,6 +142,36 @@ test("reports keep up to two extra photos and long multi-colour values", async (
     await f.stop();
   }
 });
+test("a witness can alert owners of the dogs they think they saw, once per dog, only for their own unlinked sighting", async () => {
+  const f = await fixture();
+  try {
+    const owner = f.client(), far = f.client(), witness = f.client(), stranger = f.client();
+    await register(owner);
+    await register(far);
+    const near = dog();
+    const busan = { ...dog(), name: "초코", region: "부산", location: "수영구", coords: [35.15, 129.11] };
+    await change(owner, "dogs", near);
+    await change(far, "dogs", busan);
+    const sighting = { ...report(near), dogId: null, color: "갈색" };
+    assert.equal((await change(witness, "reports", sighting)).status, 200);
+    const suggest = (c, ids) => c.request(`/api/reports/${sighting.id}/suggest`, { dogIds: ids });
+    assert.equal((await suggest(stranger, [near.id])).status, 404);
+    const first = await suggest(witness, [near.id, busan.id]);
+    assert.equal(first.status, 200);
+    assert.equal(first.data.sent, 1);
+    assert.equal((await suggest(witness, [near.id])).data.sent, 0);
+    const notice = (await owner.request("/api/state")).data.notifications.find((n) => n.title === "목격자가 우리 아이 같다고 알려줬어요");
+    assert.equal(notice.dogId, near.id);
+    assert.equal(notice.reportId, sighting.id);
+    assert.match(notice.body, /^송리단길에서 본 강아지가 보리와 닮았대요\./);
+    assert.equal((await far.request("/api/state")).data.notifications.length, 0);
+    const linked = { ...report(near) };
+    await change(witness, "reports", linked);
+    assert.equal((await witness.request(`/api/reports/${linked.id}/suggest`, { dogIds: [near.id] })).status, 409);
+  } finally {
+    await f.stop();
+  }
+});
 test("an unlinked sighting alerts owners of similar missing dogs nearby, not far or different ones", async () => {
   const f = await fixture();
   try {

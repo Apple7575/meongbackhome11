@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { fakeAddress, nextStep, registerByApi } from "./helpers.js";
+import { fakeAddress, nextStep, registerByApi, fillSighting } from "./helpers.js";
 
 test("report flow: next moves to the empty breed field, time wheels and pin address", async ({ page }) => {
   await fakeAddress(page);
@@ -76,4 +76,37 @@ test("a report can carry two extra photos and the detail page switches between t
   await expect(gallery.getByRole("button")).toHaveCount(3);
   await gallery.getByRole("button", { name: "사진 3 보기" }).click();
   await expect(page.getByAltText("세장 말티즈 사진 3/3")).toBeVisible();
+});
+
+test("after an unlinked sighting the witness picks the dog they think they saw and that owner is alerted", async ({ page, browser }) => {
+  // 보호자: 서울 송파구 근처에서 잃어버린 실제 신고
+  const ownerContext = await browser.newContext({ baseURL: "http://127.0.0.1:5174" });
+  const owner = ownerContext.request;
+  const email = `${Date.now()}-owner@example.com`;
+  await owner.post("/api/auth/register", { data: { email, password: "browser-test-password", name: "보호자" } });
+  const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=";
+  const dogId = `dog-suggest-${Date.now()}`;
+  const name = `알림${Math.floor(Math.random() * 1e6)}`;
+  const created = await owner.post("/api/changes", { data: { operations: [{ collection: "dogs", value: { id: dogId, name, breed: "푸들", color: "갈색", size: "소형", image: png, region: "서울", location: "송파구", coords: [37.5145, 127.1059], time: new Date(Date.now() - 3600000).toISOString(), accessory: "없음", status: "missing" } }] } });
+  expect(created.ok()).toBe(true);
+  // 목격자: 신고에 연결하지 않은 목격 제보를 올린다
+  await page.goto("/#/sighting/new");
+  await fakeAddress(page);
+  await page.locator("input[name=location]").fill("편의점 앞");
+  await expect(page.locator("#sighting-picker.leaflet-container")).toBeVisible();
+  await page.locator("#sighting-picker").click({ position: { x: 140, y: 100 } });
+  for (let i = 0; i < 3; i++) await nextStep(page);
+  // 털 색·크기를 알려주면 닮은 신고가 목록 위로 온다(다른 테스트가 만든 흰색 신고보다 앞).
+  await page.getByRole("group", { name: "털 색" }).getByRole("button", { name: "갈색" }).click();
+  await page.getByRole("group", { name: "크기" }).getByRole("button", { name: "소형" }).click();
+  await nextStep(page);
+  await page.getByRole("button", { name: "목격 소식 남기기" }).click();
+  const sheet = page.getByRole("dialog", { name: "혹시 이 아이인가요?" });
+  await expect(sheet).toBeVisible();
+  await sheet.getByRole("button", { name: new RegExp(`^${name} · 푸들`) }).click();
+  await sheet.getByRole("button", { name: "고른 1곳에 알리기" }).click();
+  await expect(page.locator("#toast")).toContainText("보호자 1명에게 알렸어요");
+  const state = await (await owner.get("/api/state")).json();
+  expect(state.notifications.some((n) => n.title === "목격자가 우리 아이 같다고 알려줬어요" && n.dogId === dogId)).toBe(true);
+  await ownerContext.close();
 });

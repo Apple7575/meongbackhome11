@@ -23,3 +23,4 @@ export function nearestRegion(point: Coords): string;
 export function regionFromAddress(name: string): string;
 export function filterDogs(dogs: Dog[], filter?: DogFilter): Dog[];
 export function arrowEnd(coords: Coords, heading: number, meters?: number): Coords;
+export function nearbyMissing<T extends Dog>(report: Pick<Report, "coords" | "time" | "color" | "size">, dogs: T[], options?: { maxKm?: number; limit?: number; isOwn?: (d: T) => boolean }): { dog: T; km: number; score: number }[];

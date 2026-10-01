@@ -20,7 +20,7 @@ export default function NotificationsSheet({ onClose }: { onClose: () => void })
   }, []);
   const open = (n: Notice) => {
     onClose();
-    location.hash = n.dogId ? `/dog/${n.dogId}` : "/sightings";
+    location.hash = n.dogId ? `/dog/${n.dogId}${n.reportId ? `?report=${n.reportId}` : ""}` : "/sightings";
   };
   return (
     <BottomSheet open title="알림" onClose={onClose}>

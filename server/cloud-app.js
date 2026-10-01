@@ -5,6 +5,7 @@ import {installMedia,createStorage} from './media.js';
 import {installShare,dataUrlBytes} from './share.js';
 import {similarDogs,similarNotice} from './match.js';
 import {remindStale} from './stale.js';
+import {installSuggest} from './suggest.js';
 import path from "node:path";
 import webpush from "web-push";
 import { seed } from "../src/seed.js";
@@ -96,13 +97,14 @@ export async function createApp({
   app.use(db.middleware);
   if (process.env.TRUST_PROXY === '1') app.set('trust proxy', 1);
   const prefs = async uid => JSON.parse((await db.prepare("SELECT json FROM prefs WHERE user_id=?").get(uid))?.json || '{"saved":[],"areas":[]}');
-  async function notify(uid, title, body, dogId) {
+  async function notify(uid, title, body, dogId, reportId) {
     if (!uid || uid === "example") return;
     const n = {
       id: randomUUID(),
       title,
       body,
       dogId,
+      ...(reportId ? { reportId } : {}),
       time: now(),
       read: false
     };
@@ -110,7 +112,7 @@ export async function createApp({
     for (const s of await db.prepare("SELECT * FROM subscriptions WHERE user_id=?").all(uid)) await db.prepare("INSERT INTO outbox VALUES(?,?,?,?,?)").run(randomUUID(), s.endpoint, JSON.stringify({
       title,
       body,
-      url: dogId ? `/#/dog/${dogId}` : "/#/my"
+      url: dogId ? `/#/dog/${dogId}${reportId ? `?report=${reportId}` : ""}` : "/#/my"
     }), 0, Date.now());
   }
   async function snapshot(user) {
@@ -244,6 +246,7 @@ export async function createApp({
   const media=installMedia({app,db,storage:bucket,rate});
   app.use('/api', (req,res,next)=>{res.on('finish',()=>{if(res.statusCode<400)defer(flushPush().catch(()=>{}));});next();});
   app.get("/api/state", async (req, res) => res.json(await snapshot(req.user)));
+  installSuggest({ app, get, notify, db, rate, fail });
   app.post('/api/push/test', async (req, res) => {
     await rate(`push-test:${req.user.id}`, 2);
     if (!process.env.PUSH_SUBJECT && !pushSender) fail(503, '서버의 알림 발신 설정이 필요해요.');

@@ -7,6 +7,7 @@ export interface MapHandle {
 }
 export interface MarkerHandle {
   bindPopup(html: string): MarkerHandle;
+  on(event: "click", handler: () => void): MarkerHandle;
 }
 export function baseMap(element: HTMLElement, center?: Coords, zoom?: number): MapHandle;
 export function marker(map: MapHandle, coords: Coords, label?: string, className?: string): MarkerHandle;

@@ -4,7 +4,8 @@ import { useStore } from "../../app/useStore.ts";
 import { commit } from "../../app/actions.ts";
 import { read, id as newId } from "../../client-store.js";
 import { toast } from "../../app/toast.ts";
-import { COORDS, nearestRegion } from "../../domain.js";
+import { COORDS, nearestRegion, nearbyMissing } from "../../domain.js";
+import { openSheet } from "../../app/sheets.ts";
 import Flow from "./Flow.tsx";
 import { TextField, Options, BigOptions, PhotoPicker, WhenField, WhereField, DirectionField, whenLabel, toLocalInput } from "./fields.tsx";
 import { useDraft } from "./useDraft.ts";
@@ -112,6 +113,10 @@ function SightingForm({ dog, dogId }: { dog?: Dog | null; dogId?: string }) {
     draft.finish();
     location.hash = dog ? `/dog/${dog.id}` : "/sightings";
     toast("소중한 제보가 전달됐어요. 고마워요.");
+    // 어느 신고에도 연결하지 않은 제보라면, 근처에서 찾고 있는 아이 중 닮은 아이를 고르게 한다.
+    const saved = read().reports.find((x) => x.id === report.id);
+    if (!dog && saved && nearbyMissing(saved, read().dogs, { isOwn: (d) => !!d.canManage }).length)
+      setTimeout(() => openSheet("suggest", { reportId: report.id }), 120);
   };
   const current = steps[step];
   const last = step === steps.length - 1;

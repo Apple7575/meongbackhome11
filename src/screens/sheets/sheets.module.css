@@ -38,3 +38,5 @@
 .preview span { font-size: var(--t6); color: var(--grey-600); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .preview small { font-size: var(--t7); color: var(--grey-600); }
 .srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); border: 0; opacity: 0; }
+.check, .checkOn { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--grey-300); color: transparent; }
+.checkOn { border-color: var(--brand-strong); background: var(--brand-strong); color: #fff; }

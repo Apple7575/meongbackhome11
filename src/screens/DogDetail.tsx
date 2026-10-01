@@ -40,13 +40,19 @@ function SightingMap({ dog, reports, selected, onSelect }: SightingMapProps) {
   }, [selected]);
   return <div ref={ref} className={s.map} aria-label="목격 순서와 이동 방향 지도" />;
 }
-export default function DogDetail({ id }: { id: string }) {
+export default function DogDetail({ id, report }: { id: string; report?: string }) {
   const db = useStore();
   const d = db.dogs.find((x) => x.id === id);
   const reports = d ? chronologicalSightings(db.reports.filter((r) => r.dogId === d.id)) : [];
   const [selected, setSelected] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const [shown, setShown] = useState(0);
+  // 알림에서 들어오면 그 목격 제보를 바로 열고, 주소의 ?report= 는 지운다(뒤로 가기 때 다시 열리지 않게).
+  useEffect(() => {
+    if (!report) return;
+    history.replaceState(null, "", `#/dog/${id}`);
+    window.dispatchEvent(new CustomEvent("open-report", { detail: report }));
+  }, [id, report]);
   useEffect(() => {
     if (!playing) return;
     const timer = setInterval(() => {

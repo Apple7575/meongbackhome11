@@ -4,7 +4,8 @@ import { commit } from "../app/actions.ts";
 import { read as readStore } from "../client-store.js";
 import { toast } from "../app/toast.ts";
 import BottomSheet from "../ui/BottomSheet.tsx";
-import { ListHeader, ListRow, Badge, Button } from "../ui/index.tsx";
+import { ListHeader, ListRow, Badge, Button, IconCircle } from "../ui/index.tsx";
+import { openSheet } from "../app/sheets.ts";
 import Icon from "../ui/Icon.tsx";
 import { REPORT_STATUSES, headingLabel } from "../domain.js";
 import { formatTime } from "../format.ts";
@@ -79,6 +80,10 @@ export default function ReportSheet({ id, onClose }: { id: string; onClose: () =
             </div>
           </>
         )
+      )}
+      {r.canManage && !r.dogId && !r.previewOnly && (
+        <ListRow as="button" left={<IconCircle name="Search" />} title="비슷한 실종 신고 보호자에게 알리기" description="사진을 보고 닮은 아이를 골라주세요"
+          onClick={() => { onClose(); openSheet("suggest", { reportId: r.id }); }} />
       )}
       <ListHeader title="대화" />
       {r.canChat ? (

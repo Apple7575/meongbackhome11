@@ -30,6 +30,7 @@ import PosterSheet from "../screens/sheets/PosterSheet.tsx";
 import InfoSheet from "../screens/sheets/InfoSheet.tsx";
 import { UpdateSheet, FlagSheet } from "../screens/sheets/TextSheets.tsx";
 import { DeviceSheet, DeleteAccountSheet, SuccessSheet } from "../screens/sheets/AccountSheets.tsx";
+import SuggestSheet from "../screens/sheets/SuggestSheet.tsx";
 import { EmptyState, ButtonLink, SkeletonRows } from "../ui/index.tsx";
 import s from "./Frame.module.css";
 // openSheet(name, props)로 여는 시트들. 화면·시트마다 props가 달라 표는 느슨한 타입으로 둔다.
@@ -37,14 +38,15 @@ type AnyComponent = ComponentType<any> | LazyExoticComponent<ComponentType<any>>
 const SHEETS: Record<SheetName, AnyComponent> = {
   auth: AuthSheet, notifications: NotificationsSheet, areas: AreasSheet, reunite: ReuniteSheet, story: StorySheet,
   share: ShareSheet, poster: PosterSheet, update: UpdateSheet, flag: FlagSheet, info: InfoSheet,
-  device: DeviceSheet, deleteAccount: DeleteAccountSheet, success: SuccessSheet,
+  device: DeviceSheet, deleteAccount: DeleteAccountSheet, success: SuccessSheet, suggest: SuggestSheet,
 };
 export const SCREENS: Record<string, AnyComponent> = {
   "/": Home, "/explore": Explore, "/sightings": Sightings, "/my": My, "/my/settings": Settings,
   "/stories": Stories, "/admin": Admin,
 };
 const PATTERNS: [RegExp, AnyComponent][] = [
-  [/^\/dog\/(?<id>[^/]+)$/, DogDetail],
+  // ?report=ID 가 붙으면 그 목격 제보를 바로 연다(알림에서 들어올 때).
+  [/^\/dog\/(?<id>[^/?]+)(?:\?report=(?<report>[\w-]+))?$/, DogDetail],
   [/^\/report\/(?<mode>new)$/, ReportFlow],
   [/^\/report\/(?<mode>from|edit)\/(?<id>[^/]+)$/, ReportFlow],
   [/^\/(?<mode>profile)\/new$/, ReportFlow],

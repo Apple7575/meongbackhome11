@@ -94,16 +94,21 @@ export function Badge({ tone = "grey", children }: { tone?: Tone; children: Reac
 }
 export interface ChipProps {
   onClick: () => void;
-  icon?: "ChevronDown" | "SlidersHorizontal";
+  // ChevronDown은 오른쪽(시트를 여는 칩), 나머지 아이콘은 왼쪽에 둔다.
+  icon?: "ChevronDown" | "SlidersHorizontal" | "LocateFixed";
   expanded?: boolean;
+  // 값이 있으면 켜고 끄는 칩(aria-pressed)이 되고 시트를 열지 않는다.
+  pressed?: boolean;
   children: ReactNode;
 }
-export function Chip({ onClick, icon = "ChevronDown", expanded, children }: ChipProps) {
+export function Chip({ onClick, icon = "ChevronDown", expanded, pressed, children }: ChipProps) {
+  const toggle = pressed !== undefined;
   return (
-    <button type="button" className={s.chip} onClick={onClick} aria-haspopup="dialog" aria-expanded={expanded}>
-      {icon === "SlidersHorizontal" && <Icon name={icon} size={16} />}
+    <button type="button" className={s.chip} onClick={onClick}
+      {...(toggle ? { "aria-pressed": pressed } : { "aria-haspopup": "dialog" as const, "aria-expanded": expanded })}>
+      {icon !== "ChevronDown" && <Icon name={icon} size={16} />}
       {children}
-      {icon === "ChevronDown" && <Icon name={icon} size={16} />}
+      {icon === "ChevronDown" && !toggle && <Icon name={icon} size={16} />}
     </button>
   );
 }

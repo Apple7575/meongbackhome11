@@ -1,3 +1,4 @@
+import { installSuggest } from "./suggest.js";
 import { similarDogs, similarNotice } from "./match.js";
 import { installShare, dataUrlBytes } from "./share.js";
 import { readFileSync } from "node:fs";
@@ -166,13 +167,14 @@ export function createApp({
   const broadcast = () => {
     for (const uid of streams.keys()) signal(uid);
   };
-  function notify(uid, title, body, dogId) {
+  function notify(uid, title, body, dogId, reportId) {
     if (!uid || uid === "example") return;
     const n = {
       id: randomUUID(),
       title,
       body,
       dogId,
+      ...(reportId ? { reportId } : {}),
       time: now(),
       read: false,
     };
@@ -190,7 +192,7 @@ export function createApp({
         JSON.stringify({
           title,
           body,
-          url: dogId ? `/#/dog/${dogId}` : "/#/my",
+          url: dogId ? `/#/dog/${dogId}${reportId ? `?report=${reportId}` : ""}` : "/#/my",
         }),
         0,
         Date.now(),
@@ -337,6 +339,7 @@ export function createApp({
     if (++v.n > max) fail(429, "잠시 후 다시 시도해주세요.");
   };
   app.get("/api/state", (req, res) => res.json(snapshot(req.user)));
+  installSuggest({ app, get, notify, db, rate, fail });
   app.post('/api/push/test',(req,res)=>{
     rate(`push-test:${req.user.id}`,2);
     if(!process.env.PUSH_SUBJECT&&!pushSender) fail(503,'서버의 알림 발신 설정이 필요해요.');
