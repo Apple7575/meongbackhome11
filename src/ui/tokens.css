@@ -20,9 +20,10 @@
 }
 body { padding-bottom: 0 !important; }
 body { background: var(--grey-50); }
-/* 다크 모드: 토스 다크 회색 단계. 글자는 밝게, 바탕은 어둡게, 코랄 버튼(흰 글씨)은 그대로 둔다. */
+/* 다크 색 묶음: 휴대폰이 다크 모드이고 '라이트'를 고르지 않았을 때, 또는 설정에서 '다크'를 골랐을 때.
+   토스 다크 회색 단계. 글자는 밝게, 바탕은 어둡게, 코랄 버튼(흰 글씨)은 그대로 둔다. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #17171c; --bg-rgb: 23, 23, 28; --toast: #3c3c47;
     --grey-50: #202027; --grey-100: #2c2c35; --grey-200: #3c3c47; --grey-300: #4d4d59;
     --grey-400: #62626d; --grey-500: #8a8a94; --grey-600: #a4a4ab; --grey-700: #c3c3c6;
@@ -30,6 +31,15 @@ body { background: var(--grey-50); }
     --brand-weak: #3d2a23; --brand-text: #f2a98d; --green: #5cd08b; --green-weak: #1c3326;
   }
 }
+:root[data-theme="dark"] {
+  --bg: #17171c; --bg-rgb: 23, 23, 28; --toast: #3c3c47;
+  --grey-50: #202027; --grey-100: #2c2c35; --grey-200: #3c3c47; --grey-300: #4d4d59;
+  --grey-400: #62626d; --grey-500: #8a8a94; --grey-600: #a4a4ab; --grey-700: #c3c3c6;
+  --grey-800: #e4e4e5; --grey-900: #ffffff;
+  --brand-weak: #3d2a23; --brand-text: #f2a98d; --green: #5cd08b; --green-weak: #1c3326;
+  color-scheme: dark;
+}
+:root[data-theme="light"] { color-scheme: light; }
 #app {
   max-width: var(--column);
   margin: 0 auto;

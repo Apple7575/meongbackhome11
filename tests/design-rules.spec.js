@@ -70,3 +70,28 @@ test("phone dark mode gets the app's own dark theme (no browser inversion) and k
   await page.emulateMedia({ colorScheme: "light" });
   await expect(page.locator("#app")).toHaveCSS("background-color", "rgb(255, 255, 255)");
 });
+test("settings let people pick light or dark regardless of the phone, remembered on this device", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "dark" });
+  await ready(page, "/#/my/settings");
+  await expect(page.locator("#app")).toHaveCSS("background-color", "rgb(23, 23, 28)");
+  await page.getByRole("button", { name: /화면 테마/ }).click();
+  await page.getByRole("dialog", { name: "화면 테마" }).getByRole("button", { name: "라이트" }).click();
+  await expect(page.locator("#app")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await page.reload();
+  await expect(page.locator("#app")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(page.getByRole("button", { name: /화면 테마/ })).toContainText("라이트");
+  await page.getByRole("button", { name: /화면 테마/ }).click();
+  await page.getByRole("dialog", { name: "화면 테마" }).getByRole("button", { name: "시스템 설정 따르기" }).click();
+  await expect(page.locator("#app")).toHaveCSS("background-color", "rgb(23, 23, 28)");
+});
+test("the sightings tab reopens in the view used last (list by default)", async ({ page }) => {
+  await ready(page, "/#/sightings");
+  await expect(page.locator("[data-sighting-row]").first()).toBeVisible();
+  await page.getByRole("button", { name: "지도로 보기" }).click();
+  await expect(page.locator(".leaflet-container")).toBeVisible();
+  await page.reload();
+  await expect(page.locator(".leaflet-container")).toBeVisible();
+  await page.getByRole("button", { name: "목록으로 보기" }).click();
+  await page.reload();
+  await expect(page.locator("[data-sighting-row]").first()).toBeVisible();
+});

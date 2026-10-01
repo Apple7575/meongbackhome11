@@ -15,6 +15,7 @@ const KIND_ICON: Record<string, IconName> = { 목격: "MapPin", "보호 중": "H
 const movement = (r: Report) => (r.stationary ? "머물러 있었어요" : r.heading == null ? "방향 정보 없음" : `${headingLabel(r.heading)}으로 이동`);
 // 내 근처로 볼 때의 반경(km)
 const NEAR_KM = 5;
+const VIEW_KEY = "meongback-sightings-view";
 // 목격 소식 지도: 핀을 누르면 그 제보를 연다. 내 근처로 볼 때는 내 위치를 가운데에 둔다.
 function SightingsMap({ reports, here }: { reports: Report[]; here: Coords | null }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -42,7 +43,12 @@ export default function Sightings() {
   const [region, setRegion] = useState("전국");
   const [sheet, setSheet] = useState(false);
   const [limit, setLimit] = useState(20);
-  const [view, setView] = useState<"list" | "map">("list");
+  // 목록·지도 중 마지막에 본 방식을 이 휴대폰에 기억한다(처음엔 읽기 쉬운 목록).
+  const [view, setViewState] = useState<"list" | "map">(() => {
+    try { return localStorage.getItem(VIEW_KEY) === "map" ? "map" : "list"; } catch { return "list"; }
+  });
+  const setView = (next: (v: "list" | "map") => "list" | "map") =>
+    setViewState((v) => { const n = next(v); try { localStorage.setItem(VIEW_KEY, n); } catch { /* 저장이 막혀도 화면은 바뀐다 */ } return n; });
   // 내 근처: 이 기기의 현재 위치는 거르기에만 쓰고 저장하지 않는다.
   const [here, setHere] = useState<Coords | null>(null);
   const close = useCallback(() => setSheet(false), []);
