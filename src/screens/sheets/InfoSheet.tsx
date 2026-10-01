@@ -26,7 +26,7 @@ const PAGES: Record<Kind, { title: string; image?: string; lines: string[]; link
       "보호소에 들어온 아이일 수도 있어요. 국가동물보호정보시스템(animal.go.kr)에서 보호 중인 동물 공고를 확인해 보세요.",
       "보호소 공고는 매일 새로 올라와요. 잃어버린 지역과 날짜로 찾아보세요.",
     ],
-    link: { href: "https://www.animal.go.kr/front/awtis/protection/protectionList.do", label: "보호소 공고 보러 가기" },
+    link: { href: "https://www.animal.go.kr/front/index.do", label: "국가동물보호정보시스템 가기" },
   },
   install: {
     title: "홈 화면에 추가하기",

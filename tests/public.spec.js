@@ -17,6 +17,9 @@ test("shelter dogs and outside lost reports are listed by region without the rep
   await expect(sheet.getByText("송파구 동물보호센터 · 서울특별시 송파구")).toBeVisible();
   await expect(sheet.getByRole("link", { name: "보호소에 전화하기" })).toHaveAttribute("href", "tel:020000000");
   await expect(sheet.getByText(/출처: 국가동물보호정보시스템/)).toBeVisible();
+  // 원문 사이트는 쿠키 없이 열리는 홈으로 보내고, 공고 번호로 찾게 한다.
+  await expect(sheet.getByText("서울-송파-e2e")).toBeVisible();
+  await expect(sheet.getByRole("link", { name: "국가동물보호정보시스템에서 보기" })).toHaveAttribute("href", "https://www.animal.go.kr/front/index.do");
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "다른 곳의 분실 신고" }).click();
   await expect(page.locator("[data-public-row]").filter({ hasText: "푸들 · 갈색 · 수컷" }).first()).toBeVisible();

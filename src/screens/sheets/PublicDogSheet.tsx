@@ -16,6 +16,7 @@ export default function PublicDogSheet({ item, onClose }: { item: PublicDog; onC
     ["성별·나이", [item.sex, item.age, item.weight].filter(Boolean).join(" · ")],
     ["특징", item.mark],
     ["보호 중인 곳", item.care ? [item.care.name, item.care.addr].filter(Boolean).join(" · ") : ""],
+    ["공고 번호", shelter ? item.noticeNo || "" : ""],
   ] as [string, string][]).filter(([, v]) => v);
   return (
     <BottomSheet open title={shelter ? "보호소에 들어온 아이" : "다른 곳에 신고된 실종견"} onClose={onClose}>
@@ -31,9 +32,10 @@ export default function PublicDogSheet({ item, onClose }: { item: PublicDog; onC
         {shelter && item.care?.tel && (
           <ButtonLink href={`tel:${item.care.tel.replace(/[^\d+]/g, "")}`} size="lg" full><Icon name="Smartphone" size={20} />보호소에 전화하기</ButtonLink>
         )}
-        <ButtonLink href={shelter ? "https://www.animal.go.kr/front/awtis/protection/protectionList.do" : "https://www.animal.go.kr/front/index.do"}
+        {/* 보호동물 목록 주소는 그 사이트에 처음 들어가면 열리지 않아(쿠키 필요) 홈으로 보내고 공고 번호로 찾게 한다. */}
+        <ButtonLink href={shelter ? "https://www.animal.go.kr/front/index.do" : "https://www.animal.go.kr/front/awtis/loss/lossList.do?menuNo=1000100000"}
           target="_blank" rel="noopener noreferrer" variant="weak" size="lg" full>국가동물보호정보시스템에서 보기</ButtonLink>
-        <p className={s.intro}>출처: 국가동물보호정보시스템(농림축산검역본부). 매일 새로 받아와요.{!shelter && " 신고한 분의 연락처는 원문에서 확인해주세요."}</p>
+        <p className={s.intro}>출처: 국가동물보호정보시스템(농림축산검역본부). 매일 새로 받아와요.{shelter ? " 사이트에서는 '보호센터 보호동물'에서 공고 번호로 찾을 수 있어요." : " 신고한 분의 연락처는 원문에서 확인해주세요."}</p>
       </div>
     </BottomSheet>
   );
