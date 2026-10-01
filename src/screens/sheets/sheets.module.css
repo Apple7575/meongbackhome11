@@ -43,3 +43,4 @@
 .publicPhotos { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 calc(var(--gutter) * -1); padding: 0 var(--gutter); }
 .publicPhotos img { flex: 0 0 85%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 16px; scroll-snap-align: center; background: var(--grey-100); }
 .publicPhotos img:only-child { flex-basis: 100%; }
+.facts dt { flex-shrink: 0; white-space: nowrap; }
