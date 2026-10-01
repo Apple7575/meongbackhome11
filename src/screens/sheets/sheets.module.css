@@ -44,3 +44,7 @@
 .publicPhotos img { flex: 0 0 85%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 16px; scroll-snap-align: center; background: var(--grey-100); }
 .publicPhotos img:only-child { flex-basis: 100%; }
 .facts dt { flex-shrink: 0; white-space: nowrap; }
+/* 카카오 로그인 버튼: 카카오 브랜드 가이드(바탕 #FEE500, 글자 검정 85%) */
+.kakao { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; border-radius: 12px;
+  background: #fee500; color: rgba(0, 0, 0, 0.85); font-size: var(--t5); font-weight: 600; text-decoration: none; }
+.or { margin: 4px 0 0; text-align: center; font-size: var(--t7); color: var(--grey-600); }

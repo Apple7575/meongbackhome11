@@ -69,6 +69,7 @@ export function LogoutSheet({ onClose }: { onClose: () => void }) {
   );
 }
 export function DeleteAccountSheet({ onClose }: { onClose: () => void }) {
+  const noPassword = useStore().user?.hasPassword === false;
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
@@ -76,7 +77,7 @@ export function DeleteAccountSheet({ onClose }: { onClose: () => void }) {
     e.preventDefault();
     setBusy(true);
     try {
-      await api("/api/auth/delete", { password });
+      await api("/api/auth/delete", noPassword ? { confirm: password.trim() } : { password });
       clearAllDrafts();
       onClose();
       location.hash = "/";
@@ -92,11 +93,12 @@ export function DeleteAccountSheet({ onClose }: { onClose: () => void }) {
       <form id="delete-account-form" className={`${s.body} ${s.form}`} onSubmit={submit} noValidate>
         <p className={s.intro}>계정과 직접 등록한 신고·사진·제보·이야기가 모두 지워지고 되돌릴 수 없어요.</p>
         <label className={s.field}>
-          <span className={s.label}>현재 비밀번호</span>
-          <input className={s.input} type="password" name="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <span className={s.label}>{noPassword ? "확인을 위해 '삭제'를 입력해주세요" : "현재 비밀번호"}</span>
+          <input className={s.input} type={noPassword ? "text" : "password"} name="password" autoComplete={noPassword ? "off" : "current-password"}
+            placeholder={noPassword ? "삭제" : undefined} value={password} onChange={(e) => setPassword(e.target.value)} />
         </label>
         {status && <p className={s.error} role="alert">{status}</p>}
-        <Button type="submit" size="lg" full disabled={busy || !password}>계정과 내 기록 삭제하기</Button>
+        <Button type="submit" size="lg" full disabled={busy || (noPassword ? password.trim() !== "삭제" : !password)}>계정과 내 기록 삭제하기</Button>
       </form>
     </BottomSheet>
   );

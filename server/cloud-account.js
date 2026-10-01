@@ -53,7 +53,7 @@ export function installAccount({
     await rate(`mail:${hash(email)}`, 3);
     const user = await db.prepare('SELECT * FROM users WHERE email=?').get(email);
     // Same response for existing and absent accounts, including provider failure.
-    if (user) defer(issue(user, 'reset').catch(() => {}));
+    if (user && !user.email.endsWith('@kakao.invalid')) defer(issue(user, 'reset').catch(() => {}));
     res.json({
       ok: true,
       message: '가입된 이메일이라면 재설정 링크가 도착해요. 스팸함도 확인해주세요.'
@@ -113,10 +113,15 @@ export function installAccount({
   app.post('/api/auth/delete', async (req, res) => {
     await limited(req);
     if (!req.user.email) reject(401, '로그인 후 이용해주세요.');
-    const password = req.body.password;
-    if (typeof password !== 'string' || password.length > 200) reject(400, '현재 비밀번호를 입력해주세요.');
-    const [salt, digest] = req.user.password.split(':');
-    if (!timingSafeEqual(scryptSync(password, salt, 64), Buffer.from(digest, 'hex'))) reject(401, '비밀번호를 확인해주세요.');
+    if (!req.user.password) {
+      // 카카오로만 로그인하는 계정은 비밀번호 대신 '삭제'를 입력해 확인한다.
+      if (req.body.confirm !== '삭제') reject(400, "확인을 위해 '삭제'를 입력해주세요.");
+    } else {
+      const password = req.body.password;
+      if (typeof password !== 'string' || password.length > 200) reject(400, '현재 비밀번호를 입력해주세요.');
+      const [salt, digest] = req.user.password.split(':');
+      if (!timingSafeEqual(scryptSync(password, salt, 64), Buffer.from(digest, 'hex'))) reject(401, '비밀번호를 확인해주세요.');
+    }
     const uid = req.user.id;
     await db.exec('BEGIN IMMEDIATE');
     try {

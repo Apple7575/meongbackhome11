@@ -109,6 +109,9 @@ export interface User {
   email: string | null;
   verified: boolean;
   verificationRequired: boolean;
+  // 카카오로만 로그인하는 계정은 비밀번호가 없다.
+  hasPassword?: boolean;
+  kakao?: boolean;
 }
 export interface Store {
   dogs: Dog[];

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BottomSheet from "../../ui/BottomSheet.tsx";
 import { Button } from "../../ui/index.tsx";
 import { authenticate } from "../../client-store.js";
@@ -10,6 +10,11 @@ type Field = "name" | "email" | "password" | "passwordConfirm";
 // 로그인·회원가입. after가 있으면 로그인 뒤 이어서 할 일(예: 작성한 신고 등록)을 실행한다.
 // 테스트가 쓰는 id·class(account-form, auth-intro, data-auth-mode)는 옛 팝업과 같게 둔다.
 export default function AuthSheet({ after, onClose }: { after?: () => void; onClose: () => void }) {
+  // 카카오 로그인은 서버에 키가 있을 때만 보여준다.
+  const [kakao, setKakao] = useState(false);
+  useEffect(() => {
+    fetch("/api/auth/providers").then((r) => (r.ok ? r.json() : {})).then((p: { kakao?: boolean }) => setKakao(!!p.kakao)).catch(() => {});
+  }, []);
   const [mode, setMode] = useState("login");
   const [values, setValues] = useState({ name: "", email: "", password: "", passwordConfirm: "" });
   const [error, setError] = useState("");
@@ -49,6 +54,15 @@ export default function AuthSheet({ after, onClose }: { after?: () => void; onCl
         <div className="auth-intro">
           <p className={s.intro}>{after ? "작성한 신고는 이 기기에 저장돼 있어요. 로그인하면 이어서 등록하고, 처음이면 가입 후 메일 인증을 마치면 돼요." : "로그인하면 내 신고와 제보를 한곳에서 볼 수 있어요."}</p>
         </div>
+        {kakao && (
+          <>
+            <a className={s.kakao} href={`/api/auth/kakao?next=${encodeURIComponent(location.hash.slice(1) || "/my")}`}>
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#000" d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.8 5.3 4.6 6.7l-1 3.6c-.1.3.3.6.6.4l4.3-2.8c.5.1 1 .1 1.5.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>
+              카카오로 3초 만에 시작하기
+            </a>
+            <p className={s.or}>또는 이메일로</p>
+          </>
+        )}
         <div className={s.tabs} role="group" aria-label="로그인 또는 회원가입">
           {[["login", "로그인"], ["register", "회원가입"]].map(([m, label]) => (
             <button key={m} type="button" className={s.tab} data-auth-mode={m} aria-pressed={mode === m} onClick={() => { setMode(m); setError(""); }}>{label}</button>

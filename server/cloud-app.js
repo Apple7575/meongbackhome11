@@ -7,6 +7,7 @@ import {similarDogs,similarNotice} from './match.js';
 import {remindStale} from './stale.js';
 import {installSuggest} from './suggest.js';
 import {installPublicData} from './publicdata.js';
+import {installKakao} from './kakao.js';
 import path from "node:path";
 import webpush from "web-push";
 import { seed } from "../src/seed.js";
@@ -46,6 +47,7 @@ function selected(obj, keys) {
 const collections = ["dogs", "reports", "profiles", "stories", "updates", "moderation"];
 export async function createApp({
   publicFetch = fetch,
+  oauthFetch = fetch,
   database,
   storage,
   defer = promise => promise.catch(() => {}),
@@ -127,8 +129,11 @@ export async function createApp({
         id: user.id,
         name: user.name,
         registered: !!user.email,
+        // 카카오 계정은 비밀번호가 없고, 이메일이 없으면 내부 주소를 쓰므로 화면에는 숨긴다.
+        hasPassword: !!user.password,
+        kakao: !!user.email && user.email.endsWith("@kakao.invalid"),
         role: user.role,
-        email: user.email || null,
+        email: user.email && !user.email.endsWith("@kakao.invalid") ? user.email : null,
         verified: !!user.verified_at,
         verificationRequired: requireVerification
       },
@@ -251,6 +256,7 @@ export async function createApp({
   app.use('/api', (req,res,next)=>{res.on('finish',()=>{if(res.statusCode<400)defer(flushPush().catch(()=>{}));});next();});
   app.get("/api/state", async (req, res) => res.json(await snapshot(req.user)));
   installSuggest({ app, get, notify, db, rate, fail });
+  installKakao({ app, db, session, secure, fetchImpl: oauthFetch });
   app.post('/api/push/test', async (req, res) => {
     await rate(`push-test:${req.user.id}`, 2);
     if (!process.env.PUSH_SUBJECT && !pushSender) fail(503, '서버의 알림 발신 설정이 필요해요.');

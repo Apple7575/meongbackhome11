@@ -25,7 +25,7 @@ export default function My() {
     <div className={s.screen}>
       <Top
         title={`${user.name} 님`}
-        subtitle={<>{user.email}<Badge tone={user.verified ? "green" : "grey"}>{user.verified ? "인증 완료" : "인증 전"}</Badge></>}
+        subtitle={<>{user.email || (user.kakao ? "카카오 계정" : "")}<Badge tone={user.verified ? "green" : "grey"}>{user.verified ? "인증 완료" : "인증 전"}</Badge></>}
       />
       {user.verificationRequired && !user.verified && (
         <div className={s.notice}>
