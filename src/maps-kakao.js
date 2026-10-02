@@ -200,6 +200,19 @@ export function directionPicker(element, coords, onChange) {
   return { map, set };
 }
 
+// 장소 이름으로 찾기(예: '석촌호수', '잠실역 3번 출구'). near가 있으면 그 근처를 먼저 보여준다.
+export const canSearchPlaces = true;
+export function searchPlaces(query, near) {
+  const services = k().services;
+  if (!services || !query.trim()) return Promise.resolve([]);
+  return new Promise((resolve) => {
+    const options = near ? { location: ll(near), sort: services.SortBy.ACCURACY } : {};
+    new services.Places().keywordSearch(query, (data, status) => {
+      if (status !== services.Status.OK) return resolve([]);
+      resolve(data.slice(0, 6).map((p) => ({ name: p.place_name, address: p.road_address_name || p.address_name, coords: [Number(p.y), Number(p.x)] })));
+    }, options);
+  });
+}
 // 핀 위치의 주소(카카오 좌표→주소). services 라이브러리가 없으면 null.
 export function kakaoAddress([lat, lng]) {
   const services = k().services;

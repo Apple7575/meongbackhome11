@@ -366,9 +366,34 @@ export function WhereField({ mapId, location, onLocation, placeholder, coords, h
   const placeRef = useRef(onPlace);
   placeRef.current = onPlace;
   const [looking, setLooking] = useState(false);
+  // 장소 검색(카카오맵일 때만): 이름을 적으면 잠시 뒤 찾아서 고를 수 있게 보여준다.
+  const maps = useRef<Maps | null>(null);
+  const [canSearch, setCanSearch] = useState(false);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<{ name: string; address: string; coords: Coords }[] | null>(null);
+  useEffect(() => {
+    const q = query.trim();
+    if (!q || !maps.current) return setResults(null);
+    let alive = true;
+    const timer = setTimeout(async () => {
+      const found = await maps.current!.searchPlaces(q, latest.current.coords);
+      if (alive) setResults(found);
+    }, 350);
+    return () => { alive = false; clearTimeout(timer); };
+  }, [query]);
+  const choose = (r: { name: string; coords: Coords }) => {
+    onPick(r.coords);
+    // 자세한 장소를 아직 안 적었으면 고른 장소 이름을 넣어 준다(고칠 수 있다).
+    if (!location.trim()) onLocation(r.name);
+    setQuery("");
+    setResults(null);
+  };
   useEffect(
     () =>
-      withMaps(({ directionPicker }) => {
+      withMaps((m) => {
+        const { directionPicker } = m;
+        maps.current = m;
+        setCanSearch(m.canSearchPlaces);
         if (!ref.current) return;
         const { coords: c, heading: h } = latest.current;
         const p = directionPicker(ref.current, c, (point) => pickRef.current(point));
@@ -412,6 +437,27 @@ export function WhereField({ mapId, location, onLocation, placeholder, coords, h
   };
   return (
     <>
+      {canSearch && (
+        <div className={s.placeSearch}>
+          <label className={s.placeInput}>
+            <Icon name="Search" size={20} />
+            <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="장소 이름으로 찾기 (예: 석촌호수, 잠실역)" aria-label="장소 검색"
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (results?.[0]) choose(results[0]); } }} />
+          </label>
+          {results && (
+            <ul className={s.placeResults} aria-label="장소 검색 결과">
+              {results.length ? results.map((r) => (
+                <li key={`${r.name}-${r.coords.join()}`}>
+                  <button type="button" onClick={() => choose(r)}>
+                    <strong>{r.name}</strong>
+                    <span>{r.address}</span>
+                  </button>
+                </li>
+              )) : <li className={s.placeEmpty}>찾는 장소가 없어요. 지도를 움직여 골라주세요.</li>}
+            </ul>
+          )}
+        </div>
+      )}
       <div className={s.mapWrap}>
         <div id={mapId} ref={ref} className={s.map} aria-label="지점 고르기 지도. 지도를 움직이거나 눌러서 핀을 맞춰주세요" />
         <span className={s.centerPin} aria-hidden="true"><Icon name="MapPin" size={40} /></span>

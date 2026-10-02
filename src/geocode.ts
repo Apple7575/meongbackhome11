@@ -9,6 +9,8 @@ export interface Place {
   // 장소 칸을 비웠을 때 쓸 짧은 주소(예: '노원구 하계1동 공릉로')
   short: string;
   region: string;
+  // 시·군·구(예: '송파구', '수원시 장안구'). 모르면 빈 글
+  district: string;
 }
 interface NominatimAddress { [key: string]: string | undefined }
 const cache = new Map<string, Place | null>();
@@ -23,6 +25,7 @@ export async function reverseGeocode([lat, lng]: Coords): Promise<Place | null> 
       label: [regionFromAddress(a.address.region_1depth_name), a.address.region_2depth_name, a.address.region_3depth_name].filter(Boolean).join(" "),
       short: [a.address.region_2depth_name, a.address.region_3depth_name, a.road_address?.road_name].filter(Boolean).join(" "),
       region: regionFromAddress(a.address.region_1depth_name),
+      district: a.address.region_2depth_name || "",
     } : null;
     cache.set(key, place);
     return place;
@@ -44,6 +47,7 @@ export async function reverseGeocode([lat, lng]: Coords): Promise<Place | null> 
       label: [region, district, town].filter(Boolean).join(" "),
       short: [district, town, road].filter(Boolean).join(" "),
       region,
+      district,
     } : null;
     cache.set(key, place);
     return place;

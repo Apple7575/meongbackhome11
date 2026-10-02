@@ -67,6 +67,16 @@ textarea.input { padding: 14px 16px; min-height: 120px; resize: vertical; line-h
 .sublabel { font-size: var(--t6); color: var(--grey-600); }
 .timeInput { max-width: 200px; font-size: var(--t4); font-weight: 600; }
 .mapWrap { position: relative; }
+/* 장소 검색: 지도 위 검색칸과 결과 목록 */
+.placeSearch { position: relative; }
+.placeInput { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 14px; border-radius: 12px; background: var(--grey-100); color: var(--grey-500); }
+.placeInput input { flex: 1; min-width: 0; border: 0; background: none; font: inherit; font-size: var(--t6); color: var(--grey-900); outline: none; }
+.placeResults { list-style: none; margin: 6px 0 0; padding: 4px 0; border-radius: 12px; background: var(--bg); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+.placeResults button { display: grid; gap: 2px; width: 100%; padding: 10px 14px; text-align: left; }
+.placeResults button:active { background: var(--grey-50); }
+.placeResults strong { font-size: var(--t6); color: var(--grey-900); }
+.placeResults span { font-size: var(--t7); color: var(--grey-600); }
+.placeEmpty { padding: 10px 14px; font-size: var(--t7); color: var(--grey-600); }
 .mapWrap .map { height: 320px; }
 .centerPin { position: absolute; left: 50%; bottom: 50%; transform: translateX(-50%); z-index: 1; pointer-events: none; line-height: 0;
   color: #fff; filter: drop-shadow(0 3px 4px rgba(0,0,0,0.25)); }

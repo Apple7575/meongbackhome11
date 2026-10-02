@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { withDistrict } from "../../districts.js";
 import { objectParticle, placeText } from "../../format.ts";
 import { useStore } from "../../app/useStore.ts";
 import { commit } from "../../app/actions.ts";
@@ -18,7 +19,7 @@ interface SightingValues {
   kind: string; region: string; time: string; location: string; directionMode: DirectionMode;
   color: string; size: string; description: string;
 }
-interface SightingExtra { coords: Coords; picked: boolean; heading: number | null; address?: string; short?: string }
+interface SightingExtra { coords: Coords; picked: boolean; heading: number | null; address?: string; short?: string; district?: string }
 interface Step { title: string; description: string; body: ReactNode; check?: () => string | undefined }
 export default function SightingFlow({ dogId }: { dogId?: string }) {
   const db = useStore();
@@ -40,7 +41,8 @@ function SightingForm({ dog, dogId }: { dog?: Dog | null; dogId?: string }) {
   const [photoBusy, setPhotoBusy] = useState(false);
   const heading = extra.heading ?? 0;
   // 주소를 아직 못 찾았거나 찾지 못해도 핀 위치는 정확하므로 막지 않는다.
-  const place = () => v.location.trim() || extra.short || extra.address || "지도에 표시한 곳";
+  // 직접 적은 장소에 시·군·구가 없으면 지도 주소의 시·군·구를 앞에 붙여 저장한다(지역 필터가 구 단위로 찾을 수 있게).
+  const place = () => withDistrict(v.location, extra.district) || extra.short || extra.address || "지도에 표시한 곳";
   const steps: Step[] = [
     {
       title: dog ? `${dog.name}${objectParticle(dog.name)} 본 곳은 어디인가요?` : "강아지를 본 곳은 어디인가요?",
@@ -49,8 +51,8 @@ function SightingForm({ dog, dogId }: { dog?: Dog | null; dogId?: string }) {
         <WhereField mapId="sighting-picker" location={v.location} placeholder="예: 석촌호수 동호 북쪽 산책로 벤치 앞"
           coords={extra.coords} heading={v.directionMode === "moving" ? heading : null} picked={extra.picked} address={extra.address || ""} onMessage={toast}
           onLocation={(location) => set({ location })}
-          onPick={(coords) => draft.update({ values: { region: nearestRegion(coords) }, extra: { coords, picked: true, address: "", short: "" } })}
-          onPlace={(place) => draft.update({ values: place?.region ? { region: place.region } : {}, extra: { address: place?.label || "", short: place?.short || "" } })} />
+          onPick={(coords) => draft.update({ values: { region: nearestRegion(coords) }, extra: { coords, picked: true, address: "", short: "", district: "" } })}
+          onPlace={(place) => draft.update({ values: place?.region ? { region: place.region } : {}, extra: { address: place?.label || "", short: place?.short || "", district: place?.district || "" } })} />
       ),
       check: () => (!extra.picked ? "지도를 움직여 강아지를 본 곳에 핀을 맞춰주세요." : undefined),
     },

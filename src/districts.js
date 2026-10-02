@@ -29,6 +29,13 @@ export const DISTRICTS = {
 export const splitRegion = (value = '전국') => { const [province, district = ''] = String(value).split(' '); return [province, district]; };
 // 장소 글이 그 시·군·구 안인지(시·군·구 이름이나 그 시의 구 이름이 들어 있으면)
 export const inDistrict = (text, district) => !district || [district, ...(GU[district] || [])].some((name) => String(text || '').includes(name));
+// 저장할 장소 글: 시·군·구가 글에 없으면 앞에 붙인다('석촌호수 벤치' → '송파구 석촌호수 벤치').
+// '수원시 장안구'처럼 두 단어면 그중 하나라도 글에 있으면 그대로 둔다.
+export const withDistrict = (text, district) => {
+  const t = String(text || '').trim();
+  if (!district || !t) return t;
+  return district.split(' ').some((w) => t.includes(w)) ? t : `${district} ${t}`;
+};
 // 지역 값에 맞는지: 시·도가 같고, 시·군·구를 골랐다면 장소 글에 그 이름이 있어야 한다.
 export const inRegion = (itemRegion, text, value) => {
   const [province, district] = splitRegion(value);

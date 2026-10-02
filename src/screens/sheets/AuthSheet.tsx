@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { providers } from "../../app/providers.ts";
 import BottomSheet from "../../ui/BottomSheet.tsx";
 import { Button } from "../../ui/index.tsx";
 import { authenticate } from "../../client-store.js";
@@ -13,7 +14,7 @@ export default function AuthSheet({ after, onClose }: { after?: () => void; onCl
   // 카카오 로그인은 서버에 키가 있을 때만 보여준다.
   const [kakao, setKakao] = useState(false);
   useEffect(() => {
-    fetch("/api/auth/providers").then((r) => (r.ok ? r.json() : {})).then((p: { kakao?: boolean }) => setKakao(!!p.kakao)).catch(() => {});
+    providers().then((p) => setKakao(!!p.kakao));
   }, []);
   const [mode, setMode] = useState("login");
   const [values, setValues] = useState({ name: "", email: "", password: "", passwordConfirm: "" });

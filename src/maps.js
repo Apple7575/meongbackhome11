@@ -59,6 +59,9 @@ export function marker(map, coords, label = "•", className = "") {
     }),
   }).addTo(map);
 }
+// 장소 검색은 카카오맵에서만 된다(OpenStreetMap은 지도를 움직여 고른다).
+export const canSearchPlaces = false;
+export async function searchPlaces() { return []; }
 // 여러 핀을 겹치지 않게 그린다: 가까이 모인 핀은 숫자 묶음으로 보여주고, 누르면 그 묶음이 보이게 확대한다.
 // items: { coords, onClick?, popup?, className? }. 확대·축소할 때마다 다시 묶는다.
 export function pins(map, items) {

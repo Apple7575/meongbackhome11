@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { withDistrict } from "../../districts.js";
 import { placeText } from "../../format.ts";
 import { useStore } from "../../app/useStore.ts";
 import { commit } from "../../app/actions.ts";
@@ -24,7 +25,7 @@ interface ReportValues {
   name: string; breed: string; age: string; sex: string; color: string; size: string; accessory: string;
   region: string; time: string; location: string; description: string;
 }
-interface ReportExtra { coords: Coords; picked: boolean; address?: string; short?: string; images?: string[] }
+interface ReportExtra { coords: Coords; picked: boolean; address?: string; short?: string; district?: string; images?: string[] }
 interface Step { title: string; description: string; body: ReactNode; check?: () => string | undefined }
 // mode: new(새 신고) · from(프로필로 신고) · edit(수정) · profile(우리 집 강아지 등록)
 export default function ReportFlow({ mode, id }: { mode: Mode; id?: string }) {
@@ -57,7 +58,8 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
   const [photoBusy, setPhotoBusy] = useState(false);
   const submitRef = useRef<(() => Promise<void>) | null>(null);
   // 주소를 아직 못 찾았거나 찾지 못해도 핀 위치는 정확하므로 막지 않는다.
-  const place = () => v.location.trim() || extra.short || extra.address || "지도에 표시한 곳";
+  // 직접 적은 장소에 시·군·구가 없으면 지도 주소의 시·군·구를 앞에 붙여 저장한다(지역 필터가 구 단위로 찾을 수 있게).
+  const place = () => withDistrict(v.location, extra.district) || extra.short || extra.address || "지도에 표시한 곳";
   const steps: Step[] = [
     {
       title: profileOnly ? "우리 아이 사진을 올려주세요" : "잃어버린 아이의 사진을 올려주세요",
@@ -107,8 +109,8 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
           <WhereField mapId="location-picker" location={v.location} placeholder="예: 석촌호수 동호 입구 편의점 앞"
             coords={extra.coords} picked={extra.picked} address={extra.address || ""} onMessage={toast}
             onLocation={(location) => set({ location })}
-            onPick={(coords) => draft.update({ values: { region: nearestRegion(coords) }, extra: { coords, picked: true, address: "", short: "" } })}
-            onPlace={(place) => draft.update({ values: place?.region ? { region: place.region } : {}, extra: { address: place?.label || "", short: place?.short || "" } })} />
+            onPick={(coords) => draft.update({ values: { region: nearestRegion(coords) }, extra: { coords, picked: true, address: "", short: "", district: "" } })}
+            onPlace={(place) => draft.update({ values: place?.region ? { region: place.region } : {}, extra: { address: place?.label || "", short: place?.short || "", district: place?.district || "" } })} />
         ),
         check: () => (!extra.picked ? "지도를 움직여 마지막으로 본 곳에 핀을 맞춰주세요." : undefined),
       },

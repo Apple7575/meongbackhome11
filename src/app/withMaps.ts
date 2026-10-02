@@ -2,6 +2,7 @@
 // 서버에 카카오 JavaScript 키(KAKAO_JS_KEY)가 있으면 카카오맵을, 없거나 SDK를 못 불러오면 OpenStreetMap(Leaflet)을 쓴다.
 // 두 모듈은 공개 함수 모양이 같다.
 // useEffect 안에서: useEffect(() => withMaps((maps) => { ...; return () => map.remove(); }), [deps])
+import { providers } from "./providers.ts";
 export type Maps = typeof import("../maps.js");
 declare global {
   interface Window { kakao?: { maps?: { load(cb: () => void): void; services?: unknown } } }
@@ -23,10 +24,7 @@ function loadKakao(key: string): Promise<boolean> {
 }
 export function mapProvider(): Promise<Maps> {
   provider ??= (async () => {
-    const key = await fetch("/api/auth/providers")
-      .then((r) => (r.ok ? r.json() : {}))
-      .then((p: { kakaoMapKey?: string | null }) => p.kakaoMapKey)
-      .catch(() => null);
+    const key = (await providers()).kakaoMapKey;
     if (key && (await loadKakao(key))) return (await import("../maps-kakao.js")) as Maps;
     return import("../maps.js");
   })();

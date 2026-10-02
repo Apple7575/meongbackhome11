@@ -3,6 +3,7 @@ import { read, api, enablePush, refresh } from "../client-store.js";
 import { commit } from "./actions.ts";
 import { openSheet } from "./sheets.ts";
 import { nativeShare } from "../share.ts";
+import { kakaoShareReady } from "../kakaoShare.ts";
 import { toast } from "./toast.ts";
 import { errorText } from "../errors.ts";
 import { takeInstallPrompt, isStandalone } from "./install.ts";
@@ -85,6 +86,8 @@ async function run(action: string, button: HTMLElement) {
       return;
     case "share": {
       const dog = read().dogs.find((d) => d.id === id);
+      // 카카오톡 공유를 쓸 수 있으면 카카오톡이 첫 버튼인 공유 시트를, 아니면 휴대폰 기본 공유창을 먼저 연다.
+      if (await kakaoShareReady()) return openSheet("share", { dogId: id });
       if (dog && (await nativeShare(dog))) return;
       openSheet("share", { dogId: id });
       return;
