@@ -1,4 +1,5 @@
-// 핀 위치의 주소를 OpenStreetMap(Nominatim)에서 찾는다. 키가 필요 없고, 이용 규칙상 초당 1회 이하로만 부른다.
+// 핀 위치의 주소를 찾는다. 카카오맵을 쓰는 중이면 카카오 좌표→주소를, 아니면 OpenStreetMap(Nominatim)을 쓴다.
+// Nominatim은 키가 필요 없고, 이용 규칙상 초당 1회 이하로만 부른다.
 // 실패해도 신고는 이어서 할 수 있어야 하므로 오류 대신 null을 돌려준다.
 import { regionFromAddress } from "./domain.js";
 import type { Coords } from "./types.ts";
@@ -15,6 +16,17 @@ let last = 0;
 export async function reverseGeocode([lat, lng]: Coords): Promise<Place | null> {
   const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
   if (cache.has(key)) return cache.get(key) ?? null;
+  if (window.kakao?.maps?.services) {
+    const { kakaoAddress } = await import("./maps-kakao.js");
+    const a = await kakaoAddress([lat, lng]);
+    const place: Place | null = a?.address ? {
+      label: [regionFromAddress(a.address.region_1depth_name), a.address.region_2depth_name, a.address.region_3depth_name].filter(Boolean).join(" "),
+      short: [a.address.region_2depth_name, a.address.region_3depth_name, a.road_address?.road_name].filter(Boolean).join(" "),
+      region: regionFromAddress(a.address.region_1depth_name),
+    } : null;
+    cache.set(key, place);
+    return place;
+  }
   const wait = last + 1100 - Date.now();
   if (wait > 0) await new Promise((r) => setTimeout(r, wait));
   last = Date.now();

@@ -34,6 +34,13 @@
 .mapNotice strong { font-size: var(--t6); color: var(--grey-900); }
 .mapNotice p { margin: 0 0 8px; font-size: var(--t7, 13px); color: var(--grey-600); }
 .mapNotice p:last-child { margin-bottom: 0; }
+/* 화면 안 안내 카드(위치 권한 등) */
+.noticeCard { margin: 8px var(--gutter) 4px; padding: 16px; border-radius: var(--radius); background: var(--grey-50);
+  display: grid; gap: 6px; }
+.noticeCard strong { font-size: var(--t6); color: var(--grey-900); }
+.noticeCard p { margin: 0 0 6px; font-size: var(--t7); line-height: var(--t7-lh); color: var(--grey-600); }
+.noticeCard .mapAreaActions { max-width: none; }
+.footnote { margin: 8px var(--gutter) 0; font-size: var(--t7); color: var(--grey-500); text-align: center; }
 .mapPanel { position: absolute; left: 0; right: 0; bottom: 0; z-index: 450; background: var(--bg);
   border-radius: var(--sheet-radius) var(--sheet-radius) 0 0; box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
   max-height: 60%; overflow: auto; }

@@ -6,6 +6,7 @@ import {
   escapeHTML,
   headingLabel,
 } from "./domain.js";
+import { groupByPixel, centerOf, samePlace } from "./cluster.js";
 export function baseMap(element, center = [37.512, 127.107], zoom = 15) {
   const map = L.map(element, {
     zoomControl: false,
@@ -53,6 +54,30 @@ export function marker(map, coords, label = "•", className = "") {
       iconAnchor: [17, 38],
     }),
   }).addTo(map);
+}
+// 여러 핀을 겹치지 않게 그린다: 가까이 모인 핀은 숫자 묶음으로 보여주고, 누르면 그 묶음이 보이게 확대한다.
+// items: { coords, onClick?, popup?, className? }. 확대·축소할 때마다 다시 묶는다.
+export function pins(map, items) {
+  const layer = L.layerGroup().addTo(map);
+  const draw = () => {
+    layer.clearLayers();
+    for (const g of groupByPixel(items, (c) => map.latLngToContainerPoint(c))) {
+      if (g.length === 1) {
+        const it = g[0];
+        const m = marker(layer, it.coords, "", it.className || "");
+        if (it.popup) m.bindPopup(it.popup);
+        if (it.onClick) m.on("click", it.onClick);
+        continue;
+      }
+      marker(layer, centerOf(g), String(g.length), "cluster-pin").on("click", () => {
+        if (samePlace(g) || map.getZoom() >= 18) return g[0].onClick?.();
+        map.fitBounds(L.latLngBounds(g.map((i) => i.coords)), { padding: [60, 60], maxZoom: 18 });
+      });
+    }
+  };
+  draw();
+  map.on("zoomend", draw);
+  return () => { map.off("zoomend", draw); layer.remove(); };
 }
 // 내 근처 반경을 원으로 그리고, 원 전체가 화면에 들어오게 맞춘다.
 export function rangeCircle(map, center, km, padding = {}) {

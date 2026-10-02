@@ -1,11 +1,12 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { useStore } from "../app/useStore.ts";
+import { useNearMe } from "../app/useNearMe.ts";
 import { Top, ListHeader, ListRow, Chip, Badge, Button, BottomCTA, IconCircle, EmptyState, SkeletonRows } from "../ui/index.tsx";
-import { RegionSheet, MapAreaPrompt } from "./shared.tsx";
+import { RegionSheet, OptionSheet, MapAreaPrompt, LocationDenied } from "./shared.tsx";
 import { headingLabel, haversine, COORDS } from "../domain.js";
+import { inRegion, splitRegion } from "../districts.js";
 import { withMaps } from "../app/withMaps.ts";
-import { toast } from "../app/toast.ts";
 import Icon from "../ui/Icon.tsx";
 import { relativeTime, dayGroup, distanceText } from "../format.ts";
 import s from "./screens.module.css";
@@ -17,6 +18,11 @@ const movement = (r: Report) => (r.stationary ? "머물러 있었어요" : r.hea
 // 내 근처 반경(km): 5km로 시작하고, 비어 있으면 가장 가까운 소식이 들어오는 단계까지 넓힐 수 있다.
 const NEAR_STEPS = [5, 10, 20, 50, 100];
 const VIEW_KEY = "meongback-sightings-view";
+// 기간: 0은 전체. 일주일이 지난 소식은 지도에서 흐리게 보여준다.
+const PERIODS: [string, string][] = [["0", "전체 기간"], ["3", "최근 3일"], ["7", "최근 7일"], ["30", "최근 30일"]];
+const DAY = 86400000;
+const OLD_DAYS = 7;
+const isOld = (r: Report) => Date.now() - new Date(r.time).getTime() > OLD_DAYS * DAY;
 // 목격 소식 지도: 핀을 누르면 그 제보를 연다. 내 근처로 볼 때는 내 위치와 반경 원을, 지역으로 볼 때는 그 지역을 보여준다.
 // 소식이 없어도 지도는 그대로 두고 위에 안내(children)만 띄운다.
 function SightingsMap({ reports, here, km, center, children }: { reports: Report[]; here: Coords | null; km: number; center: Coords; children?: ReactNode }) {
@@ -24,10 +30,14 @@ function SightingsMap({ reports, here, km, center, children }: { reports: Report
   const ids = reports.map((r) => r.id).join();
   useEffect(
     () =>
-      withMaps(({ baseMap, marker, rangeCircle }) => {
+      withMaps(({ baseMap, marker, pins, rangeCircle }) => {
         if (!ref.current) return;
         const map = baseMap(ref.current, here || reports[0]?.coords || center, here || reports.length === 1 ? 14 : 11);
-        reports.forEach((r) => marker(map, r.coords, "").on("click", () => window.dispatchEvent(new CustomEvent("open-report", { detail: r.id }))));
+        pins(map, reports.map((r) => ({
+          coords: r.coords,
+          className: isOld(r) ? "old-pin" : "",
+          onClick: () => window.dispatchEvent(new CustomEvent("open-report", { detail: r.id })),
+        })));
         if (here) {
           marker(map, here, "", "here-pin");
           rangeCircle(map, here, km, { paddingTopLeft: [16, 16], paddingBottomRight: [16, 16] });
@@ -56,24 +66,26 @@ export default function Sightings() {
   });
   const setView = (next: (v: "list" | "map") => "list" | "map") =>
     setViewState((v) => { const n = next(v); try { localStorage.setItem(VIEW_KEY, n); } catch { /* 저장이 막혀도 화면은 바뀐다 */ } return n; });
-  // 내 근처: 이 기기의 현재 위치는 거르기에만 쓰고 저장하지 않는다.
-  const [here, setHere] = useState<Coords | null>(null);
   const [nearKm, setNearKm] = useState(NEAR_STEPS[0]);
+  const [days, setDays] = useState("0");
+  const [periodSheet, setPeriodSheet] = useState(false);
+  // 내 근처: 이미 위치를 허용했다면 열자마자 내 근처로 보여준다.
+  const onFound = useCallback(() => { setNearKm(NEAR_STEPS[0]); setLimit(20); }, []);
+  const { here, denied, locate, clear, dismiss } = useNearMe({ auto: true, onFound });
   const close = useCallback(() => setSheet(false), []);
-  const near = () => {
-    if (here) return setHere(null);
-    if (!navigator.geolocation) return toast("이 브라우저에서는 위치를 가져올 수 없어요.");
-    toast("현재 위치를 확인하고 있어요.");
-    navigator.geolocation.getCurrentPosition(
-      (p) => { setHere([p.coords.latitude, p.coords.longitude]); setNearKm(NEAR_STEPS[0]); setLimit(20); },
-      () => toast("위치 권한을 허용하면 내 근처 목격 소식을 볼 수 있어요."),
-      { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 },
-    );
-  };
-  const regionOf = (r: Report) => r.region || db.dogs.find((d) => d.id === r.dogId)?.region;
+  const closePeriod = useCallback(() => setPeriodSheet(false), []);
+  const near = () => (here ? clear() : locate());
+  const pickRegion = (v: string) => { setRegion(v); clear(); setLimit(20); };
+  const dogOf = (r: Report) => db.dogs.find((d) => d.id === r.dogId);
+  const regionOf = (r: Report) => r.region || dogOf(r)?.region;
+  // 시·군·구는 장소 글로 가린다. 제보 글에 구 이름이 없으면 연결된 강아지의 장소도 함께 본다.
+  const placeOf = (r: Report) => [r.location, dogOf(r)?.location].filter(Boolean).join(" ");
   const km = (r: Report) => (here ? haversine(here, r.coords) : 0);
-  const reports = db.reports
-    .filter((r) => (here ? Array.isArray(r.coords) && km(r) <= nearKm : region === "전국" || regionOf(r) === region))
+  const recent = db.reports.filter((r) => days === "0" || Date.now() - new Date(r.time).getTime() <= Number(days) * DAY);
+  // 위치가 없는 제보는 내 근처에서 빠진다. 몇 건인지 알려준다.
+  const noCoords = here ? recent.filter((r) => !Array.isArray(r.coords)).length : 0;
+  const reports = recent
+    .filter((r) => (here ? Array.isArray(r.coords) && km(r) <= nearKm : inRegion(regionOf(r), placeOf(r), region)))
     .sort((a, b) => (here ? km(a) - km(b) : new Date(b.time).getTime() - new Date(a.time).getTime()));
   const groups: [DayGroup, Report[]][] = [];
   for (const r of reports.slice(0, limit)) {
@@ -82,9 +94,10 @@ export default function Sightings() {
     groups[groups.length - 1][1].push(r);
   }
   // 반경 안이 비었을 때: 가장 가까운 소식까지의 거리와, 그게 들어오는 반경을 알려준다.
-  const nearest = here && !reports.length ? Math.min(...db.reports.filter((r) => Array.isArray(r.coords)).map(km)) : Infinity;
+  const nearest = here && !reports.length ? Math.min(...recent.filter((r) => Array.isArray(r.coords)).map(km)) : Infinity;
   const widen = NEAR_STEPS.find((k) => k >= nearest);
-  const emptyTitle = here ? `내 근처 ${nearKm}km 안에는 아직 목격 소식이 없어요` : region === "전국" ? "아직 목격 소식이 없어요" : `${region}에는 아직 목격 소식이 없어요`;
+  const when = days === "0" ? "" : `최근 ${days}일 동안 `;
+  const emptyTitle = here ? `${when}내 근처 ${nearKm}km 안에는 목격 소식이 없어요` : region === "전국" ? `${when}목격 소식이 없어요` : `${when}${region}에는 목격 소식이 없어요`;
   const emptyText = widen ? `가장 가까운 소식은 ${distanceText(nearest)} 떨어져 있어요` : "주변에서 본 강아지가 있다면 알려주세요";
   const widenButton = widen && <Button variant="weak" onClick={() => setNearKm(widen)}>{widen}km까지 넓혀 보기</Button>;
   const dogName = (r: Report) => db.dogs.find((d) => d.id === r.dogId)?.name;
@@ -93,19 +106,21 @@ export default function Sightings() {
       <Top title="목격 소식" />
       <div className={s.sticky}>
         <div className={s.chips}>
-          {!here && <Chip onClick={() => setSheet(true)} expanded={sheet}>{region}</Chip>}
           <Chip icon="LocateFixed" onClick={near} pressed={!!here}>{here ? `내 근처 ${nearKm}km` : "내 근처"}</Chip>
+          <Chip onClick={() => setSheet(true)} expanded={sheet}>{here ? "지역" : region}</Chip>
+          <Chip onClick={() => setPeriodSheet(true)} expanded={periodSheet}>{PERIODS.find(([v]) => v === days)?.[1]}</Chip>
           <button type="button" className={s.viewToggle} onClick={() => setView((v) => (v === "list" ? "map" : "list"))} aria-label={view === "list" ? "지도로 보기" : "목록으로 보기"}>
             <Icon name={view === "list" ? "Map" : "List"} />
           </button>
         </div>
       </div>
+      {denied && <LocationDenied onRetry={() => locate()} onPick={() => setSheet(true)} onClose={dismiss} />}
       {db.connection === "loading" ? (
         <SkeletonRows />
       ) : view === "map" && !here && region === "전국" ? (
         <MapAreaPrompt onNear={near} onPick={() => setSheet(true)} />
       ) : view === "map" ? (
-        <SightingsMap reports={reports} here={here} km={nearKm} center={COORDS[region] || COORDS.서울}>
+        <SightingsMap reports={reports} here={here} km={nearKm} center={COORDS[splitRegion(region)[0]] || COORDS.서울}>
           {!reports.length && (
             <div className={s.mapNotice} role="status">
               <strong>{emptyTitle}</strong>
@@ -136,11 +151,13 @@ export default function Sightings() {
           </section>
         ))
       )}
+      {noCoords > 0 && <p className={s.footnote}>위치 정보가 없는 제보 {noCoords}건은 내 근처에서 빠졌어요</p>}
       {view === "list" && reports.length > limit && (
         <div className={s.more}><Button variant="weak" full onClick={() => setLimit((l) => l + 20)}>더 보기</Button></div>
       )}
       <BottomCTA data-action="sighting">강아지를 봤어요</BottomCTA>
-      <RegionSheet open={sheet} value={region} onSelect={setRegion} onClose={close} />
+      <RegionSheet districts open={sheet} value={region} onSelect={pickRegion} onClose={close} />
+      <OptionSheet open={periodSheet} title="기간" options={PERIODS} value={days} onSelect={(v) => { setDays(v); setLimit(20); }} onClose={closePeriod} />
     </div>
   );
 }

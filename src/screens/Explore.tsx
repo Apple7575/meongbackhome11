@@ -3,7 +3,10 @@ import { useStore } from "../app/useStore.ts";
 import { Top, Chip, Button, EmptyState } from "../ui/index.tsx";
 import Icon from "../ui/Icon.tsx";
 import BottomSheet from "../ui/BottomSheet.tsx";
-import { DogRow, OptionSheet, RegionSheet, MapAreaPrompt } from "./shared.tsx";
+import { DogRow, OptionSheet, RegionSheet, MapAreaPrompt, LocationDenied } from "./shared.tsx";
+import { useNearMe } from "../app/useNearMe.ts";
+import { splitRegion } from "../districts.js";
+import { distanceText } from "../format.ts";
 import { filterDogs, COORDS, escapeHTML, haversine } from "../domain.js";
 import { toast } from "../app/toast.ts";
 import type { Coords } from "../types.ts";
@@ -52,29 +55,43 @@ function FilterSheet({ open, value, countFor, onApply, onClose }: FilterSheetPro
     </BottomSheet>
   );
 }
-// 내 위치가 있으면 그 근처를, 아니면 고른 지역의 강아지들이 다 보이게 연다(전국 지도는 열지 않는다).
+// 가까운 순일 때 지도 반경: 가장 가까운 강아지가 들어오는 가장 작은 단계(목격 소식과 같은 단계)
+const NEAR_STEPS = [5, 10, 20, 50, 100];
+// 내 위치가 있으면 그 근처를(반경 원과 함께), 아니면 고른 지역의 강아지들이 다 보이게 연다(전국 지도는 열지 않는다).
 function ExploreMap({ dogs, here, center }: { dogs: Dog[]; here: Coords | null; center: Coords }) {
+  const nearest = here && dogs.length ? haversine(here, dogs[0].coords) : Infinity;
+  const km = NEAR_STEPS.find((k) => k >= nearest);
   const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const ids = dogs.map((d) => d.id).join();
   useEffect(
     () =>
-      withMaps(({ baseMap, marker }) => {
+      withMaps(({ baseMap, marker, pins, rangeCircle }) => {
         if (!ref.current) return;
         const map = baseMap(ref.current, here || dogs[0]?.coords || center, here ? 13 : 12);
-        dogs.forEach((d) =>
-          marker(map, d.coords, "♥").bindPopup(`<a href="#/dog/${d.id}"><b>${escapeHTML(d.name)}</b> · ${escapeHTML(d.breed)}<br>${escapeHTML(d.location)}</a>`),
-        );
-        if (here) marker(map, here, "", "here-pin");
+        pins(map, dogs.map((d) => ({
+          coords: d.coords,
+          popup: `<a href="#/dog/${d.id}"><b>${escapeHTML(d.name)}</b> · ${escapeHTML(d.breed)}<br>${escapeHTML(d.location)}</a>`,
+        })));
+        if (here) {
+          marker(map, here, "", "here-pin");
+          if (km) rangeCircle(map, here, km);
+        }
         // 여러 마리면 모든 핀이 보이게 맞춘다(아래 목록 손잡이만큼 아래쪽 여백을 더 둔다).
         else if (dogs.length > 1) map.fitBounds(dogs.map((d) => d.coords), { paddingTopLeft: [40, 40], paddingBottomRight: [40, 100], maxZoom: 13 });
         return () => map.remove();
       }),
-    [ids, here?.join()],
+    [ids, here?.join(), center.join()],
   );
   return (
     <div className={s.map}>
       <div ref={ref} aria-label="실종 강아지 지도" />
+      {here && dogs.length > 0 && (
+        <div className={s.mapNotice} role="status">
+          <strong>{km ? `내 근처 ${km}km` : "내 근처 100km 안에는 찾는 강아지가 없어요"}</strong>
+          <p>가장 가까운 강아지는 {distanceText(nearest)} 떨어져 있어요</p>
+        </div>
+      )}
       <div className={s.mapPanel}>
         <button type="button" className={s.mapPanelToggle} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
           {dogs.length}마리 · {open ? "목록 접기" : "목록 펼치기"}
@@ -93,17 +110,9 @@ export default function Explore() {
   const close = useCallback(() => setSheet(null), []);
   const set = (patch: Partial<Filters>) => { setF((v) => ({ ...v, ...patch })); setLimit(20); };
   // 가까운 순: 이 기기의 현재 위치는 정렬에만 쓰고 저장하지 않는다.
-  const [here, setHere] = useState<Coords | null>(null);
-  const near = (value: string) => {
-    if (value !== "near") return setHere(null);
-    if (!navigator.geolocation) return toast("이 브라우저에서는 위치를 가져올 수 없어요.");
-    toast("현재 위치를 확인하고 있어요.");
-    navigator.geolocation.getCurrentPosition(
-      (p) => { setHere([p.coords.latitude, p.coords.longitude]); setLimit(20); toast("가까운 순으로 보여드려요."); },
-      () => toast("위치 권한을 허용하면 가까운 순으로 볼 수 있어요."),
-      { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 },
-    );
-  };
+  const onFound = useCallback(() => { setLimit(20); toast("가까운 순으로 보여드려요."); }, []);
+  const { here, denied, locate, clear, dismiss } = useNearMe({ onFound });
+  const near = (value: string) => (value === "near" ? locate() : clear());
   const filtered = filterDogs(db.dogs, f);
   const dogs = here ? [...filtered].sort((a, b) => haversine(here, a.coords) - haversine(here, b.coords)) : filtered;
   const filterCount = [f.color, f.size, f.accessory].filter(Boolean).length;
@@ -125,12 +134,13 @@ export default function Explore() {
           </button>
         </div>
       </div>
+      {denied && <LocationDenied onRetry={() => locate()} onPick={() => setSheet("region")} onClose={dismiss} />}
       {!dogs.length ? (
         <EmptyState title="조건에 맞는 강아지가 없어요" description="검색어나 필터를 바꿔보세요" action={<Button variant="weak" onClick={() => set(EMPTY)}>필터 초기화</Button>} />
       ) : view === "map" && !here && f.region === "전국" ? (
         <MapAreaPrompt onNear={() => near("near")} onPick={() => setSheet("region")} />
       ) : view === "map" ? (
-        <ExploreMap dogs={dogs} here={here} center={COORDS[f.region] || COORDS.서울} />
+        <ExploreMap dogs={dogs} here={here} center={COORDS[splitRegion(f.region)[0]] || COORDS.서울} />
       ) : (
         <>
           {dogs.slice(0, limit).map((d) => <DogRow key={d.id} dog={d} size={72} distance={here ? haversine(here, d.coords) : undefined} />)}
@@ -139,7 +149,7 @@ export default function Explore() {
           )}
         </>
       )}
-      <RegionSheet open={sheet === "region"} value={f.region} onSelect={(region: string) => set({ region })} onClose={close} />
+      <RegionSheet districts open={sheet === "region"} value={f.region} onSelect={(region: string) => set({ region })} onClose={close} />
       <OptionSheet open={sheet === "status"} title="상태" options={STATUS} value={f.status} onSelect={(status: string) => set({ status })} onClose={close} />
       <OptionSheet open={sheet === "sort"} title="정렬" options={SORTS} value={here ? "near" : "recent"} onSelect={near} onClose={close} />
       <FilterSheet open={sheet === "filters"} value={f} countFor={(d) => filterDogs(db.dogs, { ...f, ...d }).length} onApply={set} onClose={close} />

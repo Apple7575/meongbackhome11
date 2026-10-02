@@ -54,26 +54,44 @@ test("explore filters with easy-to-answer sheets and pages 20 at a time", async 
   // 전국은 한 장의 지도로 열지 않고, 지역을 고르면 그 지역 지도를 연다.
   await expect(page.locator(".leaflet-container")).toHaveCount(0);
   await page.getByRole("button", { name: "지역 고르기" }).click();
-  await page.getByRole("dialog", { name: "지역 선택" }).getByRole("button", { name: "서울" }).click();
+  await pickRegion(page, "서울", "서울 전체");
   await expect(page.locator(".leaflet-container")).toBeVisible();
   await page.getByRole("button", { name: "목록으로 보기" }).click();
   await expect(page.locator(".leaflet-container")).toHaveCount(0);
 });
-test("sightings near me are sorted by distance and can be browsed on a map", async ({ page, context }) => {
+// 지역 시트: 시·도를 고르면 이어서 시·군·구를 고른다.
+async function pickRegion(page, province, district) {
+  await page.getByRole("dialog", { name: "지역 선택" }).getByRole("button", { name: province, exact: true }).click();
+  await page.getByRole("dialog", { name: `${province} 시·군·구` }).getByRole("button", { name: district, exact: true }).click();
+}
+// 핀 하나를 누른다. 가까이 모인 핀은 숫자 묶음이라, 묶음을 눌러 확대한 뒤 다시 찾는다.
+async function openOnePin(page) {
+  const single = page.locator(".leaflet-marker-icon:has(.map-pin:not(.cluster-pin):not(.here-pin))");
+  for (let i = 0; i < 6 && !(await single.count()); i++) {
+    await page.locator(".leaflet-marker-icon:has(.cluster-pin)").first().dispatchEvent("click");
+    await page.waitForTimeout(400);
+  }
+  await single.first().dispatchEvent("click");
+}
+test("sightings open near me when location is already allowed, sorted by distance and on a map", async ({ page, context }) => {
   // 서울 송파구 근처에 있다고 가정한다(예시 목격 소식이 이 근처에 있다).
   await context.grantPermissions(["geolocation"]);
   await context.setGeolocation({ latitude: 37.5145, longitude: 127.1059 });
   await ready(page, "/#/sightings");
-  await page.getByRole("button", { name: "내 근처" }).click();
   await expect(page.getByRole("button", { name: "내 근처 5km" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("main").getByRole("heading", { name: "내 근처 5km" })).toBeVisible();
   const first = page.locator("[data-sighting-row]").first();
   await expect(first).toContainText(/^.*?(\d+m|\d+\.\dkm|\d+km) ·/);
   await page.getByRole("button", { name: "지도로 보기" }).click();
   await expect(page.locator(".leaflet-container")).toBeVisible();
-  // 다른 테스트가 만든 제보 핀이 겹칠 수 있어 핀에 직접 클릭 이벤트를 보낸다.
-  await page.locator(".leaflet-marker-icon").first().dispatchEvent("click");
+  await openOnePin(page);
   await expect(page.getByRole("dialog", { name: "목격 제보" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  // 지역 칩은 내 근처에서도 보이고, 지역을 고르면 내 근처가 꺼진다.
+  await page.getByRole("button", { name: "지역", exact: true }).click();
+  await pickRegion(page, "서울", "송파구");
+  await expect(page.getByRole("button", { name: "내 근처", exact: true })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("button", { name: "서울 송파구" })).toBeVisible();
 });
 test("sightings never open a whole-country map: pick an area or use my location first", async ({ page, context }) => {
   await ready(page, "/#/sightings");
@@ -81,14 +99,14 @@ test("sightings never open a whole-country map: pick an area or use my location 
   await expect(page.getByRole("heading", { name: "어느 동네를 지도로 볼까요?" })).toBeVisible();
   await expect(page.locator(".leaflet-container")).toHaveCount(0);
   await page.getByRole("button", { name: "지역 고르기" }).click();
-  await page.getByRole("dialog", { name: "지역 선택" }).getByRole("button", { name: "서울" }).click();
+  await pickRegion(page, "서울", "서울 전체");
   await expect(page.locator(".leaflet-container")).toBeVisible();
   // 서울 지도는 한반도 전체가 아니라 도시 단위로 열린다.
   const zoom = await page.locator(".leaflet-container").evaluate((el) => Number(el.querySelector(".leaflet-tile")?.getAttribute("src")?.split("/").at(-3)));
   expect(zoom).toBeGreaterThanOrEqual(10);
   await context.grantPermissions(["geolocation"]);
   await context.setGeolocation({ latitude: 37.5145, longitude: 127.1059 });
-  await page.getByRole("button", { name: "서울" }).click();
+  await page.getByRole("button", { name: "서울", exact: true }).click();
   await page.getByRole("dialog", { name: "지역 선택" }).getByRole("button", { name: "전국" }).click();
   await page.getByRole("button", { name: "내 위치로 보기" }).click();
   await expect(page.getByRole("button", { name: "내 근처 5km" })).toHaveAttribute("aria-pressed", "true");
@@ -99,10 +117,10 @@ test("an empty near-me map stays on screen and offers to widen to the nearest si
   await context.grantPermissions(["geolocation"]);
   await context.setGeolocation({ latitude: 37.66, longitude: 127.1 });
   await ready(page, "/#/sightings");
+  await expect(page.getByRole("button", { name: "내 근처 5km" })).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "지도로 보기" }).click();
-  await page.getByRole("button", { name: "내 위치로 보기" }).click();
   await expect(page.locator(".leaflet-container")).toBeVisible();
-  const notice = page.getByRole("status").filter({ hasText: "내 근처 5km 안에는 아직 목격 소식이 없어요" });
+  const notice = page.getByRole("status").filter({ hasText: "내 근처 5km 안에는 목격 소식이 없어요" });
   await expect(notice).toContainText(/가장 가까운 소식은 \d+(\.\d)?km 떨어져 있어요/);
   await expect(page.locator(".range-circle")).toHaveCount(1);
   await notice.getByRole("button", { name: "20km까지 넓혀 보기" }).click();
@@ -110,6 +128,36 @@ test("an empty near-me map stays on screen and offers to widen to the nearest si
   await expect(page.locator(".leaflet-marker-icon:not(:has(.here-pin))").first()).toBeVisible();
   await page.getByRole("button", { name: "목록으로 보기" }).click();
   await expect(page.locator("[data-sighting-row]").first()).toBeVisible();
+});
+test("denied location leaves an in-page guide with retry and region picking", async ({ page }) => {
+  await ready(page, "/#/sightings");
+  // 권한 거절을 흉내 낸다(브라우저마다 거절 창이 달라 위치 함수를 바꿔 끼운다).
+  await page.evaluate(() => {
+    navigator.geolocation.getCurrentPosition = (_ok, fail) => fail({ code: 1, PERMISSION_DENIED: 1 });
+  });
+  await page.getByRole("button", { name: "내 근처", exact: true }).click();
+  const guide = page.getByRole("alert").filter({ hasText: "위치 권한이 꺼져 있어요" });
+  await expect(guide).toBeVisible();
+  await guide.getByRole("button", { name: "지역 고르기" }).click();
+  await expect(guide).toHaveCount(0);
+  await pickRegion(page, "서울", "송파구");
+  await expect(page.getByRole("button", { name: "서울 송파구" })).toBeVisible();
+  expect(await page.locator("[data-sighting-row]").count()).toBeGreaterThan(0);
+  // 다른 구를 고르면 송파 예시 소식은 빠진다.
+  await page.getByRole("button", { name: "서울 송파구" }).click();
+  await pickRegion(page, "서울", "도봉구");
+  await expect(page.getByRole("button", { name: "서울 도봉구" })).toBeVisible();
+  await expect(page.locator("[data-sighting-row]", { hasText: "동호 산책로" })).toHaveCount(0);
+});
+test("the period filter narrows sightings to recent days", async ({ page }) => {
+  await ready(page, "/#/sightings");
+  const all = await page.locator("[data-sighting-row]").count();
+  await page.getByRole("button", { name: "전체 기간" }).click();
+  await page.getByRole("dialog", { name: "기간" }).getByRole("button", { name: "최근 3일" }).click();
+  await expect(page.getByRole("button", { name: "최근 3일" })).toBeVisible();
+  const recent = await page.locator("[data-sighting-row]").count();
+  expect(recent).toBeLessThanOrEqual(all);
+  for (const g of await page.getByRole("main").getByRole("heading", { level: 2 }).allInnerTexts()) expect(["오늘", "어제", "이번 주"]).toContain(g);
 });
 test("sightings are grouped by day, paged, and have one thumb-reach action", async ({ page }) => {
   await ready(page, "/#/sightings");

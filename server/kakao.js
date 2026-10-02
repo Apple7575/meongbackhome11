@@ -18,7 +18,8 @@ export function installKakao({ app, db, session, secure, fetchImpl = fetch, env 
   const enabled = () => !!env.KAKAO_REST_KEY;
   const origin = req => env.PUBLIC_ORIGIN || `${req.protocol}://${req.get('host')}`;
   const redirectUri = req => `${origin(req)}/api/auth/kakao/callback`;
-  app.get('/api/auth/providers', (req, res) => res.json({ kakao: enabled() }));
+  // kakaoMapKey: 카카오맵 JavaScript 키(브라우저에 공개되는 키, 카카오 콘솔에 등록한 사이트 주소에서만 동작한다)
+  app.get('/api/auth/providers', (req, res) => res.json({ kakao: enabled(), kakaoMapKey: env.KAKAO_JS_KEY || null }));
   app.get('/api/auth/kakao', (req, res) => {
     if (!enabled()) return res.status(404).json({ error: '카카오 로그인을 준비 중이에요.' });
     const state = randomBytes(16).toString('hex');
