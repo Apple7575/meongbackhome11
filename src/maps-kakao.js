@@ -38,7 +38,14 @@ function handle(kmap, element) {
 export function baseMap(element, center = [37.512, 127.107], zoom = 15) {
   element.classList.add("kakao-map");
   const kmap = new (k().Map)(element, { center: ll(center), level: level(zoom) });
-  kmap.addControl(new (k().ZoomControl)(), k().ControlPosition.RIGHT);
+  // 카카오 기본 확대 막대는 커서, Leaflet과 같은 작은 +/− 버튼을 붙인다(마우스 휠·두 손가락 확대는 기본으로 된다).
+  const zoomBox = document.createElement("div");
+  zoomBox.className = "kakao-zoom";
+  zoomBox.innerHTML = '<button type="button" aria-label="확대">+</button><button type="button" aria-label="축소">−</button>';
+  const [plus, minus] = zoomBox.children;
+  plus.addEventListener("click", () => kmap.setLevel(kmap.getLevel() - 1, { animate: !reduced() }));
+  minus.addEventListener("click", () => kmap.setLevel(kmap.getLevel() + 1, { animate: !reduced() }));
+  element.append(zoomBox);
   // 화면이 막 그려진 직후에는 크기가 0일 수 있어 한 번 다시 잰다.
   setTimeout(() => kmap.relayout(), 100);
   return handle(kmap, element);
@@ -49,7 +56,8 @@ export function marker(map, coords, label = "•", className = "") {
   const el = document.createElement("div");
   el.className = "custom-map-icon";
   el.innerHTML = `<span class="map-pin ${className}"><b>${escapeHTML(String(label || "•"))}</b></span>`;
-  const overlay = new (k().CustomOverlay)({ position: ll(coords), content: el, xAnchor: 0.5, yAnchor: 0.9, clickable: true });
+  // 내 위치 점은 다른 핀·묶음에 가리지 않게 늘 위에 둔다.
+  const overlay = new (k().CustomOverlay)({ position: ll(coords), content: el, xAnchor: 0.5, yAnchor: className.includes("here-pin") ? 0.5 : 0.9, zIndex: className.includes("here-pin") ? 10 : 1, clickable: true });
   overlay.setMap(map.kmap);
   let popup = null;
   const m = {

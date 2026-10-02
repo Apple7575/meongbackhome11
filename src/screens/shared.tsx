@@ -1,6 +1,7 @@
 import { ListRow, Thumb, Badge, Button, EmptyState } from "../ui/index.tsx";
 import BottomSheet from "../ui/BottomSheet.tsx";
 import { REGIONS } from "../domain.js";
+import Icon from "../ui/Icon.tsx";
 import { DISTRICTS, splitRegion } from "../districts.js";
 import { useState, useEffect } from "react";
 import { relativeTime, distanceText } from "../format.ts";
@@ -73,6 +74,14 @@ export function MapAreaPrompt({ onNear, onPick }: { onNear: () => void; onPick: 
         </div>
       }
     />
+  );
+}
+// 지도 위 '내 위치로' 버튼(지도 앱처럼 확대 버튼 위에 둔다).
+export function LocateButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button type="button" className={s.locateBtn} onClick={onClick} aria-label="내 위치로">
+      <Icon name="LocateFixed" size={20} />
+    </button>
   );
 }
 // 위치 권한을 거절했을 때 화면 안에 남기는 안내. 다시 시도하거나 지역을 직접 고를 수 있다.

@@ -180,6 +180,12 @@ textarea:focus-visible {
   box-shadow: 0 4px 16px rgba(0,0,0,0.16); font-size: 13px; line-height: 1.5; max-width: 240px; white-space: normal; }
 .kakao-popup a { color: inherit; text-decoration: none; }
 .kakao-map .custom-map-icon { cursor: pointer; }
+/* 카카오맵 확대 버튼(Leaflet 확대 버튼과 같은 자리·모양) */
+.kakao-zoom { position: absolute; right: 10px; bottom: 24px; z-index: 2; display: grid; background: #fff;
+  border-radius: 8px; box-shadow: 0 1px 5px rgba(0,0,0,0.25); overflow: hidden; }
+.kakao-zoom button { width: 36px; height: 36px; font-size: 20px; line-height: 1; color: #333; background: #fff; }
+.kakao-zoom button + button { border-top: 1px solid #ddd; }
+.kakao-zoom button:active { background: #f2f2f2; }
 /* 가까이 모인 핀 묶음(숫자) */
 .map-pin.cluster-pin { background: #c8603f; border-radius: 50%; transform: none; width: 38px; height: 38px; }
 .map-pin.cluster-pin > b { transform: none; font-size: 14px; }

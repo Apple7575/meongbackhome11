@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { useStore } from "../app/useStore.ts";
 import { useNearMe } from "../app/useNearMe.ts";
 import { Top, ListHeader, ListRow, Chip, Badge, Button, BottomCTA, IconCircle, EmptyState, SkeletonRows } from "../ui/index.tsx";
-import { RegionSheet, OptionSheet, MapAreaPrompt, LocationDenied } from "./shared.tsx";
+import { RegionSheet, OptionSheet, MapAreaPrompt, LocationDenied, LocateButton } from "./shared.tsx";
 import { headingLabel, haversine, COORDS } from "../domain.js";
 import { inRegion, splitRegion } from "../districts.js";
 import { withMaps } from "../app/withMaps.ts";
@@ -11,6 +11,7 @@ import Icon from "../ui/Icon.tsx";
 import { relativeTime, dayGroup, distanceText } from "../format.ts";
 import s from "./screens.module.css";
 import type { Report, Coords } from "../types.ts";
+import type { MapHandle } from "../maps.js";
 import type { DayGroup } from "../format.ts";
 import type { IconName } from "../ui/Icon.tsx";
 const KIND_ICON: Record<string, IconName> = { 목격: "MapPin", "보호 중": "HouseHeart", "기관 인계": "Building2" };
@@ -25,14 +26,16 @@ const OLD_DAYS = 7;
 const isOld = (r: Report) => Date.now() - new Date(r.time).getTime() > OLD_DAYS * DAY;
 // 목격 소식 지도: 핀을 누르면 그 제보를 연다. 내 근처로 볼 때는 내 위치와 반경 원을, 지역으로 볼 때는 그 지역을 보여준다.
 // 소식이 없어도 지도는 그대로 두고 위에 안내(children)만 띄운다.
-function SightingsMap({ reports, here, km, center, children }: { reports: Report[]; here: Coords | null; km: number; center: Coords; children?: ReactNode }) {
+function SightingsMap({ reports, here, km, center, onLocate, children }: { reports: Report[]; here: Coords | null; km: number; center: Coords; onLocate: () => void; children?: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<MapHandle | null>(null);
   const ids = reports.map((r) => r.id).join();
   useEffect(
     () =>
       withMaps(({ baseMap, marker, pins, rangeCircle }) => {
         if (!ref.current) return;
         const map = baseMap(ref.current, here || reports[0]?.coords || center, here || reports.length === 1 ? 14 : 11);
+        mapRef.current = map;
         pins(map, reports.map((r) => ({
           coords: r.coords,
           className: isOld(r) ? "old-pin" : "",
@@ -49,6 +52,8 @@ function SightingsMap({ reports, here, km, center, children }: { reports: Report
   return (
     <div className={s.map}>
       <div ref={ref} aria-label="목격 소식 지도. 핀을 누르면 제보를 볼 수 있어요" />
+      {/* 내 위치를 알면 그리로 돌아가고, 모르면 위치를 찾는다. */}
+      <LocateButton onClick={() => (here ? mapRef.current?.setView(here, 15) : onLocate())} />
       {children}
     </div>
   );
@@ -120,7 +125,7 @@ export default function Sightings() {
       ) : view === "map" && !here && region === "전국" ? (
         <MapAreaPrompt onNear={near} onPick={() => setSheet(true)} />
       ) : view === "map" ? (
-        <SightingsMap reports={reports} here={here} km={nearKm} center={COORDS[splitRegion(region)[0]] || COORDS.서울}>
+        <SightingsMap reports={reports} here={here} km={nearKm} onLocate={() => locate()} center={COORDS[splitRegion(region)[0]] || COORDS.서울}>
           {!reports.length && (
             <div className={s.mapNotice} role="status">
               <strong>{emptyTitle}</strong>

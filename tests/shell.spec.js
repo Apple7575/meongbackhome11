@@ -149,6 +149,31 @@ test("denied location leaves an in-page guide with retry and region picking", as
   await expect(page.getByRole("button", { name: "서울 도봉구" })).toBeVisible();
   await expect(page.locator("[data-sighting-row]", { hasText: "동호 산책로" })).toHaveCount(0);
 });
+test("the map zooms with the mouse wheel and has a back-to-my-location button", async ({ page, context }) => {
+  test.skip(test.info().project.name === "mobile", "마우스 휠은 데스크톱에서만");
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 37.5145, longitude: 127.1059 });
+  await ready(page, "/#/sightings");
+  await page.getByRole("button", { name: "지도로 보기" }).click();
+  const map = page.locator(".leaflet-container");
+  await expect(map).toBeVisible();
+  // 지금 보이는 배경 지도 조각의 확대 단계(조각 주소 .../z/x/y.png의 z 중 가장 큰 값)
+  const zoom = () => map.evaluate((el) => Math.max(0, ...[...el.querySelectorAll(".leaflet-tile")].map((t) => Number(t.getAttribute("src")?.split("/").at(-3)))));
+  await page.waitForTimeout(500);
+  const before = await zoom();
+  const box = await map.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, -600);
+  await expect.poll(zoom).toBeGreaterThan(before);
+  // 지도를 옮긴 뒤 '내 위치로'를 누르면 내 위치 점이 화면에 돌아온다.
+  await page.mouse.wheel(0, 1200);
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 20, box.y + 20, { steps: 8 });
+  await page.mouse.up();
+  await page.getByRole("button", { name: "내 위치로" }).click();
+  await expect(page.locator(".here-pin")).toBeInViewport();
+});
 test("the period filter narrows sightings to recent days", async ({ page }) => {
   await ready(page, "/#/sightings");
   const all = await page.locator("[data-sighting-row]").count();

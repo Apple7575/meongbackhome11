@@ -3,7 +3,8 @@ import { useStore } from "../app/useStore.ts";
 import { Top, Chip, Button, EmptyState } from "../ui/index.tsx";
 import Icon from "../ui/Icon.tsx";
 import BottomSheet from "../ui/BottomSheet.tsx";
-import { DogRow, OptionSheet, RegionSheet, MapAreaPrompt, LocationDenied } from "./shared.tsx";
+import { DogRow, OptionSheet, RegionSheet, MapAreaPrompt, LocationDenied, LocateButton } from "./shared.tsx";
+import type { MapHandle } from "../maps.js";
 import { useNearMe } from "../app/useNearMe.ts";
 import { splitRegion } from "../districts.js";
 import { distanceText } from "../format.ts";
@@ -58,7 +59,8 @@ function FilterSheet({ open, value, countFor, onApply, onClose }: FilterSheetPro
 // 가까운 순일 때 지도 반경: 가장 가까운 강아지가 들어오는 가장 작은 단계(목격 소식과 같은 단계)
 const NEAR_STEPS = [5, 10, 20, 50, 100];
 // 내 위치가 있으면 그 근처를(반경 원과 함께), 아니면 고른 지역의 강아지들이 다 보이게 연다(전국 지도는 열지 않는다).
-function ExploreMap({ dogs, here, center }: { dogs: Dog[]; here: Coords | null; center: Coords }) {
+function ExploreMap({ dogs, here, center, onLocate }: { dogs: Dog[]; here: Coords | null; center: Coords; onLocate: () => void }) {
+  const mapRef = useRef<MapHandle | null>(null);
   const nearest = here && dogs.length ? haversine(here, dogs[0].coords) : Infinity;
   const km = NEAR_STEPS.find((k) => k >= nearest);
   const ref = useRef<HTMLDivElement>(null);
@@ -69,6 +71,7 @@ function ExploreMap({ dogs, here, center }: { dogs: Dog[]; here: Coords | null; 
       withMaps(({ baseMap, marker, pins, rangeCircle }) => {
         if (!ref.current) return;
         const map = baseMap(ref.current, here || dogs[0]?.coords || center, here ? 13 : 12);
+        mapRef.current = map;
         pins(map, dogs.map((d) => ({
           coords: d.coords,
           popup: `<a href="#/dog/${d.id}"><b>${escapeHTML(d.name)}</b> · ${escapeHTML(d.breed)}<br>${escapeHTML(d.location)}</a>`,
@@ -86,6 +89,7 @@ function ExploreMap({ dogs, here, center }: { dogs: Dog[]; here: Coords | null; 
   return (
     <div className={s.map}>
       <div ref={ref} aria-label="실종 강아지 지도" />
+      <LocateButton onClick={() => (here ? mapRef.current?.setView(here, 14) : onLocate())} />
       {here && dogs.length > 0 && (
         <div className={s.mapNotice} role="status">
           <strong>{km ? `내 근처 ${km}km` : "내 근처 100km 안에는 찾는 강아지가 없어요"}</strong>
@@ -140,7 +144,7 @@ export default function Explore() {
       ) : view === "map" && !here && f.region === "전국" ? (
         <MapAreaPrompt onNear={() => near("near")} onPick={() => setSheet("region")} />
       ) : view === "map" ? (
-        <ExploreMap dogs={dogs} here={here} center={COORDS[splitRegion(f.region)[0]] || COORDS.서울} />
+        <ExploreMap dogs={dogs} here={here} onLocate={() => near("near")} center={COORDS[splitRegion(f.region)[0]] || COORDS.서울} />
       ) : (
         <>
           {dogs.slice(0, limit).map((d) => <DogRow key={d.id} dog={d} size={72} distance={here ? haversine(here, d.coords) : undefined} />)}

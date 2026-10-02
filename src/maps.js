@@ -10,7 +10,9 @@ import { groupByPixel, centerOf, samePlace } from "./cluster.js";
 export function baseMap(element, center = [37.512, 127.107], zoom = 15) {
   const map = L.map(element, {
     zoomControl: false,
-    scrollWheelZoom: false,
+    // 마우스 휠로 확대·축소(지도 앱과 같은 동작). 한 칸에 너무 많이 바뀌지 않게 조금 느리게.
+    scrollWheelZoom: true,
+    wheelPxPerZoomLevel: 90,
   }).setView(center, zoom);
   L.control.zoom({ position: "bottomright" }).addTo(map);
   const tiles = L.tileLayer(
@@ -47,6 +49,8 @@ export function baseMap(element, center = [37.512, 127.107], zoom = 15) {
 }
 export function marker(map, coords, label = "•", className = "") {
   return L.marker(coords, {
+    // 내 위치 점은 다른 핀·묶음에 가리지 않게 늘 위에 둔다.
+    zIndexOffset: className.includes("here-pin") ? 1000 : 0,
     icon: L.divIcon({
       className: "custom-map-icon",
       html: `<span class="map-pin ${className}"><b>${escapeHTML(label || "•")}</b></span>`,
