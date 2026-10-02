@@ -54,6 +54,12 @@ export function marker(map, coords, label = "•", className = "") {
     }),
   }).addTo(map);
 }
+// 내 근처 반경을 원으로 그리고, 원 전체가 화면에 들어오게 맞춘다.
+export function rangeCircle(map, center, km, padding = {}) {
+  const circle = L.circle(center, { radius: km * 1000, className: "range-circle", interactive: false }).addTo(map);
+  map.fitBounds(circle.getBounds(), padding);
+  return circle;
+}
 export function drawTimeline(map, reports, onSelect) {
   const ordered = chronologicalSightings(reports);
   const pins = new Map();

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import type { ReactNode } from "react";
 import { useStore } from "../app/useStore.ts";
 import { Top, ListHeader, ListRow, Chip, Badge, Button, BottomCTA, IconCircle, EmptyState, SkeletonRows } from "../ui/index.tsx";
 import { RegionSheet, MapAreaPrompt } from "./shared.tsx";
@@ -13,28 +14,32 @@ import type { DayGroup } from "../format.ts";
 import type { IconName } from "../ui/Icon.tsx";
 const KIND_ICON: Record<string, IconName> = { 목격: "MapPin", "보호 중": "HouseHeart", "기관 인계": "Building2" };
 const movement = (r: Report) => (r.stationary ? "머물러 있었어요" : r.heading == null ? "방향 정보 없음" : `${headingLabel(r.heading)}으로 이동`);
-// 내 근처로 볼 때의 반경(km)
-const NEAR_KM = 5;
+// 내 근처 반경(km): 5km로 시작하고, 비어 있으면 가장 가까운 소식이 들어오는 단계까지 넓힐 수 있다.
+const NEAR_STEPS = [5, 10, 20, 50, 100];
 const VIEW_KEY = "meongback-sightings-view";
-// 목격 소식 지도: 핀을 누르면 그 제보를 연다. 내 근처로 볼 때는 내 위치를, 지역으로 볼 때는 그 지역을 가운데에 둔다.
-function SightingsMap({ reports, here, center }: { reports: Report[]; here: Coords | null; center: Coords }) {
+// 목격 소식 지도: 핀을 누르면 그 제보를 연다. 내 근처로 볼 때는 내 위치와 반경 원을, 지역으로 볼 때는 그 지역을 보여준다.
+// 소식이 없어도 지도는 그대로 두고 위에 안내(children)만 띄운다.
+function SightingsMap({ reports, here, km, center, children }: { reports: Report[]; here: Coords | null; km: number; center: Coords; children?: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const ids = reports.map((r) => r.id).join();
   useEffect(
     () =>
-      withMaps(({ baseMap, marker }) => {
+      withMaps(({ baseMap, marker, rangeCircle }) => {
         if (!ref.current) return;
         const map = baseMap(ref.current, here || reports[0]?.coords || center, here || reports.length === 1 ? 14 : 11);
         reports.forEach((r) => marker(map, r.coords, "").on("click", () => window.dispatchEvent(new CustomEvent("open-report", { detail: r.id }))));
-        if (here) marker(map, here, "", "here-pin");
-        else if (reports.length > 1) map.fitBounds(reports.map((r) => r.coords), { paddingTopLeft: [40, 40], paddingBottomRight: [40, 100], maxZoom: 14 });
+        if (here) {
+          marker(map, here, "", "here-pin");
+          rangeCircle(map, here, km, { paddingTopLeft: [16, 16], paddingBottomRight: [16, 16] });
+        } else if (reports.length > 1) map.fitBounds(reports.map((r) => r.coords), { paddingTopLeft: [40, 40], paddingBottomRight: [40, 100], maxZoom: 14 });
         return () => map.remove();
       }),
-    [ids, here?.join()],
+    [ids, here?.join(), km, center.join()],
   );
   return (
     <div className={s.map}>
       <div ref={ref} aria-label="목격 소식 지도. 핀을 누르면 제보를 볼 수 있어요" />
+      {children}
     </div>
   );
 }
@@ -53,13 +58,14 @@ export default function Sightings() {
     setViewState((v) => { const n = next(v); try { localStorage.setItem(VIEW_KEY, n); } catch { /* 저장이 막혀도 화면은 바뀐다 */ } return n; });
   // 내 근처: 이 기기의 현재 위치는 거르기에만 쓰고 저장하지 않는다.
   const [here, setHere] = useState<Coords | null>(null);
+  const [nearKm, setNearKm] = useState(NEAR_STEPS[0]);
   const close = useCallback(() => setSheet(false), []);
   const near = () => {
     if (here) return setHere(null);
     if (!navigator.geolocation) return toast("이 브라우저에서는 위치를 가져올 수 없어요.");
     toast("현재 위치를 확인하고 있어요.");
     navigator.geolocation.getCurrentPosition(
-      (p) => { setHere([p.coords.latitude, p.coords.longitude]); setLimit(20); },
+      (p) => { setHere([p.coords.latitude, p.coords.longitude]); setNearKm(NEAR_STEPS[0]); setLimit(20); },
       () => toast("위치 권한을 허용하면 내 근처 목격 소식을 볼 수 있어요."),
       { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 },
     );
@@ -67,14 +73,20 @@ export default function Sightings() {
   const regionOf = (r: Report) => r.region || db.dogs.find((d) => d.id === r.dogId)?.region;
   const km = (r: Report) => (here ? haversine(here, r.coords) : 0);
   const reports = db.reports
-    .filter((r) => (here ? Array.isArray(r.coords) && km(r) <= NEAR_KM : region === "전국" || regionOf(r) === region))
+    .filter((r) => (here ? Array.isArray(r.coords) && km(r) <= nearKm : region === "전국" || regionOf(r) === region))
     .sort((a, b) => (here ? km(a) - km(b) : new Date(b.time).getTime() - new Date(a.time).getTime()));
   const groups: [DayGroup, Report[]][] = [];
   for (const r of reports.slice(0, limit)) {
-    const label = here ? (`내 근처 ${NEAR_KM}km` as DayGroup) : dayGroup(r.time);
+    const label = here ? (`내 근처 ${nearKm}km` as DayGroup) : dayGroup(r.time);
     if (groups.at(-1)?.[0] !== label) groups.push([label, []]);
     groups[groups.length - 1][1].push(r);
   }
+  // 반경 안이 비었을 때: 가장 가까운 소식까지의 거리와, 그게 들어오는 반경을 알려준다.
+  const nearest = here && !reports.length ? Math.min(...db.reports.filter((r) => Array.isArray(r.coords)).map(km)) : Infinity;
+  const widen = NEAR_STEPS.find((k) => k >= nearest);
+  const emptyTitle = here ? `내 근처 ${nearKm}km 안에는 아직 목격 소식이 없어요` : region === "전국" ? "아직 목격 소식이 없어요" : `${region}에는 아직 목격 소식이 없어요`;
+  const emptyText = widen ? `가장 가까운 소식은 ${distanceText(nearest)} 떨어져 있어요` : "주변에서 본 강아지가 있다면 알려주세요";
+  const widenButton = widen && <Button variant="weak" onClick={() => setNearKm(widen)}>{widen}km까지 넓혀 보기</Button>;
   const dogName = (r: Report) => db.dogs.find((d) => d.id === r.dogId)?.name;
   return (
     <div className={`${s.screen} ${s.withCta}`}>
@@ -82,7 +94,7 @@ export default function Sightings() {
       <div className={s.sticky}>
         <div className={s.chips}>
           {!here && <Chip onClick={() => setSheet(true)} expanded={sheet}>{region}</Chip>}
-          <Chip icon="LocateFixed" onClick={near} pressed={!!here}>{here ? `내 근처 ${NEAR_KM}km` : "내 근처"}</Chip>
+          <Chip icon="LocateFixed" onClick={near} pressed={!!here}>{here ? `내 근처 ${nearKm}km` : "내 근처"}</Chip>
           <button type="button" className={s.viewToggle} onClick={() => setView((v) => (v === "list" ? "map" : "list"))} aria-label={view === "list" ? "지도로 보기" : "목록으로 보기"}>
             <Icon name={view === "list" ? "Map" : "List"} />
           </button>
@@ -90,16 +102,20 @@ export default function Sightings() {
       </div>
       {db.connection === "loading" ? (
         <SkeletonRows />
-      ) : !reports.length ? (
-        here ? (
-          <EmptyState image="/assets/mascot-search.webp" title={`내 근처 ${NEAR_KM}km 안에는 아직 목격 소식이 없어요`} description="다른 지역도 살펴보거나, 본 강아지가 있다면 알려주세요" />
-        ) : (
-          <EmptyState image="/assets/mascot-search.webp" title="아직 목격 소식이 없어요" description="주변에서 본 강아지를 알려주세요" />
-        )
       ) : view === "map" && !here && region === "전국" ? (
         <MapAreaPrompt onNear={near} onPick={() => setSheet(true)} />
       ) : view === "map" ? (
-        <SightingsMap reports={reports} here={here} center={COORDS[region] || COORDS.서울} />
+        <SightingsMap reports={reports} here={here} km={nearKm} center={COORDS[region] || COORDS.서울}>
+          {!reports.length && (
+            <div className={s.mapNotice} role="status">
+              <strong>{emptyTitle}</strong>
+              <p>{emptyText}</p>
+              {widenButton}
+            </div>
+          )}
+        </SightingsMap>
+      ) : !reports.length ? (
+        <EmptyState image="/assets/mascot-search.webp" title={emptyTitle} description={emptyText} action={widenButton || undefined} />
       ) : (
         groups.map(([label, items]) => (
           <section key={label}>

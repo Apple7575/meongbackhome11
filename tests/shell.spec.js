@@ -94,6 +94,23 @@ test("sightings never open a whole-country map: pick an area or use my location 
   await expect(page.getByRole("button", { name: "내 근처 5km" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator(".leaflet-container")).toBeVisible();
 });
+test("an empty near-me map stays on screen and offers to widen to the nearest sighting", async ({ page, context }) => {
+  // 예시 목격 소식(송파)에서 북쪽으로 약 16km: 5km 안에는 없고 20km 안에는 있다.
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 37.66, longitude: 127.1 });
+  await ready(page, "/#/sightings");
+  await page.getByRole("button", { name: "지도로 보기" }).click();
+  await page.getByRole("button", { name: "내 위치로 보기" }).click();
+  await expect(page.locator(".leaflet-container")).toBeVisible();
+  const notice = page.getByRole("status").filter({ hasText: "내 근처 5km 안에는 아직 목격 소식이 없어요" });
+  await expect(notice).toContainText(/가장 가까운 소식은 \d+(\.\d)?km 떨어져 있어요/);
+  await expect(page.locator(".range-circle")).toHaveCount(1);
+  await notice.getByRole("button", { name: "20km까지 넓혀 보기" }).click();
+  await expect(page.getByRole("button", { name: "내 근처 20km" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".leaflet-marker-icon:not(:has(.here-pin))").first()).toBeVisible();
+  await page.getByRole("button", { name: "목록으로 보기" }).click();
+  await expect(page.locator("[data-sighting-row]").first()).toBeVisible();
+});
 test("sightings are grouped by day, paged, and have one thumb-reach action", async ({ page }) => {
   await ready(page, "/#/sightings");
   await expect(page.getByRole("heading", { name: "목격 소식" })).toBeVisible();

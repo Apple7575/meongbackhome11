@@ -28,6 +28,12 @@
   align-items: center; justify-content: center; border-radius: var(--radius); color: var(--grey-800); }
 .map { position: relative; height: calc(100dvh - var(--top-h) - var(--nav-h) - 180px); min-height: 320px; }
 .map > div:first-child { position: absolute; inset: 0; }
+/* 지도는 그대로 두고, 결과가 없을 때 위에 띄우는 안내 카드 */
+.mapNotice { position: absolute; left: var(--gutter); right: var(--gutter); top: 12px; z-index: 1001; background: var(--bg);
+  border-radius: var(--radius); box-shadow: 0 4px 16px rgba(0,0,0,0.12); padding: 16px; display: grid; gap: 4px; }
+.mapNotice strong { font-size: var(--t6); color: var(--grey-900); }
+.mapNotice p { margin: 0 0 8px; font-size: var(--t7, 13px); color: var(--grey-600); }
+.mapNotice p:last-child { margin-bottom: 0; }
 .mapPanel { position: absolute; left: 0; right: 0; bottom: 0; z-index: 450; background: var(--bg);
   border-radius: var(--sheet-radius) var(--sheet-radius) 0 0; box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
   max-height: 60%; overflow: auto; }
