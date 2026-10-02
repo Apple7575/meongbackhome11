@@ -88,9 +88,9 @@ test("the sightings tab reopens in the view used last (list by default)", async 
   await ready(page, "/#/sightings");
   await expect(page.locator("[data-sighting-row]").first()).toBeVisible();
   await page.getByRole("button", { name: "지도로 보기" }).click();
-  await expect(page.locator(".leaflet-container")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "어느 동네를 지도로 볼까요?" })).toBeVisible();
   await page.reload();
-  await expect(page.locator(".leaflet-container")).toBeVisible();
+  await expect(page.getByRole("button", { name: "목록으로 보기" })).toBeVisible();
   await page.getByRole("button", { name: "목록으로 보기" }).click();
   await page.reload();
   await expect(page.locator("[data-sighting-row]").first()).toBeVisible();

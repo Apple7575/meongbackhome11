@@ -3,7 +3,7 @@ import { useStore } from "../app/useStore.ts";
 import { Top, Chip, Button, EmptyState } from "../ui/index.tsx";
 import Icon from "../ui/Icon.tsx";
 import BottomSheet from "../ui/BottomSheet.tsx";
-import { DogRow, OptionSheet, RegionSheet } from "./shared.tsx";
+import { DogRow, OptionSheet, RegionSheet, MapAreaPrompt } from "./shared.tsx";
 import { filterDogs, COORDS, escapeHTML, haversine } from "../domain.js";
 import { toast } from "../app/toast.ts";
 import type { Coords } from "../types.ts";
@@ -52,7 +52,8 @@ function FilterSheet({ open, value, countFor, onApply, onClose }: FilterSheetPro
     </BottomSheet>
   );
 }
-function ExploreMap({ dogs }: { dogs: Dog[] }) {
+// 내 위치가 있으면 그 근처를, 아니면 고른 지역의 강아지들이 다 보이게 연다(전국 지도는 열지 않는다).
+function ExploreMap({ dogs, here, center }: { dogs: Dog[]; here: Coords | null; center: Coords }) {
   const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const ids = dogs.map((d) => d.id).join();
@@ -60,15 +61,16 @@ function ExploreMap({ dogs }: { dogs: Dog[] }) {
     () =>
       withMaps(({ baseMap, marker }) => {
         if (!ref.current) return;
-        const map = baseMap(ref.current, dogs[0]?.coords || COORDS.서울, dogs.length > 1 ? 7 : 12);
+        const map = baseMap(ref.current, here || dogs[0]?.coords || center, here ? 13 : 12);
         dogs.forEach((d) =>
           marker(map, d.coords, "♥").bindPopup(`<a href="#/dog/${d.id}"><b>${escapeHTML(d.name)}</b> · ${escapeHTML(d.breed)}<br>${escapeHTML(d.location)}</a>`),
         );
+        if (here) marker(map, here, "", "here-pin");
         // 여러 마리면 모든 핀이 보이게 맞춘다(아래 목록 손잡이만큼 아래쪽 여백을 더 둔다).
-        if (dogs.length > 1) map.fitBounds(dogs.map((d) => d.coords), { paddingTopLeft: [40, 40], paddingBottomRight: [40, 100], maxZoom: 13 });
+        else if (dogs.length > 1) map.fitBounds(dogs.map((d) => d.coords), { paddingTopLeft: [40, 40], paddingBottomRight: [40, 100], maxZoom: 13 });
         return () => map.remove();
       }),
-    [ids],
+    [ids, here?.join()],
   );
   return (
     <div className={s.map}>
@@ -125,8 +127,10 @@ export default function Explore() {
       </div>
       {!dogs.length ? (
         <EmptyState title="조건에 맞는 강아지가 없어요" description="검색어나 필터를 바꿔보세요" action={<Button variant="weak" onClick={() => set(EMPTY)}>필터 초기화</Button>} />
+      ) : view === "map" && !here && f.region === "전국" ? (
+        <MapAreaPrompt onNear={() => near("near")} onPick={() => setSheet("region")} />
       ) : view === "map" ? (
-        <ExploreMap dogs={dogs} />
+        <ExploreMap dogs={dogs} here={here} center={COORDS[f.region] || COORDS.서울} />
       ) : (
         <>
           {dogs.slice(0, limit).map((d) => <DogRow key={d.id} dog={d} size={72} distance={here ? haversine(here, d.coords) : undefined} />)}

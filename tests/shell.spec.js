@@ -51,6 +51,10 @@ test("explore filters with easy-to-answer sheets and pages 20 at a time", async 
   await expect(page.getByRole("button", { name: "필터 1" })).toBeVisible();
   for (const row of await page.locator("[data-dog-row]").all()) await expect(row).toBeVisible();
   await page.getByRole("button", { name: "지도로 보기" }).click();
+  // 전국은 한 장의 지도로 열지 않고, 지역을 고르면 그 지역 지도를 연다.
+  await expect(page.locator(".leaflet-container")).toHaveCount(0);
+  await page.getByRole("button", { name: "지역 고르기" }).click();
+  await page.getByRole("dialog", { name: "지역 선택" }).getByRole("button", { name: "서울" }).click();
   await expect(page.locator(".leaflet-container")).toBeVisible();
   await page.getByRole("button", { name: "목록으로 보기" }).click();
   await expect(page.locator(".leaflet-container")).toHaveCount(0);
@@ -70,6 +74,25 @@ test("sightings near me are sorted by distance and can be browsed on a map", asy
   // 다른 테스트가 만든 제보 핀이 겹칠 수 있어 핀에 직접 클릭 이벤트를 보낸다.
   await page.locator(".leaflet-marker-icon").first().dispatchEvent("click");
   await expect(page.getByRole("dialog", { name: "목격 제보" })).toBeVisible();
+});
+test("sightings never open a whole-country map: pick an area or use my location first", async ({ page, context }) => {
+  await ready(page, "/#/sightings");
+  await page.getByRole("button", { name: "지도로 보기" }).click();
+  await expect(page.getByRole("heading", { name: "어느 동네를 지도로 볼까요?" })).toBeVisible();
+  await expect(page.locator(".leaflet-container")).toHaveCount(0);
+  await page.getByRole("button", { name: "지역 고르기" }).click();
+  await page.getByRole("dialog", { name: "지역 선택" }).getByRole("button", { name: "서울" }).click();
+  await expect(page.locator(".leaflet-container")).toBeVisible();
+  // 서울 지도는 한반도 전체가 아니라 도시 단위로 열린다.
+  const zoom = await page.locator(".leaflet-container").evaluate((el) => Number(el.querySelector(".leaflet-tile")?.getAttribute("src")?.split("/").at(-3)));
+  expect(zoom).toBeGreaterThanOrEqual(10);
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: 37.5145, longitude: 127.1059 });
+  await page.getByRole("button", { name: "서울" }).click();
+  await page.getByRole("dialog", { name: "지역 선택" }).getByRole("button", { name: "전국" }).click();
+  await page.getByRole("button", { name: "내 위치로 보기" }).click();
+  await expect(page.getByRole("button", { name: "내 근처 5km" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".leaflet-container")).toBeVisible();
 });
 test("sightings are grouped by day, paged, and have one thumb-reach action", async ({ page }) => {
   await ready(page, "/#/sightings");

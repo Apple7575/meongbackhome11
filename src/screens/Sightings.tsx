@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useStore } from "../app/useStore.ts";
 import { Top, ListHeader, ListRow, Chip, Badge, Button, BottomCTA, IconCircle, EmptyState, SkeletonRows } from "../ui/index.tsx";
-import { RegionSheet } from "./shared.tsx";
+import { RegionSheet, MapAreaPrompt } from "./shared.tsx";
 import { headingLabel, haversine, COORDS } from "../domain.js";
 import { withMaps } from "../app/withMaps.ts";
 import { toast } from "../app/toast.ts";
@@ -16,15 +16,15 @@ const movement = (r: Report) => (r.stationary ? "머물러 있었어요" : r.hea
 // 내 근처로 볼 때의 반경(km)
 const NEAR_KM = 5;
 const VIEW_KEY = "meongback-sightings-view";
-// 목격 소식 지도: 핀을 누르면 그 제보를 연다. 내 근처로 볼 때는 내 위치를 가운데에 둔다.
-function SightingsMap({ reports, here }: { reports: Report[]; here: Coords | null }) {
+// 목격 소식 지도: 핀을 누르면 그 제보를 연다. 내 근처로 볼 때는 내 위치를, 지역으로 볼 때는 그 지역을 가운데에 둔다.
+function SightingsMap({ reports, here, center }: { reports: Report[]; here: Coords | null; center: Coords }) {
   const ref = useRef<HTMLDivElement>(null);
   const ids = reports.map((r) => r.id).join();
   useEffect(
     () =>
       withMaps(({ baseMap, marker }) => {
         if (!ref.current) return;
-        const map = baseMap(ref.current, here || reports[0]?.coords || COORDS.서울, here ? 14 : 11);
+        const map = baseMap(ref.current, here || reports[0]?.coords || center, here || reports.length === 1 ? 14 : 11);
         reports.forEach((r) => marker(map, r.coords, "").on("click", () => window.dispatchEvent(new CustomEvent("open-report", { detail: r.id }))));
         if (here) marker(map, here, "", "here-pin");
         else if (reports.length > 1) map.fitBounds(reports.map((r) => r.coords), { paddingTopLeft: [40, 40], paddingBottomRight: [40, 100], maxZoom: 14 });
@@ -40,7 +40,9 @@ function SightingsMap({ reports, here }: { reports: Report[]; here: Coords | nul
 }
 export default function Sightings() {
   const db = useStore();
-  const [region, setRegion] = useState("전국");
+  // 처음엔 홈과 같이 저장한 관심 지역으로 연다.
+  const [picked, setRegion] = useState<string | null>(null);
+  const region = picked ?? db.areas?.[0] ?? "전국";
   const [sheet, setSheet] = useState(false);
   const [limit, setLimit] = useState(20);
   // 목록·지도 중 마지막에 본 방식을 이 휴대폰에 기억한다(처음엔 읽기 쉬운 목록).
@@ -94,8 +96,10 @@ export default function Sightings() {
         ) : (
           <EmptyState image="/assets/mascot-search.webp" title="아직 목격 소식이 없어요" description="주변에서 본 강아지를 알려주세요" />
         )
+      ) : view === "map" && !here && region === "전국" ? (
+        <MapAreaPrompt onNear={near} onPick={() => setSheet(true)} />
       ) : view === "map" ? (
-        <SightingsMap reports={reports} here={here} />
+        <SightingsMap reports={reports} here={here} center={COORDS[region] || COORDS.서울} />
       ) : (
         groups.map(([label, items]) => (
           <section key={label}>
