@@ -110,10 +110,13 @@ export default function Sightings() {
     <div className={`${s.screen} ${s.withCta}`}>
       <Top title="목격 소식" />
       <div className={s.sticky}>
-        <div className={s.chips}>
-          <Chip icon="LocateFixed" onClick={near} pressed={!!here}>{here ? `내 근처 ${nearKm}km` : "내 근처"}</Chip>
-          <Chip onClick={() => setSheet(true)} expanded={sheet}>{here ? "지역" : region}</Chip>
-          <Chip onClick={() => setPeriodSheet(true)} expanded={periodSheet}>{PERIODS.find(([v]) => v === days)?.[1]}</Chip>
+        {/* 칩만 옆으로 밀리고, 목록·지도 전환 버튼은 오른쪽에 늘 보이게 둔다. */}
+        <div className={s.filterRow}>
+          <div className={s.chips}>
+            <Chip icon="LocateFixed" onClick={near} pressed={!!here}>{here ? `내 근처 ${nearKm}km` : "내 근처"}</Chip>
+            <Chip onClick={() => setSheet(true)} expanded={sheet}>{here ? "지역" : region}</Chip>
+            <Chip onClick={() => setPeriodSheet(true)} expanded={periodSheet}>{PERIODS.find(([v]) => v === days)?.[1]}</Chip>
+          </div>
           <button type="button" className={s.viewToggle} onClick={() => setView((v) => (v === "list" ? "map" : "list"))} aria-label={view === "list" ? "지도로 보기" : "목록으로 보기"}>
             <Icon name={view === "list" ? "Map" : "List"} />
           </button>

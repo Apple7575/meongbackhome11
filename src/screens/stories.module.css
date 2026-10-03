@@ -1,5 +1,4 @@
 .screen { padding-bottom: 96px; }
-.empty { margin: 0; padding: 8px var(--gutter) 12px; font-size: var(--t6); color: var(--grey-600); }
 .story { margin: 0 var(--gutter) 16px; border-radius: 16px; background: var(--grey-50); overflow: hidden; }
 .story img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
 .story h2 { margin: 16px 16px 4px; font-size: var(--t4); line-height: var(--t4-lh); font-weight: 700; color: var(--grey-900); letter-spacing: -0.01em; }

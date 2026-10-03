@@ -80,11 +80,14 @@ export default function Flow({ step, total, title, description, error, busy, nex
       <h1 className={s.title}>{title}</h1>
       {description && <p className={s.desc}>{description}</p>}
       <div className={s.body}>{children}</div>
-      {error && <p className={s.error} role="alert">{error}</p>}
       <div className={keyboard ? `${s.cta} ${s.ctaKeyboard}` : s.cta}>
-        {step > 0 && !keyboard && <Button variant="weak" size="lg" onClick={onBack}>이전</Button>}
-        {/* 누를 때 입력칸의 초점을 빼앗지 않아 키보드가 내려갔다 올라오지 않는다. */}
-        <Button type="submit" size="lg" disabled={busy} onMouseDown={(e) => e.preventDefault()}>{busy ? "잠시만요…" : nextLabel}</Button>
+        {/* 긴 단계에서는 본문 끝이 하단 버튼에 가려지므로, 안내는 버튼 바로 위에 붙여 늘 보이게 한다. */}
+        {error && <p className={s.ctaError} role="alert">{error}</p>}
+        <div className={s.ctaRow}>
+          {step > 0 && !keyboard && <Button variant="weak" size="lg" onClick={onBack}>이전</Button>}
+          {/* 누를 때 입력칸의 초점을 빼앗지 않아 키보드가 내려갔다 올라오지 않는다. */}
+          <Button type="submit" size="lg" disabled={busy} onMouseDown={(e) => e.preventDefault()}>{busy ? "잠시만요…" : nextLabel}</Button>
+        </div>
       </div>
     </form>
   );

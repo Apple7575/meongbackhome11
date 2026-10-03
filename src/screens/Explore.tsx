@@ -128,11 +128,14 @@ export default function Explore() {
           <Icon name="Search" size={20} />
           <input id="dog-search" type="search" value={f.query} onChange={(e) => set({ query: e.target.value })} placeholder="이름, 견종, 동네로 찾기" aria-label="강아지 검색" />
         </label>
-        <div className={s.chips}>
-          <Chip onClick={() => setSheet("region")} expanded={sheet === "region"}>{f.region}</Chip>
-          <Chip onClick={() => setSheet("status")} expanded={sheet === "status"}>{STATUS.find(([v]) => v === f.status)?.[1] ?? "전체"}</Chip>
-          <Chip icon="SlidersHorizontal" onClick={() => setSheet("filters")} expanded={sheet === "filters"}>{filterCount ? `필터 ${filterCount}` : "필터"}</Chip>
-          <Chip onClick={() => setSheet("sort")} expanded={sheet === "sort"}>{here ? "가까운 순" : "최신순"}</Chip>
+        {/* 칩만 옆으로 밀리고, 목록·지도 전환 버튼은 오른쪽에 늘 보이게 둔다. */}
+        <div className={s.filterRow}>
+          <div className={s.chips}>
+            <Chip onClick={() => setSheet("region")} expanded={sheet === "region"}>{f.region}</Chip>
+            <Chip onClick={() => setSheet("status")} expanded={sheet === "status"}>{STATUS.find(([v]) => v === f.status)?.[1] ?? "전체"}</Chip>
+            <Chip icon="SlidersHorizontal" onClick={() => setSheet("filters")} expanded={sheet === "filters"}>{filterCount ? `필터 ${filterCount}` : "필터"}</Chip>
+            <Chip onClick={() => setSheet("sort")} expanded={sheet === "sort"}>{here ? "가까운 순" : "최신순"}</Chip>
+          </div>
           <button type="button" className={s.viewToggle} onClick={() => setView((v) => (v === "list" ? "map" : "list"))} aria-label={view === "list" ? "지도로 보기" : "목록으로 보기"}>
             <Icon name={view === "list" ? "Map" : "List"} />
           </button>

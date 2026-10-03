@@ -112,11 +112,31 @@ export function Chip({ onClick, icon = "ChevronDown", expanded, pressed, childre
     </button>
   );
 }
+// 탭처럼 둘 중 하나를 고르는 칸. 칩과 달리 칸을 똑같이 나눠 긴 글자도 잘리지 않는다.
+export function Segmented<T extends string>({ label, options, value, onChange }: { label: string; options: [T, string][]; value: T; onChange: (value: T) => void }) {
+  return (
+    <div className={s.segmented} role="group" aria-label={label}>
+      {options.map(([v, text]) => (
+        <button key={v} type="button" className={s.segment} aria-pressed={value === v} onClick={() => onChange(v)}>{text}</button>
+      ))}
+    </div>
+  );
+}
+// 켜짐·꺼짐 모양. 누르는 일은 감싼 줄(버튼)이 맡고, 상태 글자는 화면 읽기 프로그램에만 읽힌다.
+export function Switch({ on }: { on: boolean }) {
+  return (
+    <span className={s.switch} data-on={on}>
+      <span className={s.srOnly}>{on ? "켜짐" : "꺼짐"}</span>
+    </span>
+  );
+}
 export function Divider() {
   return <div className={s.band} role="presentation" />;
 }
 export function Thumb({ src, size = 56 }: { src?: string; size?: 56 | 72 }) {
-  return <img className={s.thumb} src={thumbSrc(src)} alt="" width={size} height={size} loading="lazy" decoding="async" />;
+  // 공공데이터 사진은 원본이 내려가면 404가 나므로, 깨진 그림 대신 기본 그림을 보여준다.
+  return <img className={s.thumb} src={thumbSrc(src)} alt="" width={size} height={size} loading="lazy" decoding="async"
+    onError={(e) => { const fallback = thumbSrc(); if (!e.currentTarget.src.endsWith(fallback)) e.currentTarget.src = fallback; }} />;
 }
 export function IconCircle({ name, tone = "grey" }: { name: IconName; tone?: "grey" | "coral" }) {
   return (

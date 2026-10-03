@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import { useStore } from "../app/useStore.ts";
-import { Top, ListHeader, ListRow, Button, Badge, Divider, Thumb, IconCircle, EmptyState } from "../ui/index.tsx";
+import { Top, ListHeader, ListRow, Button, ButtonLink, Badge, Divider, Thumb, IconCircle, EmptyState } from "../ui/index.tsx";
 import { DogBadge, DogRow } from "./shared.tsx";
 import s from "./screens.module.css";
 export default function My() {
@@ -51,7 +51,10 @@ export default function My() {
           </Fragment>
         ))
       ) : (
-        <p className={s.emptyLine}>등록한 신고가 없어요</p>
+        <div className={s.emptyAction}>
+          <p>등록한 신고가 없어요</p>
+          <Button variant="weak" size="sm" data-action="report">신고하기</Button>
+        </div>
       )}
       <Divider />
       <ListHeader title="우리 집 강아지" />
@@ -67,7 +70,12 @@ export default function My() {
       <ListRow as="button" data-action="profile" left={<IconCircle name="Plus" />} title="강아지 등록하기" description="미리 저장해두면 빠르게 신고할 수 있어요" />
       <Divider />
       <ListHeader title={saved.length ? `저장한 소식 ${saved.length}` : "저장한 소식"} />
-      {saved.length ? saved.map((d) => <DogRow key={d.id} dog={d} />) : <p className={s.emptyLine}>하트를 누른 강아지가 여기에 모여요</p>}
+      {saved.length ? saved.map((d) => <DogRow key={d.id} dog={d} />) : (
+        <div className={s.emptyAction}>
+          <p>하트를 누른 강아지가 여기에 모여요</p>
+          <ButtonLink variant="weak" size="sm" href="#/explore">강아지 찾아보기</ButtonLink>
+        </div>
+      )}
     </div>
   );
 }

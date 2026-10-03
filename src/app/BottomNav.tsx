@@ -1,6 +1,7 @@
 import Icon from "../ui/Icon.tsx";
 import type { IconName } from "../ui/Icon.tsx";
 import s from "./Frame.module.css";
+import { isSubPage } from "./TopBar.tsx";
 const ITEMS: ([string, IconName, string] | null)[] = [
   ["/", "House", "홈"],
   ["/explore", "Search", "찾기"],
@@ -8,7 +9,9 @@ const ITEMS: ([string, IconName, string] | null)[] = [
   ["/sightings", "MapPin", "목격 소식"],
   ["/my", "UserRound", "마이홈"],
 ];
-const isCurrent = (route: string, path: string) => route === path || (path === "/my" && route.startsWith("/my/"));
+// 보호소·재회 이야기는 홈에서 들어가는 화면이라 홈을 켜 둔다.
+const isCurrent = (route: string, path: string) =>
+  route === path || (path === "/my" && route.startsWith("/my/")) || (path === "/" && isSubPage(route));
 export default function BottomNav({ route }: { route: string }) {
   return (
     <nav className={s.nav} aria-label="하단 메뉴">

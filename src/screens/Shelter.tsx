@@ -1,13 +1,14 @@
 import { useEffect, useState, useCallback } from "react";
 import { useStore } from "../app/useStore.ts";
-import { Top, ListRow, Chip, Button, EmptyState, SkeletonRows, Thumb } from "../ui/index.tsx";
+import { Top, ListRow, Chip, Button, EmptyState, SkeletonRows, Thumb, Segmented } from "../ui/index.tsx";
 import { RegionSheet } from "./shared.tsx";
 import { relativeTime } from "../format.ts";
 import { openSheet } from "../app/sheets.ts";
 import s from "./screens.module.css";
 import type { PublicDog } from "../types.ts";
 type Tab = "shelter" | "lost";
-const TABS: [Tab, string][] = [["shelter", "보호소에 들어온 아이"], ["lost", "다른 곳의 분실 신고"]];
+// 작은 휴대폰(320px)에서도 두 칸에 한 줄로 들어가는 길이로 쓴다.
+const TABS: [Tab, string][] = [["shelter", "보호소 공고"], ["lost", "다른 곳 분실 신고"]];
 // 공공데이터 한 줄: 사진·견종·색·성별, 언제·어디서
 export function PublicDogRow({ item }: { item: PublicDog }) {
   const shelter = item.source === "shelter";
@@ -46,11 +47,9 @@ export default function Shelter({ region: initial }: { region?: string }) {
     <div className={s.screen}>
       <Top title="보호소·분실 신고" subtitle="국가동물보호정보시스템 공고를 매일 받아와요" />
       <div className={s.sticky}>
+        <Segmented label="공고 종류" options={TABS} value={tab} onChange={setTab} />
         <div className={s.chips}>
           <Chip onClick={() => setSheet(true)} expanded={sheet}>{region}</Chip>
-          {TABS.map(([value, label]) => (
-            <Chip key={value} pressed={tab === value} onClick={() => setTab(value)}>{label}</Chip>
-          ))}
         </div>
       </div>
       {failed ? (
@@ -63,7 +62,8 @@ export default function Shelter({ region: initial }: { region?: string }) {
           {items.length < total && <div className={s.more}><Button variant="weak" full onClick={more}>더 보기</Button></div>}
         </>
       ) : (
-        <EmptyState image="/assets/mascot-search.webp" title={tab === "shelter" ? `${region} 보호소에 공고 중인 아이가 없어요` : `${region}에 최근 분실 신고가 없어요`} description="다른 지역도 살펴보세요" />
+        <EmptyState image="/assets/mascot-search.webp" title={tab === "shelter" ? `${region} 보호소에 공고 중인 아이가 없어요` : `${region}에 최근 분실 신고가 없어요`} description="다른 지역도 살펴보세요"
+          action={<Button variant="weak" onClick={() => setSheet(true)}>지역 바꾸기</Button>} />
       )}
       <RegionSheet open={sheet} value={region} onSelect={setRegion} onClose={close} />
     </div>

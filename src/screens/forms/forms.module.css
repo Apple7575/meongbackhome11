@@ -5,12 +5,20 @@
 .title { margin: 0; font-size: var(--t2); line-height: var(--t2-lh); font-weight: 700; letter-spacing: -0.02em; color: var(--grey-900); }
 .desc { margin: 8px 0 0; font-size: var(--t6); line-height: var(--t6-lh); color: var(--grey-600); }
 .body { margin-top: 24px; display: flex; flex-direction: column; gap: 20px; }
-.error { margin: 16px 0 0; font-size: var(--t6); color: #f04452; }
 .cta { position: fixed; left: 50%; transform: translateX(-50%); bottom: var(--keyboard, 0px); z-index: 600; width: min(100%, var(--column));
-  display: flex; gap: 8px; padding: 12px var(--gutter) calc(12px + var(--safe-bottom));
+  padding: 12px var(--gutter) calc(12px + var(--safe-bottom));
   background: linear-gradient(rgba(var(--bg-rgb),0), var(--bg) 24%); }
-.cta > :last-child { flex: 1; }
-.cta > :first-child:not(:last-child) { flex: 0 0 30%; }
+.ctaRow { display: flex; gap: 8px; }
+/* 신고 첫 단계의 로그인 안내: 질문을 가리지 않게 가볍게 한 줄 */
+.loginNote { margin: 0; padding: 10px 14px; border-radius: var(--radius); background: var(--grey-50);
+  font-size: var(--t6); line-height: var(--t6-lh); color: var(--grey-700); word-break: keep-all; }
+.ctaRow > :last-child { flex: 1; }
+.ctaRow > :first-child:not(:last-child) { flex: 0 0 30%; }
+/* 하단 버튼 바로 위에 붙는 안내: 뒤 내용과 겹쳐도 읽히도록 바탕을 깐다. */
+.ctaError { margin: 0 0 8px; padding: 10px 14px; border-radius: var(--radius); background: #fff0f1;
+  font-size: var(--t6); line-height: var(--t6-lh); font-weight: 600; color: #d22030; }
+:root[data-theme="dark"] .ctaError { background: #3a1f23; color: #ff8a94; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ctaError { background: #3a1f23; color: #ff8a94; } }
 .field { display: flex; flex-direction: column; gap: 8px; }
 .label { font-size: var(--t6); font-weight: 600; color: var(--grey-800); }
 .input { min-height: 52px; padding: 0 16px; border: 0; border-radius: var(--radius); background: var(--grey-100);

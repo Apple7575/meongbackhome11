@@ -3,7 +3,7 @@ import { useState } from "react";
 import { OptionSheet } from "./shared.tsx";
 import { THEMES, getTheme, setTheme } from "../app/theme.ts";
 import type { Theme } from "../app/theme.ts";
-import { Top, ListHeader, ListRow, Divider, IconCircle, Badge } from "../ui/index.tsx";
+import { Top, ListHeader, ListRow, Divider, IconCircle, Switch } from "../ui/index.tsx";
 import s from "./screens.module.css";
 export default function Settings() {
   const [theme, setThemeState] = useState<Theme>(getTheme());
@@ -18,7 +18,7 @@ export default function Settings() {
       <Top title="설정" />
       <ListHeader title="알림" />
       <ListRow as="button" data-action="push" left={<IconCircle name="Bell" />} title="새 목격 소식 알림" description="내 신고에 제보가 오면 바로 알려드려요"
-        right={<Badge tone={pushOn ? "coral" : "grey"}>{pushOn ? "켜짐" : "꺼짐"}</Badge>} />
+        right={<Switch on={pushOn} />} />
       <ListRow as="button" data-action="areas" left={<IconCircle name="MapPin" />} title="관심 지역" description={db.areas.length ? db.areas.join(", ") : "새 실종 소식을 받을 동네를 골라요"} />
       <Divider />
       <ListHeader title="화면" />

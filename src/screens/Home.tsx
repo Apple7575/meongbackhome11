@@ -35,7 +35,7 @@ export default function Home() {
       {mine ? <OwnerCard dog={mine} db={db} /> : (
         <ListRow as="button" data-action="report" left={<IconCircle name="Search" tone="coral" />} title="강아지를 잃어버렸어요" description="사진과 장소만 있으면 돼요" />
       )}
-      <ListRow as="button" data-action="sighting" left={<IconCircle name="MapPin" />} title="강아지를 발견했어요" description="로그인 없이 알려줄 수 있어요" />
+      <ListRow as="button" data-action="sighting" left={<IconCircle name="MapPin" />} title="강아지를 봤어요" description="로그인 없이 알려줄 수 있어요" />
       <Divider />
       <ListHeader
         title={`${region}에서 찾고 있어요 ${missing.length}`}
@@ -51,7 +51,7 @@ export default function Home() {
       {missing.length > 5 && <ListRow href="#/explore" title="전체 보기" />}
       <Divider />
       <ListRow href="#/shelter" left={<IconCircle name="Building2" />} title="보호소에 들어온 아이" description="전국 보호소 공고와 다른 곳의 분실 신고를 매일 받아와요" />
-      <ListRow href="#/stories" left={<IconCircle name="Heart" />} title={`집에 돌아온 아이들 ${reunited}마리`} description="함께 찾아서 다시 만났어요" />
+      <ListRow href="#/stories" left={<IconCircle name="Heart" />} title={reunited ? `집에 돌아온 아이들 ${reunited}마리` : "집에 돌아온 아이들"} description="함께 찾아서 다시 만났어요" />
       <RegionSheet open={sheet} value={region} onSelect={setPicked} onClose={close} />
     </div>
   );

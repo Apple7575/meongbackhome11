@@ -13,7 +13,7 @@ test("React shell draws top bar and bottom navigation around every screen", asyn
 test("home shows missing dogs first and lets people change the region in a bottom sheet", async ({ page }) => {
   await ready(page);
   await expect(page.getByRole("button", { name: /강아지를 잃어버렸어요/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: /강아지를 발견했어요/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /강아지를 봤어요/ })).toBeVisible();
   const first = page.locator("[data-dog-row]").first();
   await expect(first).toBeVisible();
   expect((await first.boundingBox()).y).toBeLessThan(600);

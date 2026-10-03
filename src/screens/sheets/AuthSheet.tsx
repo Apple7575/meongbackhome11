@@ -20,17 +20,38 @@ export default function AuthSheet({ after, onClose }: { after?: () => void; onCl
   const [values, setValues] = useState({ name: "", email: "", password: "", passwordConfirm: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [invalid, setInvalid] = useState<Partial<Record<Field, string>>>({});
   const register = mode === "register";
   const field = (label: string, name: Field, type: string, extra: InputHTMLAttributes<HTMLInputElement> = {}) => (
     <label className={s.field}>
       <span className={s.label}>{label}</span>
       <input className={s.input} name={name} type={type} value={values[name]} required
-        onChange={(e) => setValues((v) => ({ ...v, [name]: e.target.value }))} {...extra} />
+        aria-invalid={invalid[name] ? true : undefined} aria-describedby={invalid[name] ? `${name}-error` : undefined}
+        onChange={(e) => { setValues((v) => ({ ...v, [name]: e.target.value })); setInvalid((m) => ({ ...m, [name]: undefined })); }} {...extra} />
+      {invalid[name] && <span id={`${name}-error`} className={s.fieldError}>{invalid[name]}</span>}
     </label>
   );
+  // 서버는 어느 칸이 틀렸는지 알려주지 않으므로, 보내기 전에 칸마다 무엇을 고칠지 바로 옆에 알려준다.
+  const check = () => {
+    const m: Partial<Record<Field, string>> = {};
+    if (register && !values.name.trim()) m.name = "닉네임을 적어주세요.";
+    if (!values.email.trim()) m.email = "이메일을 적어주세요.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) m.email = "이메일 주소 형식을 확인해주세요. 예: bori@example.com";
+    if (!values.password) m.password = "비밀번호를 적어주세요.";
+    else if (register && values.password.length < 10) m.password = "비밀번호는 10자 이상이어야 해요.";
+    if (register && values.password && values.password !== values.passwordConfirm) m.passwordConfirm = "비밀번호가 서로 달라요. 다시 확인해주세요.";
+    return m;
+  };
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (register && values.password !== values.passwordConfirm) return setError("비밀번호가 서로 달라요. 다시 확인해주세요.");
+    const problems = check();
+    setInvalid(problems);
+    const first = (Object.keys(problems) as Field[])[0];
+    if (first) {
+      setError("");
+      (e.currentTarget as HTMLFormElement).querySelector<HTMLInputElement>(`input[name=${first}]`)?.focus();
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -53,7 +74,10 @@ export default function AuthSheet({ after, onClose }: { after?: () => void; onCl
     <BottomSheet open title={register ? "회원가입" : "로그인"} onClose={onClose}>
       <div className={s.body}>
         <div className="auth-intro">
-          <p className={s.intro}>{after ? "작성한 신고는 이 기기에 저장돼 있어요. 로그인하면 이어서 등록하고, 처음이면 가입 후 메일 인증을 마치면 돼요." : "로그인하면 내 신고와 제보를 한곳에서 볼 수 있어요."}</p>
+          {/* 신고를 다 쓰고 등록하려는 순간: 쓴 내용이 남아 있고, 카카오는 메일 인증 없이 바로 이어진다는 걸 먼저 말한다. */}
+          <p className={s.intro}>{!after ? "로그인하면 내 신고와 제보를 한곳에서 볼 수 있어요."
+            : kakao ? "작성한 신고는 이 기기에 저장돼 있어요. 카카오로 시작하면 메일 인증 없이 바로 등록돼요."
+            : "작성한 신고는 이 기기에 저장돼 있어요. 로그인하면 이어서 등록하고, 처음이면 가입 후 메일 인증을 마치면 돼요."}</p>
         </div>
         {kakao && (
           <>
@@ -67,7 +91,7 @@ export default function AuthSheet({ after, onClose }: { after?: () => void; onCl
         )}
         <div className={s.tabs} role="group" aria-label="로그인 또는 회원가입">
           {[["login", "로그인"], ["register", "회원가입"]].map(([m, label]) => (
-            <button key={m} type="button" className={s.tab} data-auth-mode={m} aria-pressed={mode === m} onClick={() => { setMode(m); setError(""); }}>{label}</button>
+            <button key={m} type="button" className={s.tab} data-auth-mode={m} aria-pressed={mode === m} onClick={() => { setMode(m); setError(""); setInvalid({}); }}>{label}</button>
           ))}
         </div>
         <form id="account-form" className={s.form} onSubmit={submit} noValidate>

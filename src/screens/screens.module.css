@@ -3,6 +3,10 @@
 .name { font-weight: 600; }
 .breed { font-weight: 400; color: var(--grey-600); }
 .emptyLine { margin: 0; padding: 12px var(--gutter) 16px; font-size: var(--t6); color: var(--grey-600); }
+/* 비어 있는 목록 한 줄 + 바로 할 수 있는 일 */
+.emptyAction { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px var(--gutter) 16px; }
+.emptyAction p { margin: 0; font-size: var(--t6); line-height: var(--t6-lh); color: var(--grey-600); word-break: keep-all; }
+.emptyAction > :last-child { flex-shrink: 0; }
 .notice { display: flex; align-items: center; justify-content: space-between; gap: 12px;
   margin: 0 var(--gutter) 8px; padding: 12px 16px; border-radius: var(--radius); background: var(--brand-weak); }
 .notice p { margin: 0; font-size: var(--t6); line-height: var(--t6-lh); color: var(--grey-800); }
@@ -23,7 +27,13 @@
   border-radius: var(--radius); background: var(--grey-100); color: var(--grey-700); }
 .search input { flex: 1; min-width: 0; align-self: stretch; min-height: 48px; border: 0; background: none;
   outline: none; font-size: 1rem; color: var(--grey-900); }
-.chips { display: flex; align-items: center; gap: 8px; margin-top: 8px; overflow-x: auto; }
+.chips { display: flex; align-items: center; gap: 8px; margin-top: 8px; overflow-x: auto; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+/* 칩 줄 + 오른쪽 고정 버튼: 칩만 가로로 밀리고, 끝이 잘린다는 걸 오른쪽 흐림으로 알려준다. */
+.filterRow { display: flex; align-items: center; gap: 4px; margin-top: 8px; }
+.filterRow .chips { flex: 1; min-width: 0; margin-top: 0; padding-right: 16px;
+  mask-image: linear-gradient(to right, #000 calc(100% - 20px), transparent); }
+.filterRow .viewToggle { margin-left: 0; }
 .viewToggle { margin-left: auto; width: 44px; height: 44px; flex-shrink: 0; display: inline-flex;
   align-items: center; justify-content: center; border-radius: var(--radius); color: var(--grey-800); }
 .map { position: relative; height: calc(100dvh - var(--top-h) - var(--nav-h) - 180px); min-height: 320px; }

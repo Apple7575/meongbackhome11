@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { withDistrict } from "../../districts.js";
 import { placeText } from "../../format.ts";
 import { useStore } from "../../app/useStore.ts";
@@ -15,6 +15,7 @@ import s from "./forms.module.css";
 import type { ReactNode } from "react";
 import type { Coords, Dog, Profile } from "../../types.ts";
 import { errorText } from "../../errors.ts";
+import { providers } from "../../app/providers.ts";
 type Mode = "new" | "from" | "edit" | "profile";
 const BREEDS = ["말티즈", "푸들", "포메라니안", "비숑", "시츄", "치와와", "진돗개", "웰시코기", "골든리트리버", "믹스"];
 const COLORS = ["흰색", "크림", "갈색", "검정색", "회색", "황색", "얼룩"];
@@ -58,6 +59,13 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
   const [busy, setBusy] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const submitRef = useRef<(() => Promise<void>) | null>(null);
+  // 로그인은 마지막 등록 때 묻는다(쓰던 내용은 저장됨). 처음에 한 줄로 미리 알려 놀라지 않게 한다.
+  const user = useStore().user;
+  const loggedOut = !profileOnly && !edit && !user?.registered;
+  const [kakao, setKakao] = useState(false);
+  useEffect(() => {
+    if (loggedOut) providers().then((p) => setKakao(!!p.kakao));
+  }, [loggedOut]);
   // 주소를 아직 못 찾았거나 찾지 못해도 핀 위치는 정확하므로 막지 않는다.
   // 직접 적은 장소에 시·군·구가 없으면 지도 주소의 시·군·구를 앞에 붙여 저장한다(지역 필터가 구 단위로 찾을 수 있게).
   const place = () => withDistrict(v.location, extra.district) || extra.short || extra.address || "지도에 표시한 곳";
@@ -66,6 +74,7 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
       title: profileOnly ? "우리 아이 사진을 올려주세요" : "잃어버린 아이의 사진을 올려주세요",
       description: "얼굴과 털 색이 잘 보이면 이웃이 알아보기 쉬워요.",
       body: (<>
+        {loggedOut && <p className={s.loginNote} data-login-note="">{kakao ? "등록할 때 카카오로 3초 만에 로그인해요" : "등록할 때 로그인해요"} · 쓰던 내용은 저장돼요</p>}
         <PhotoPicker value={image} onChange={(img) => draft.update({ image: img })} onError={setError} onBusy={setPhotoBusy} label="강아지 사진 올리기" />
         {image && <ExtraPhotos values={extra.images || []} onChange={(images) => draft.update({ extra: { images } })} onError={setError} onBusy={setPhotoBusy} />}
       </>),
