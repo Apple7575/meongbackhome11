@@ -7,6 +7,7 @@ import { movement } from "./ReportSheet.tsx";
 import { chronologicalSightings, matchCandidates } from "../domain.js";
 import { formatTime, sexLabel, subjectParticle, placeText } from "../format.ts";
 import { withMaps } from "../app/withMaps.ts";
+import { openSheet } from "../app/sheets.ts";
 import { thumbSrc } from "../thumb.ts";
 import { PublicDogRow } from "./Shelter.tsx";
 import type { PublicDog } from "../types.ts";
@@ -125,6 +126,7 @@ export default function DogDetail({ id, report }: { id: string; report?: string 
         <div className={s.actions}>
           <Button variant="weak" size="sm" data-action="edit-dog" data-id={d.id}><Icon name="Pencil" size={18} />신고 수정</Button>
           {missing && <Button variant="weak" size="sm" data-action="update" data-id={d.id}><Icon name="Clock3" size={18} />수색 상황 남기기</Button>}
+          {!d.demo && !d.previewOnly && <Button variant="weak" size="sm" onClick={() => openSheet("deleteDoc", { collection: "dogs", id: d.id })}><Icon name="Trash2" size={18} />삭제</Button>}
         </div>
       )}
       {!missing && (

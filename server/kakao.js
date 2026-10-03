@@ -3,7 +3,7 @@
 // - 카카오가 인증한 이메일이 오고 같은 이메일 계정이 있으면 그 계정에 잇는다. 이메일이 없으면 보내지 않는 내부 주소를 둔다.
 // - 카카오가 이미 본인을 확인했으므로 이메일 인증 없이 바로 신고할 수 있다(verified_at 설정). 비밀번호는 없다.
 // - KAKAO_REST_KEY가 없으면 버튼도 경로도 꺼져 있다.
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 
 const AUTHORIZE = 'https://kauth.kakao.com/oauth/authorize';
 const TOKEN = 'https://kauth.kakao.com/oauth/token';
@@ -60,7 +60,12 @@ export function installKakao({ app, db, session, secure, fetchImpl = fetch, env 
     if (!uid && req.user?.email) uid = req.user.id; // 이미 로그인한 계정에 카카오를 잇는다
     if (!uid) {
       // 지금 쓰던 익명 계정(작성 중이던 제보 등)을 그대로 카카오 계정으로 바꾼다.
-      uid = req.user.id;
+      // 쿠키 없이 온 손님(클라우드는 익명 계정을 미리 만들지 않는다)이면 새 계정을 만든다.
+      uid = req.user?.id;
+      if (!uid) {
+        uid = randomUUID();
+        await db.prepare('INSERT INTO users(id,name) VALUES(?,?)').run(uid, nickname);
+      }
       await db.prepare('UPDATE users SET email=?,password=NULL,name=?,verified_at=? WHERE id=?').run(email || kakaoEmail(kid), nickname, now, uid);
     } else {
       await db.prepare('UPDATE users SET verified_at=COALESCE(verified_at,?) WHERE id=?').run(now, uid);

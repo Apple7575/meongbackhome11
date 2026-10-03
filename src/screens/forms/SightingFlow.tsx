@@ -19,7 +19,8 @@ interface SightingValues {
   kind: string; region: string; time: string; location: string; directionMode: DirectionMode;
   color: string; size: string; description: string;
 }
-interface SightingExtra { coords: Coords; picked: boolean; heading: number | null; address?: string; short?: string; district?: string }
+// id: 작성 중인 제보마다 한 번 정해 임시 저장에 둔다. 응답이 늦어 다시 보내도 같은 id라 서버가 같은 제보로 알아본다.
+interface SightingExtra { coords: Coords; picked: boolean; heading: number | null; address?: string; short?: string; district?: string; id?: string }
 interface Step { title: string; description: string; body: ReactNode; check?: () => string | undefined }
 export default function SightingFlow({ dogId }: { dogId?: string }) {
   const db = useStore();
@@ -31,7 +32,7 @@ function SightingForm({ dog, dogId }: { dog?: Dog | null; dogId?: string }) {
   const draft = useDraft<SightingValues, SightingExtra>(key, {
     values: { kind: "목격", region: dog?.region || "서울", time: toLocalInput(), location: "", directionMode: "unknown", color: "모름", size: "모름", description: "" },
     image: "",
-    extra: { coords: dog?.coords || COORDS.서울, picked: false, heading: null },
+    extra: { coords: dog?.coords || COORDS.서울, picked: false, heading: null, id: newId("sighting") },
   });
   const { values: v, image, extra } = draft;
   const set = (values: Partial<SightingValues>) => draft.update({ values });
@@ -105,7 +106,7 @@ function SightingForm({ dog, dogId }: { dog?: Dog | null; dogId?: string }) {
   ];
   const submit = async () => {
     const report: Report = {
-      id: newId("sighting"), dogId: dog?.id || null, kind: v.kind, region: v.region, coords: extra.coords,
+      id: extra.id || newId("sighting"), dogId: dog?.id || null, kind: v.kind, region: v.region, coords: extra.coords,
       heading: v.directionMode === "moving" ? heading : null, stationary: v.directionMode === "still",
       location: place(), time: new Date(v.time).toISOString(), description: v.description.trim(), image,
       color: dog ? dog.color : v.color, size: dog ? dog.size : v.size, status: "확인 전", messages: [], demo: false,

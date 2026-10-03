@@ -1,6 +1,6 @@
 import { useStore } from "../app/useStore.ts";
 import { commit } from "../app/actions.ts";
-import { read } from "../client-store.js";
+import { read, perform } from "../client-store.js";
 import { toast } from "../app/toast.ts";
 import { Top, ListHeader, ListRow, Badge, Button, ButtonLink, EmptyState, Thumb } from "../ui/index.tsx";
 import { formatTime } from "../format.ts";
@@ -32,6 +32,15 @@ export default function Admin() {
       toast(errorText(e));
     }
   };
+  // 문제 있는 신고를 지우지 않고 숨긴다. 숨긴 신고는 운영자에게만 보이고, 다시 보이게 할 수 있다.
+  const hide = async (dogId: string, hidden: boolean) => {
+    try {
+      await perform("/api/admin/hide", { collection: "dogs", id: dogId, hidden });
+      toast(hidden ? "신고를 숨겼어요. 운영자에게만 보여요." : "신고를 다시 보이게 했어요.");
+    } catch (e) {
+      toast(errorText(e));
+    }
+  };
   const newest = (a: Item, b: Item) => new Date(b.time).getTime() - new Date(a.time).getTime();
   const open = db.moderation.filter((m) => !m.resolved).sort(newest);
   const done = db.moderation.filter((m) => m.resolved).sort(newest);
@@ -46,6 +55,7 @@ export default function Admin() {
         description={[dog ? `${dog.name} · ${dog.breed}` : "삭제된 신고", formatTime(m.time), detail].filter(Boolean).join(" · ")}
         right={<>
           {dog && <ButtonLink href={`#/dog/${dog.id}`} variant="weak" size="sm" aria-label={`${dog.name} 신고 보기`}>보기</ButtonLink>}
+          {dog && !dog.demo && <Button variant="weak" size="sm" aria-pressed={!!dog.hidden} onClick={() => hide(dog.id, !dog.hidden)}>{dog.hidden ? "숨김 해제" : "숨기기"}</Button>}
           {m.resolved ? <Badge tone="green">처리 완료</Badge> : <Button variant="weak" size="sm" onClick={() => resolve(m.id)}>처리 완료</Button>}
         </>} />
     );

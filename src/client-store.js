@@ -132,14 +132,20 @@ export async function save() {
     .map((n) => n.id);
   busy = true;
   try {
+    // 쿠키 없이 둘러보던 손님은 첫 저장 전에 익명 계정을 먼저 받는다. 사진 업로드·저장이 모두 같은 계정이 되고,
+    // 응답이 늦어 다시 저장해도 서버가 같은 글로 알아본다(같은 사람·같은 id).
+    if(data.user&&!data.user.id)await api('/api/session',{});
     if(data.storageMode==='supabase')for(const operation of operations){
       if(operation.value.image?.startsWith('data:image/')){
         const uploaded=await api('/api/photos',{image:operation.value.image});
         operation.value.image=uploaded.image;
       }
       // 더 올린 사진(최대 2장)도 저장소에 올리고 주소로 바꾼다.
-      if(Array.isArray(operation.value.images))
-        operation.value.images=await Promise.all(operation.value.images.map(async img=>img?.startsWith('data:image/')?(await api('/api/photos',{image:img})).image:img));
+      if(Array.isArray(operation.value.images)){
+        const images=[];
+        for(const img of operation.value.images)images.push(img?.startsWith('data:image/')?(await api('/api/photos',{image:img})).image:img);
+        operation.value.images=images;
+      }
     }
     data = await api("/api/changes", {
       operations,
@@ -154,6 +160,20 @@ export async function save() {
     throw e;
   } finally {
     busy = false;
+  }
+}
+// 글 지우기·숨기기처럼 서버가 새 상태(/api/state와 같은 모양)를 돌려주는 요청을 보내고 그 상태로 바꾼다.
+export async function perform(url, body) {
+  if (busy)
+    throw new Error("앞선 내용을 저장 중이에요. 잠시 후 다시 시도해주세요.");
+  busy = true;
+  epoch++;
+  try {
+    data = withExamples(await api(url, body));
+    baseline = structuredClone(data);
+  } finally {
+    busy = false;
+    window.dispatchEvent(new Event("store-updated"));
   }
 }
 export async function authenticate(mode, values) {

@@ -75,6 +75,8 @@ const collections = [
   "updates",
   "moderation",
 ];
+// 글쓴이가 지우거나 운영자가 숨길 수 있는 공개 글(cloud-app.js와 같다)
+const publicCollections = ["dogs", "reports", "stories"];
 export function createApp({
   publicFetch = fetch,
   oauthFetch = fetch,
@@ -126,12 +128,16 @@ export function createApp({
       : null;
   };
   const put = (c, v, owner) => {
-    const revision = (get(c, v.id)?.revision || 0) + 1;
+    const previous = get(c, v.id);
+    const revision = (previous?.revision || 0) + 1;
     const clean = { ...v };
     delete clean.ownerId;
     delete clean.revision;
     delete clean.canManage;
     delete clean.canChat;
+    delete clean.canDelete;
+    // 운영자가 숨긴 글은 글쓴이가 고쳐도 숨김이 풀리지 않는다.
+    if (previous?.hidden) clean.hidden = true;
     db.prepare(
       "INSERT INTO docs(collection,id,owner,revision,json) VALUES(?,?,?,?,?) ON CONFLICT(collection,id) DO UPDATE SET revision=excluded.revision,json=excluded.json",
     ).run(c, v.id, owner, revision, JSON.stringify(clean));
@@ -205,6 +211,9 @@ export function createApp({
   }
   function snapshot(user) {
     const all = Object.fromEntries(collections.map((c) => [c, rows(c)]));
+    // 운영자가 숨긴 글은 운영자에게만 보인다.
+    if (user.role !== "admin")
+      for (const c of publicCollections) all[c] = all[c].filter((v) => !v.hidden);
     const canSee = (r) =>
       r.ownerId === user.id ||
       all.dogs.find((d) => d.id === r.dogId)?.ownerId === user.id;
@@ -231,6 +240,8 @@ export function createApp({
           messages: priv ? r.messages || [] : [],
           canChat: priv,
           canManage: owner,
+          // 제보를 쓴 사람만 지울 수 있다.
+          canDelete: r.ownerId === user.id,
         };
         if (!priv && r.kind !== "목격") {
           v.coords = r.coords.map((x) => Math.round(x * 100) / 100);
@@ -243,6 +254,7 @@ export function createApp({
         }
         return v;
       }),
+      stories: all.stories.map((st) => ({ ...st, canDelete: st.ownerId === user.id })),
       profiles: all.profiles.filter((p) => p.ownerId === user.id),
       moderation: all.moderation.filter(
         (m) => user.role === "admin" || m.ownerId === user.id,
@@ -290,10 +302,12 @@ export function createApp({
   // 공유 링크 미리보기는 로그인·세션 없이 읽기만 한다.
   installShare({
     app,
-    listDogs: () => db.prepare("SELECT json FROM docs WHERE collection='dogs'").all().map((row) => JSON.parse(row.json)),
+    // 운영자가 숨긴 신고는 공유 미리보기·사이트맵에도 내보내지 않는다.
+    listDogs: () => db.prepare("SELECT json FROM docs WHERE collection='dogs'").all().map((row) => JSON.parse(row.json)).filter((d) => !d.hidden),
     getDog: (id) => {
       const row = db.prepare("SELECT json FROM docs WHERE collection='dogs' AND id=?").get(id);
-      return row ? JSON.parse(row.json) : null;
+      const dog = row ? JSON.parse(row.json) : null;
+      return dog?.hidden ? null : dog;
     },
     readImage: async (uri) =>
       dataUrlBytes(uri) ||
@@ -444,6 +458,8 @@ export function createApp({
         if (!v || typeof v.id !== "string" || !/^[\w-]{1,80}$/.test(v.id))
           fail(400, "잘못된 식별자예요.");
         const old = get(c, v.id);
+        // 응답이 늦어 같은 글을 다시 보낸 경우(같은 id·같은 사람, 새 글로 보냄): 그대로 두고 알림도 다시 보내지 않는다.
+        if (old && old.ownerId === req.user.id && op.revision === undefined) continue;
         if (old)
           for (const [key, value] of Object.entries(old))
             if (!(key in v)) v[key] = value;
@@ -573,6 +589,8 @@ export function createApp({
                 ![
                   "canChat",
                   "canManage",
+                  "canDelete",
+                  "hidden",
                   "ownerId",
                   "revision",
                   "approximate",
@@ -689,6 +707,47 @@ export function createApp({
       db.exec("ROLLBACK");
       throw e;
     }
+  });
+  // 내가 올린 실종 신고·목격 제보·이야기를 지운다(cloud-app.js와 같은 규칙).
+  app.post("/api/docs/delete", (req, res) => {
+    rate(`delete:${req.user.id}`, 30);
+    const c = req.body.collection, id = req.body.id;
+    if (!publicCollections.includes(c) || typeof id !== "string") fail(400, "지울 글을 확인해주세요.");
+    const doc = get(c, id);
+    if (!doc) fail(404, "이미 지워졌거나 찾을 수 없는 글이에요.");
+    if (doc.ownerId !== req.user.id) fail(403, "내가 올린 글만 지울 수 있어요.");
+    db.exec("BEGIN IMMEDIATE");
+    try {
+      db.prepare("DELETE FROM docs WHERE collection=? AND id=?").run(c, id);
+      if (c === "dogs") {
+        // 수색 상황은 함께 지우고, 이웃의 제보는 남기되 연결만 끊는다.
+        for (const u of rows("updates")) if (u.dogId === id) db.prepare("DELETE FROM docs WHERE collection='updates' AND id=?").run(u.id);
+        for (const r of rows("reports")) if (r.dogId === id) {
+          const { ownerId: _o, revision: _r, ...data } = r;
+          db.prepare("UPDATE docs SET json=?,revision=revision+1 WHERE collection='reports' AND id=?").run(JSON.stringify({ ...data, dogId: null }), r.id);
+        }
+      }
+      db.exec("COMMIT");
+    } catch (e) {
+      db.exec("ROLLBACK");
+      throw e;
+    }
+    res.json(snapshot(req.user));
+    broadcast();
+  });
+  // 운영자: 문제 있는 글을 숨기거나 다시 보이게 한다(문서 안의 hidden 표시만 바꾼다).
+  app.post("/api/admin/hide", (req, res) => {
+    if (req.user.role !== "admin") fail(403, "운영자 권한이 필요해요.");
+    const c = req.body.collection, id = req.body.id;
+    if (!publicCollections.includes(c) || typeof id !== "string") fail(400, "숨길 글을 확인해주세요.");
+    const doc = get(c, id);
+    if (!doc) fail(404, "글을 찾을 수 없어요.");
+    const { ownerId: _o, revision: _r, ...data } = doc;
+    if (req.body.hidden) data.hidden = true;
+    else delete data.hidden;
+    db.prepare("UPDATE docs SET json=?,revision=revision+1 WHERE collection=? AND id=?").run(JSON.stringify(data), c, id);
+    res.json(snapshot(req.user));
+    broadcast();
   });
   app.get("/api/push/key", (req, res) =>
     res.json({

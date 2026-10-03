@@ -38,7 +38,8 @@ export function installAccount({
       reject(503, '메일을 발송하지 못했어요. 잠시 후 다시 시도해주세요.');
     }
   }
-  const limited = async req => await rate(`account:${req.ip}`, 10);
+  // clientIp: Vercel에서 실제 요청자 IP(cloud-app.js). 없으면 Express의 req.ip.
+  const limited = async req => await rate(`account:${req.clientIp || req.ip}`, 10);
   const valid = async (raw, purpose) => {
     if (typeof raw !== 'string' || !/^[a-f0-9]{64}$/.test(raw)) reject(400, '유효하지 않거나 만료된 링크예요. 새 링크를 요청해주세요.');
     const record = await db.prepare('DELETE FROM account_tokens WHERE token=? AND purpose=? AND expires>? RETURNING *').get(hash(raw), purpose, Date.now());

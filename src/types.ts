@@ -25,6 +25,8 @@ export interface Dog {
   demo?: boolean;
   previewOnly?: boolean;
   canManage?: boolean;
+  // 운영자가 숨긴 신고(운영자에게만 내려온다)
+  hidden?: boolean;
   reunitedAt?: string;
   exampleProfile?: { feature: string; habit: string; focus: string };
 }
@@ -54,6 +56,9 @@ export interface Report {
   previewOnly?: boolean;
   canManage?: boolean;
   canChat?: boolean;
+  // 이 제보를 쓴 사람이면 지울 수 있다
+  canDelete?: boolean;
+  hidden?: boolean;
   exampleConversation?: { who: string; text: string }[];
 }
 export interface Candidate extends Report {
@@ -87,6 +92,8 @@ export interface Story {
   text: string;
   image?: string;
   time: string;
+  canDelete?: boolean;
+  hidden?: boolean;
 }
 export interface Update {
   id: string;

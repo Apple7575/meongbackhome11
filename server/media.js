@@ -7,9 +7,13 @@ export function createStorage(){
   const client=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
   return client.storage.from(bucketName);
 }
-export function installMedia({app,db,storage,rate}){
+// ipRate(req,kind): IP별 공개 쓰기 제한, identify(req,res): 손님이면 익명 계정을 만든다, who(req): 사용자별 제한 열쇠
+export function installMedia({app,db,storage,rate,ipRate=async()=>{},identify=async()=>{},who=req=>req.user.id}){
   const reject=(status,message)=>{throw Object.assign(new Error(message),{status});};
   app.post('/api/photos',async(req,res)=>{
+    // 쿠키를 지워 새 익명 계정으로 오면 사용자별 제한이 새로 시작되므로 IP로도 센다.
+    await ipRate(req,'photo');
+    await identify(req,res);
     await rate(`photo:${req.user.id}`,20);
     const raw=req.body.image;
     if(typeof raw!=='string'||raw.length>1800000||!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(raw))reject(400,'사진 형식이나 크기를 확인해주세요.');
@@ -32,6 +36,8 @@ export function installMedia({app,db,storage,rate}){
       const refs=await db.prepare("SELECT * FROM docs WHERE json::jsonb->>'image'=? OR COALESCE(json::jsonb->'images','[]'::jsonb) @> jsonb_build_array(?::text)").all(uri,uri);
       for(const row of refs){
         const value=JSON.parse(row.json);
+        // 운영자가 숨긴 글의 사진은 올린 사람과 운영자에게만 보인다.
+        if(value.hidden&&req.user.role!=='admin')continue;
         if(['dogs','stories'].includes(row.collection)||row.owner===req.user.id||(row.collection==='reports'&&value.kind==='목격'))permitted=true;
         if(row.collection==='reports'&&value.dogId){
           const dog=await db.prepare("SELECT owner FROM docs WHERE collection='dogs' AND id=?").get(value.dogId);
@@ -45,7 +51,7 @@ export function installMedia({app,db,storage,rate}){
     let bytes=Buffer.from(await data.arrayBuffer());
     // 목록 썸네일용 작은 사진(허용한 크기만)
     const width=Number(req.query.w);
-    if([192,640].includes(width))await rate(`thumb:${req.user.id}`,240);
+    if([192,640].includes(width))await rate(`thumb:${who(req)}`,240);
     if([192,640].includes(width))bytes=await sharp(bytes).resize(width,width,{fit:'inside',withoutEnlargement:true}).webp({quality:72}).toBuffer();
     // 사진 주소는 한 번 정해지면 내용이 바뀌지 않는다. 권한이 있는 사람의 기기에만 보관한다(private).
     res.set('Cache-Control','private, max-age=86400');

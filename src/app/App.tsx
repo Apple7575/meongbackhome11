@@ -34,6 +34,7 @@ import { UpdateSheet, FlagSheet } from "../screens/sheets/TextSheets.tsx";
 import { DeviceSheet, DeleteAccountSheet, SuccessSheet, LogoutSheet } from "../screens/sheets/AccountSheets.tsx";
 import SuggestSheet from "../screens/sheets/SuggestSheet.tsx";
 import PublicDogSheet from "../screens/sheets/PublicDogSheet.tsx";
+import DeleteDocSheet from "../screens/sheets/DeleteDocSheet.tsx";
 import { EmptyState, ButtonLink, SkeletonRows } from "../ui/index.tsx";
 import s from "./Frame.module.css";
 // openSheet(name, props)로 여는 시트들. 화면·시트마다 props가 달라 표는 느슨한 타입으로 둔다.
@@ -41,7 +42,7 @@ type AnyComponent = ComponentType<any> | LazyExoticComponent<ComponentType<any>>
 const SHEETS: Record<SheetName, AnyComponent> = {
   auth: AuthSheet, notifications: NotificationsSheet, areas: AreasSheet, reunite: ReuniteSheet, story: StorySheet,
   share: ShareSheet, poster: PosterSheet, update: UpdateSheet, flag: FlagSheet, info: InfoSheet,
-  device: DeviceSheet, deleteAccount: DeleteAccountSheet, success: SuccessSheet, suggest: SuggestSheet, publicDog: PublicDogSheet, logout: LogoutSheet,
+  device: DeviceSheet, deleteAccount: DeleteAccountSheet, success: SuccessSheet, suggest: SuggestSheet, publicDog: PublicDogSheet, logout: LogoutSheet, deleteDoc: DeleteDocSheet,
 };
 export const SCREENS: Record<string, AnyComponent> = {
   "/": Home, "/explore": Explore, "/sightings": Sightings, "/my": My, "/my/settings": Settings,

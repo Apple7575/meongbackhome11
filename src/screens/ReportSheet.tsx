@@ -85,6 +85,10 @@ export default function ReportSheet({ id, onClose }: { id: string; onClose: () =
         <ListRow as="button" left={<IconCircle name="Search" />} title="비슷한 실종 신고 보호자에게 알리기" description="사진을 보고 닮은 아이를 골라주세요"
           onClick={() => { onClose(); openSheet("suggest", { reportId: r.id }); }} />
       )}
+      {r.canDelete && !r.demo && !r.previewOnly && (
+        <ListRow as="button" left={<IconCircle name="Trash2" />} title="내 제보 삭제"
+          onClick={() => { onClose(); openSheet("deleteDoc", { collection: "reports", id: r.id }); }} />
+      )}
       <ListHeader title="대화" />
       {r.canChat ? (
         <div className={s.chat}>

@@ -25,7 +25,8 @@ interface ReportValues {
   name: string; breed: string; age: string; sex: string; color: string; size: string; accessory: string;
   region: string; time: string; location: string; description: string;
 }
-interface ReportExtra { coords: Coords; picked: boolean; address?: string; short?: string; district?: string; images?: string[] }
+// id: 새 신고·프로필마다 한 번 정해 임시 저장에 둔다. 응답이 늦어 다시 보내도 서버가 같은 글로 알아본다.
+interface ReportExtra { coords: Coords; picked: boolean; address?: string; short?: string; district?: string; images?: string[]; id?: string }
 interface Step { title: string; description: string; body: ReactNode; check?: () => string | undefined }
 // mode: new(새 신고) · from(프로필로 신고) · edit(수정) · profile(우리 집 강아지 등록)
 export default function ReportFlow({ mode, id }: { mode: Mode; id?: string }) {
@@ -48,7 +49,7 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
       location: base.location || "", description: base.description || "",
     },
     image: base.image || "",
-    extra: { coords: base.coords || COORDS[base.region || "서울"], picked: !!edit, images: base.images || [] },
+    extra: { coords: base.coords || COORDS[base.region || "서울"], picked: !!edit, images: base.images || [], id: newId(profileOnly ? "profile" : "dog") },
   });
   const { values: v, image, extra } = draft;
   const set = (values: Partial<ReportValues>) => draft.update({ values });
@@ -149,7 +150,7 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
     if (profileOnly) {
       // 프로필에는 신고용 값(시간·지역·장소·착용물)을 저장하지 않는다.
       const { time: _t, region: _r, location: _l, accessory: _a, ...rest } = values;
-      read().profiles.push({ ...rest, image, images: extra.images || [], id: newId("profile") });
+      read().profiles.push({ ...rest, image, images: extra.images || [], id: extra.id || newId("profile") });
       await commit();
       draft.finish();
       // 다 쓴 작성 화면으로 뒤로 가지 않도록 방문 기록을 바꿔치기한다.
@@ -159,7 +160,7 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
     }
     const target = edit ? read().dogs.find((d) => d.id === edit.id) : null;
     const entry = {
-      ...values, id: target?.id || newId("dog"), coords: extra.coords, image, images: extra.images || [],
+      ...values, id: target?.id || extra.id || newId("dog"), coords: extra.coords, image, images: extra.images || [],
       time: new Date(values.time).toISOString(), status: target?.status || "missing", demo: false,
     };
     if (target) Object.assign(target, entry);

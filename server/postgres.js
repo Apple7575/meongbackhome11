@@ -36,6 +36,19 @@ export function createPostgres({pool}={}){
         try{await client.query(sql);}finally{context.client=null;client.release();}
       }else return query(sql);
     },
+    // SERIALIZABLE 거래는 동시에 쓰면 40001(직렬화 실패)로 끝날 수 있다. 사용자에게 409를 돌려주기 전에
+    // 서버에서 두 번까지 다시 해 본다. fn은 다시 불려도 같은 결과가 나오게(요청 값을 고치지 않게) 써야 한다.
+    async transaction(fn,{retries=2}={}){
+      for(let attempt=0;;attempt++){
+        await this.exec('BEGIN');
+        try{const result=await fn();await this.exec('COMMIT');return result;}
+        catch(error){
+          await this.exec('ROLLBACK');
+          if(error.code!=='40001'||attempt>=retries)throw error;
+          await new Promise(r=>setTimeout(r,20*(attempt+1)+Math.random()*30));
+        }
+      }
+    },
     close(){return pool.end();},
   };
 }

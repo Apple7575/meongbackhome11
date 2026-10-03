@@ -8,7 +8,7 @@ const lost={happenDt:'2026-09-24 02:00:00.0',happenAddr:'서울특별시 송파�
 const page=list=>({response:{header:{resultCode:'00'},body:{items:{item:list},totalCount:list.length}}});
 const publicFetch=async url=>url.includes('fileDownloadSrvc')?new Response(png):Response.json(page(url.includes('abandonment')?(url.includes('state=notice')?[sample]:[]):[lost]));
 process.env.DATA_GO_KR_KEY||='e2e-key';
-const options={publicFetch,databasePath:':memory:',examples:true,publicOrigin:'http://127.0.0.1:5174',authRateLimit:1000,mailer:{configured:true,send:async mail=>mailbox.push(mail)}};
+const options={publicFetch,databasePath:':memory:',examples:true,publicOrigin:'http://127.0.0.1:5174',authRateLimit:1000,ipRateLimit:false,mailer:{configured:true,send:async mail=>mailbox.push(mail)}};
 const service=process.env.CLOUD_TEST==='1'?await (await import('../tests/cloud-fixture.js')).createCloudFixture(options):createApp(options);
 // Local test fixture only; this route is never mounted by the production server.
 service.app.get('/__test/public-sync',async(req,res)=>res.json(await service.publicData.sync({force:true})));
