@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { ready, registerByApi, nextStep, openLogin } from "./helpers.js";
+import { ready, registerByApi, nextStep, openLogin, finishPhoto } from "./helpers.js";
 
 // 휴대폰 화면(390x844) 기준으로 확인한다. 데스크톱 프로젝트에서도 같은 크기로 맞춘다.
 test.use({ viewport: { width: 390, height: 844 } });
@@ -7,6 +7,7 @@ test.use({ viewport: { width: 390, height: 844 } });
 test("a failed step shows its reason right above the button, never hidden under it", async ({ page }) => {
   await ready(page, "/#/report/new");
   await page.locator("input[name=photo]").setInputFiles("public/assets/dog-maltese.png");
+  await finishPhoto(page);
   await expect(page.getByAltText("고른 사진")).toBeVisible();
   await nextStep(page);
   await page.locator("input[name=name]").fill("보리");

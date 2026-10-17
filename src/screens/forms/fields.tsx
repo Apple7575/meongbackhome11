@@ -171,6 +171,8 @@ export function PhotoPicker({ value, onChange, onError, onBusy, label = "사진 
       const photo = await readPhoto(file);
       setOriginal(photo);
       onChange(photo);
+      // 인스타그램·카카오톡처럼 고르자마자 맞추기 화면을 띄운다(닫으면 고른 사진 그대로).
+      if (guide) setCropping(true);
       onError?.("");
     } catch (err) {
       onError?.(errorText(err));
@@ -190,7 +192,7 @@ export function PhotoPicker({ value, onChange, onError, onBusy, label = "사진 
           {guide && size && Math.abs(size.w - size.h) > 2 && <SquareGuide {...size} />}
         </>) : (<><Icon name="Camera" size={32} /><span>{label}</span></>)}
       </label>
-      {guide && value && <Button variant="weak" full onClick={() => setCropping(true)}><Icon name="Crop" size={18} />위치·크기 맞추기</Button>}
+      {guide && value && <Button variant="weak" full onClick={() => setCropping(true)}><Icon name="Crop" size={18} />사진 다시 맞추기</Button>}
       {guide && value && <PhotoPreviews src={value} />}
       {cropping && <PhotoCrop src={original || value} onApply={onChange} onClose={() => setCropping(false)} />}
     </>

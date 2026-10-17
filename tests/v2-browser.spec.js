@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { unique, credentials, ready, registerByApi as account, openLogin, fillReport, fillSighting, nextStep } from "./helpers.js";
+import { unique, credentials, ready, registerByApi as account, openLogin, fillReport, fillSighting, nextStep, finishPhoto } from "./helpers.js";
 async function submitDog(page, name) {
   await page.getByRole("button", { name: "실종 신고", exact: true }).click();
   await fillReport(page, { name });
@@ -184,6 +184,7 @@ test("saved profile becomes a report and uploaded image can be exported as QR po
   await page
     .locator("input[name=photo]")
     .setInputFiles("public/assets/dog-jindo.png");
+  await finishPhoto(page);
   await expect(page.getByAltText("고른 사진")).toBeVisible();
   await nextStep(page);
   await page.locator("input[name=name]").fill("프로필" + unique());

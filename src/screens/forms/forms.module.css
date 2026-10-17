@@ -152,19 +152,29 @@ textarea.input { padding: 14px 16px; min-height: 120px; resize: vertical; line-h
 .extraAdd { display: flex; align-items: center; justify-content: center; color: var(--grey-700); cursor: pointer; }
 .extraAdd input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 
-/* 사진 위치·크기 맞추기: 정사각형 틀 + 3×3 안내선, 아래 크기 슬라이더 */
-.crop { padding: 0 var(--gutter) 8px; display: flex; flex-direction: column; gap: 14px; }
-.cropBox { position: relative; width: min(100%, 52dvh); aspect-ratio: 1; align-self: center; overflow: hidden; border-radius: 16px;
-  background: #000; touch-action: none; cursor: grab; user-select: none; }
-.cropBox:active { cursor: grabbing; }
-.cropBox:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
-.cropBox img { position: absolute; left: 0; top: 0; max-width: none; transform-origin: 0 0; pointer-events: none; }
-.cropGrid { position: absolute; inset: 0; pointer-events: none; border: 2px solid rgba(255, 255, 255, 0.9); border-radius: 16px;
+/* 사진 맞추기: 사진을 고르면 바로 뜨는 전체 화면 편집기(인스타그램·카카오톡 방식). 테마와 관계없이 검은 배경. */
+.cropScreen { position: fixed; inset: 0; z-index: 1000; display: flex; flex-direction: column; background: #000; color: #fff;
+  padding-top: env(safe-area-inset-top); }
+.cropTop { position: relative; display: flex; align-items: center; justify-content: center; height: 56px; flex-shrink: 0; }
+.cropTop h2 { margin: 0; font-size: var(--t5); font-weight: 700; }
+.cropClose { position: absolute; left: 8px; top: 6px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+  border: 0; background: none; color: #fff; cursor: pointer; }
+.cropStage { position: relative; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  touch-action: none; cursor: grab; user-select: none; outline: none; }
+.cropStage:active { cursor: grabbing; }
+/* 틀 밖으로 넘친 사진도 그대로 그리되, 틀 바깥은 어둡게 덮어 무엇이 잘리는지 보이게 한다. */
+.cropFrame { position: relative; }
+.cropFrame img { position: absolute; left: 0; top: 0; max-width: none; pointer-events: none; }
+.cropGrid { position: absolute; inset: 0; pointer-events: none; border: 2px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.6);
   background:
-    linear-gradient(to right, transparent calc(33.33% - 0.5px), rgba(255,255,255,0.5) calc(33.33% - 0.5px), rgba(255,255,255,0.5) calc(33.33% + 0.5px), transparent calc(33.33% + 0.5px),
-      transparent calc(66.66% - 0.5px), rgba(255,255,255,0.5) calc(66.66% - 0.5px), rgba(255,255,255,0.5) calc(66.66% + 0.5px), transparent calc(66.66% + 0.5px)),
-    linear-gradient(to bottom, transparent calc(33.33% - 0.5px), rgba(255,255,255,0.5) calc(33.33% - 0.5px), rgba(255,255,255,0.5) calc(33.33% + 0.5px), transparent calc(33.33% + 0.5px),
-      transparent calc(66.66% - 0.5px), rgba(255,255,255,0.5) calc(66.66% - 0.5px), rgba(255,255,255,0.5) calc(66.66% + 0.5px), transparent calc(66.66% + 0.5px)); }
-.cropZoom { display: flex; align-items: center; gap: 12px; font-size: var(--t6); color: var(--grey-700); }
-.cropZoom input { flex: 1; accent-color: var(--brand); }
-.pairButtons { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
+    linear-gradient(to right, transparent calc(33.33% - 0.5px), rgba(255,255,255,0.45) calc(33.33% - 0.5px), rgba(255,255,255,0.45) calc(33.33% + 0.5px), transparent calc(33.33% + 0.5px),
+      transparent calc(66.66% - 0.5px), rgba(255,255,255,0.45) calc(66.66% - 0.5px), rgba(255,255,255,0.45) calc(66.66% + 0.5px), transparent calc(66.66% + 0.5px)),
+    linear-gradient(to bottom, transparent calc(33.33% - 0.5px), rgba(255,255,255,0.45) calc(33.33% - 0.5px), rgba(255,255,255,0.45) calc(33.33% + 0.5px), transparent calc(33.33% + 0.5px),
+      transparent calc(66.66% - 0.5px), rgba(255,255,255,0.45) calc(66.66% - 0.5px), rgba(255,255,255,0.45) calc(66.66% + 0.5px), transparent calc(66.66% + 0.5px)); }
+.cropBottom { flex-shrink: 0; display: flex; flex-direction: column; gap: 12px; padding: 12px var(--gutter) calc(16px + var(--safe-bottom)); }
+.cropBottom p { margin: 0; text-align: center; font-size: var(--t6); color: rgba(255, 255, 255, 0.7); }
+@media (prefers-reduced-motion: no-preference) {
+  .cropScreen { animation: cropIn 0.2s ease-out; }
+  @keyframes cropIn { from { opacity: 0; } }
+}

@@ -1,10 +1,11 @@
 import { test, expect } from "@playwright/test";
-import { fakeAddress, nextStep, registerByApi, fillSighting, fillReport, credentials } from "./helpers.js";
+import { fakeAddress, nextStep, registerByApi, fillSighting, fillReport, credentials, finishPhoto } from "./helpers.js";
 
 test("report flow: next moves to the empty breed field, time wheels and pin address", async ({ page }) => {
   await fakeAddress(page);
   await page.goto("/#/report/new");
   await page.locator("input[name=photo]").setInputFiles("public/assets/dog-maltese.png");
+  await finishPhoto(page);
   await expect(page.getByAltText("고른 사진")).toBeVisible();
   await nextStep(page);
   // 이름만 쓰고 키보드의 다음을 누르면 단계를 넘기지 않고 견종 칸으로 간다.
@@ -50,6 +51,7 @@ test("a report can carry two extra photos and the detail page switches between t
   await registerByApi(page);
   await page.goto("/#/report/new");
   await page.locator("input[name=photo]").setInputFiles("public/assets/dog-maltese.png");
+  await finishPhoto(page);
   await expect(page.getByAltText("고른 사진")).toBeVisible();
   // 대표 사진을 고르면 옆모습·무늬 사진을 더 올릴 수 있다.
   await page.locator("input[name=photo-extra]").setInputFiles("public/assets/dog-poodle.png");
@@ -143,25 +145,28 @@ test("cancelling kakao login keeps the report on the confirm step instead of ste
   await expect(page.getByRole("button", { name: "실종 신고 등록하기" })).toBeVisible();
 });
 
-// 사진을 고르면 목록에 보일 정사각형 자리와 공유·전단 미리보기가 보이고, 위치·크기를 맞추면 그 정사각형으로 바뀐다.
-test("report photo shows how neighbours see it and can be framed into a square", async ({ page }) => {
+// 사진을 고르면 인스타그램·카카오톡처럼 바로 맞추기 화면이 뜨고, 맞춘 정사각형이 대표 사진이 된다.
+// 닫으면 원래 사진을 그대로 쓰고, 목록에 보일 정사각형 자리와 공유·전단 미리보기를 보여준다.
+test("report photo opens a full-screen framing step and previews how neighbours see it", async ({ page }) => {
   await page.goto("/#/report/new");
+  const ratio = () => page.getByAltText("고른 사진").evaluate((img) => img.naturalWidth / img.naturalHeight);
   await page.locator("input[name=photo]").setInputFiles("public/assets/hero-home.png");
-  await expect(page.getByAltText("고른 사진")).toBeVisible();
+  const editor = page.getByRole("dialog", { name: "사진 맞추기" });
+  await expect(editor).toBeVisible();
+  await editor.getByRole("button", { name: "닫고 원래 사진 쓰기" }).click();
+  await expect(editor).toBeHidden();
+  expect(await ratio()).not.toBeCloseTo(1, 2);
   await expect(page.getByText("목록에 보이는 부분")).toBeVisible();
   await expect(page.getByText("이웃에게 이렇게 보여요")).toBeVisible();
-  const ratio = () => page.getByAltText("고른 사진").evaluate((img) => img.naturalWidth / img.naturalHeight);
-  expect(await ratio()).not.toBeCloseTo(1, 2);
-  await page.getByRole("button", { name: "위치·크기 맞추기" }).click();
-  const sheet = page.getByRole("dialog", { name: "사진 위치와 크기 맞추기" });
-  await sheet.getByLabel("사진 크기").fill("2");
-  const frame = sheet.getByRole("application");
+  await page.getByRole("button", { name: "사진 다시 맞추기" }).click();
+  const frame = editor.getByRole("application");
+  await expect(frame).toBeFocused();
+  for (let i = 0; i < 5; i++) await frame.press("+");
   const b = await frame.boundingBox();
   await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
   await page.mouse.down();
   await page.mouse.move(b.x + b.width / 2 + 60, b.y + b.height / 2 + 30, { steps: 5 });
   await page.mouse.up();
-  await sheet.getByRole("button", { name: "이대로 쓰기" }).click();
-  await expect(sheet).toBeHidden();
+  await finishPhoto(page);
   await expect.poll(ratio).toBeCloseTo(1, 2);
 });

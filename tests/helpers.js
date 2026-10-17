@@ -32,11 +32,17 @@ export async function openLogin(page) {
 export const fakeAddress = (page) =>
   page.route("https://nominatim.openstreetmap.org/**", (route) =>
     route.fulfill({ json: { address: { city: "서울특별시", borough: "송파구", quarter: "잠실동", road: "석촌호수로" } } }));
+// 실종 신고·프로필 사진을 고르면 바로 뜨는 '사진 맞추기' 화면에서 완료를 누른다.
+export async function finishPhoto(page) {
+  await page.getByRole("dialog", { name: "사진 맞추기" }).getByRole("button", { name: "완료" }).click();
+  await expect(page.getByRole("dialog", { name: "사진 맞추기" })).toBeHidden();
+}
 export const nextStep =(page) => page.getByRole("button", { name: "다음", exact: true }).click();
 // 새 실종 신고 흐름(사진 → 이름·견종 → 특징 → 언제 → 어디서 → 설명)을 확인 단계 직전까지 채운다.
 export async function fillReport(page, { name, breed = "말티즈", photo = "public/assets/dog-maltese.png" }) {
   await fakeAddress(page);
   await page.locator("input[name=photo]").setInputFiles(photo);
+  await finishPhoto(page);
   await expect(page.getByAltText("고른 사진")).toBeVisible();
   await nextStep(page);
   await page.locator("input[name=name]").fill(name);
