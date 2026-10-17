@@ -13,5 +13,7 @@ export function takeInstallPrompt() {
   installPrompt = null;
   return p;
 }
+// 앱(Capacitor, user agent에 MeongbackApp)도 이미 설치된 것으로 본다.
+export const isApp = () => navigator.userAgent.includes("MeongbackApp");
 export const isStandalone = () =>
-  matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  isApp() || matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;

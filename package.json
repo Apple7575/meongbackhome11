@@ -15,9 +15,12 @@
     "test": "tsc --noEmit -p . && node --test tests/*.test.js",
     "cloud:setup": "node --env-file=.env.cloud scripts/setup-supabase.mjs",
     "cloud:check": "node --env-file=.env.cloud scripts/check-cloud.mjs",
-    "typecheck": "tsc --noEmit -p ."
+    "typecheck": "tsc --noEmit -p .",
+    "app:sync": "vite build && cap sync",
+    "app:android": "vite build && cap sync android && cd android && gradlew assembleDebug"
   },
   "dependencies": {
+    "@capacitor/core": "^8.5.3",
     "@supabase/supabase-js": "^2.116.0",
     "@vercel/functions": "^3.9.5",
     "express": "^5.2.1",
@@ -37,6 +40,9 @@
     "@babel/parser": "^8.0.4",
     "@babel/traverse": "^8.0.4",
     "@babel/types": "^8.0.4",
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/ios": "^8.5.3",
     "@electric-sql/pglite": "^0.5.8",
     "@playwright/test": "^1.55.0",
     "@types/qrcode": "^1.5.6",

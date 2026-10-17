@@ -10,3 +10,6 @@ supabase
 deploy
 playwright-report
 test-results
+android
+ios
+assets
