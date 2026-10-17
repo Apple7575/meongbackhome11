@@ -8,7 +8,9 @@ test.beforeEach(async ({ page }) => {
 
 test("shelter dogs and outside lost reports are listed by region without the reporter's contact", async ({ page }) => {
   await ready(page, "/");
-  await page.getByRole("link", { name: /보호소에 들어온 아이/ }).click();
+  // 홈에는 보호소 공고 몇 개와 전체 보기가 있다.
+  await expect(page.locator("[data-public-row]").first()).toBeVisible();
+  await page.getByRole("link", { name: "보호소 공고 전체 보기" }).click();
   await expect(page.getByRole("heading", { name: "보호소·분실 신고" })).toBeVisible();
   const row = page.locator("[data-public-row]").filter({ hasText: "말티즈 · 흰색 · 암컷" }).first();
   await expect(row).toBeVisible();

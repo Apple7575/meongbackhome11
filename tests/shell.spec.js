@@ -10,20 +10,24 @@ test("React shell draws top bar and bottom navigation around every screen", asyn
   await expect(page.locator(".site-header, .site-footer, .mobile-nav")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "집에 돌아온 아이들" })).toBeVisible();
 });
-test("home shows missing dogs first and lets people change the region in a bottom sheet", async ({ page }) => {
+// 홈은 전국 보호소 공고를 먼저 보여주고(2026-10-17부터), 지역은 아래 시트에서 바꾼다.
+test("home shows shelter notices first and lets people change the region in a bottom sheet", async ({ page }) => {
   await ready(page);
   await expect(page.getByRole("button", { name: /강아지를 잃어버렸어요/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /강아지를 봤어요/ })).toBeVisible();
-  const first = page.locator("[data-dog-row]").first();
+  await expect(page.getByRole("heading", { name: "보호소에 들어온 아이" })).toBeVisible();
+  const first = page.locator("[data-public-row]").first();
   await expect(first).toBeVisible();
   expect((await first.boundingBox()).y).toBeLessThan(600);
-  expect(await page.locator("[data-dog-row]").count()).toBeLessThanOrEqual(5);
+  expect(await page.locator("[data-public-row]").count()).toBeLessThanOrEqual(5);
   await page.getByRole("button", { name: "전국" }).click();
   const sheet = page.getByRole("dialog", { name: "지역 선택" });
   await expect(sheet).toBeVisible();
   await sheet.getByRole("button", { name: "부산" }).click();
   await expect(sheet).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: /^부산에서 찾고 있어요/ })).toBeVisible();
+  // 테스트 공고는 서울 송파에만 있어 부산은 비어 있고, 보호소 화면으로 가는 길을 준다.
+  await expect(page.getByRole("button", { name: "부산" })).toBeVisible();
+  await expect(page.getByText("현재 보호소 공고가 없어요")).toBeVisible();
   await expect(page.getByRole("link", { name: /집에 돌아온 아이들/ })).toBeVisible();
 });
 test("explore can sort by distance from the phone's location", async ({ page, context }) => {
@@ -211,7 +215,8 @@ test("notification and area sheets: saving an area makes it the home default", a
   await areas.getByRole("button", { name: "부산" }).click();
   await areas.getByRole("button", { name: "1곳 저장하기" }).click();
   await expect(areas).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: /^부산에서 찾고 있어요/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "보호소에 들어온 아이" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "부산" })).toBeVisible();
 });
 test("members can leave a reunion story from the stories screen", async ({ page }) => {
   await ready(page);

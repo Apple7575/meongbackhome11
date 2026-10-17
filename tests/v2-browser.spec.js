@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => ready(page));
 test("home list, explore search and no horizontal overflow", async ({
   page,
 }) => {
-  await expect(page.locator("[data-dog-row]").first()).toBeVisible();
+  await expect(page.locator("[data-public-row]").first()).toBeVisible();
   await page.goto("/#/explore");
   await page.locator("#dog-search").fill("초코");
   await expect(page.locator("[data-dog-row]")).toHaveCount(1);

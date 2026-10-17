@@ -82,7 +82,7 @@ test("shelter and stories have a way back, and empty screens offer a next step",
   await expect(page.getByRole("main")).not.toContainText(/돌아온 아이들 0|0마리/);
   await expect(page.getByRole("navigation", { name: "하단 메뉴" }).getByRole("link", { name: "홈", exact: true })).toHaveAttribute("aria-current", "page");
   await page.getByRole("button", { name: "뒤로" }).click();
-  await expect(page.getByRole("heading", { name: /에서 찾고 있어요/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "보호소에 들어온 아이" })).toBeVisible();
   // 보호소: 두 칸 탭은 글자가 잘리지 않고, 비어 있으면 지역을 바로 바꿀 수 있다.
   await page.route("**/api/public/**", (route) => route.fulfill({ json: { total: 0, items: [] } }));
   await ready(page, "/#/shelter");
