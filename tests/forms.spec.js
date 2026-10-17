@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { fakeAddress, nextStep, registerByApi, fillSighting } from "./helpers.js";
+import { fakeAddress, nextStep, registerByApi, fillSighting, fillReport, credentials } from "./helpers.js";
 
 test("report flow: next moves to the empty breed field, time wheels and pin address", async ({ page }) => {
   await fakeAddress(page);
@@ -113,4 +113,32 @@ test("after an unlinked sighting the witness picks the dog they think they saw a
   const state = await (await owner.get("/api/state")).json();
   expect(state.notifications.some((n) => n.title === "목격자가 우리 아이 같다고 알려줬어요" && n.dogId === dogId)).toBe(true);
   await ownerContext.close();
+});
+
+// 신고를 다 쓰고 등록을 누른 뒤 카카오로 로그인하고 돌아오면, 처음 단계가 아니라 바로 등록이 이어진다.
+test("returning from kakao login while submitting a report registers it right away", async ({ page }) => {
+  await page.goto("/#/report/new");
+  await fillReport(page, { name: "카카오보리" });
+  await page.getByRole("button", { name: "실종 신고 등록하기" }).click();
+  await expect(page.locator("#account-form")).toBeVisible();
+  // 테스트 서버에는 카카오 키가 없으므로, 카카오 버튼이 하는 표시와 로그인 쿠키만 대신 만든다.
+  await page.evaluate(() => sessionStorage.setItem("meongback-resume-submit", JSON.stringify({ route: "/report/new", at: Date.now() })));
+  await page.request.post("/api/auth/register", { data: credentials() });
+  // 카카오에서 돌아올 때처럼 페이지를 새로 연다.
+  await page.goto("about:blank");
+  await page.goto("/#/report/new?login=kakao");
+  await expect(page).toHaveURL(/#\/dog\/dog-/);
+  await expect(page.getByRole("heading", { name: "카카오보리" }).first()).toBeVisible();
+});
+
+test("cancelling kakao login keeps the report on the confirm step instead of step one", async ({ page }) => {
+  await page.goto("/#/report/new");
+  await fillReport(page, { name: "취소보리" });
+  await page.evaluate(() => sessionStorage.setItem("meongback-resume-submit", JSON.stringify({ route: "/report/new", at: Date.now() })));
+  // 카카오에서 돌아올 때처럼 페이지를 새로 연다.
+  await page.goto("about:blank");
+  await page.goto("/#/report/new?login=cancelled");
+  await expect(page.getByRole("heading", { name: "이대로 등록할까요?" })).toBeVisible();
+  await expect(page.getByText("취소보리")).toBeVisible();
+  await expect(page.getByRole("button", { name: "실종 신고 등록하기" })).toBeVisible();
 });

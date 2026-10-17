@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { withDistrict } from "../../districts.js";
 import { placeText } from "../../format.ts";
 import { useStore } from "../../app/useStore.ts";
@@ -16,6 +16,7 @@ import type { ReactNode } from "react";
 import type { Coords, Dog, Profile } from "../../types.ts";
 import { errorText } from "../../errors.ts";
 import { providers } from "../../app/providers.ts";
+import { hasResume, clearResume } from "../../resume.ts";
 type Mode = "new" | "from" | "edit" | "profile";
 const BREEDS = ["말티즈", "푸들", "포메라니안", "비숑", "시츄", "치와와", "진돗개", "웰시코기", "골든리트리버", "믹스"];
 const COLORS = ["흰색", "크림", "갈색", "검정색", "회색", "황색", "얼룩"];
@@ -60,8 +61,12 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
   const [photoBusy, setPhotoBusy] = useState(false);
   const submitRef = useRef<(() => Promise<void>) | null>(null);
   // 로그인은 마지막 등록 때 묻는다(쓰던 내용은 저장됨). 처음에 한 줄로 미리 알려 놀라지 않게 한다.
-  const user = useStore().user;
+  const store = useStore();
+  const user = store.user;
   const loggedOut = !profileOnly && !edit && !user?.registered;
+  // 등록하려다 카카오 로그인으로 다녀왔으면 처음부터 다시 보여주지 않고, 확인 단계에서 바로 등록을 이어 간다.
+  const [resume, setResume] = useState(() => !profileOnly && !edit && hasResume(location.hash.slice(1)));
+  const [resumed, setResumed] = useState(false);
   const [kakao, setKakao] = useState(false);
   useEffect(() => {
     if (loggedOut) providers().then((p) => setKakao(!!p.kakao));
@@ -192,6 +197,20 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
     }
   };
   submitRef.current = run;
+  useLayoutEffect(() => {
+    if (!resume) return;
+    clearResume();
+    setStep(steps.length - 1);
+  }, []);
+  useEffect(() => {
+    if (!resume || store.connection === "loading") return;
+    setResume(false);
+    // 로그인을 취소했으면 확인 단계에 머물러 버튼만 다시 누르면 되게 한다.
+    if (user?.registered) {
+      setResumed(true);
+      submitRef.current?.();
+    }
+  }, [resume, store.connection, user?.registered]);
   const current = steps[step];
   const last = step === steps.length - 1;
   const next = () => {
@@ -206,7 +225,7 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
       step={step}
       total={steps.length}
       title={current.title}
-      description={step === 0 && draft.restored ? "작성하던 내용을 불러왔어요." : current.description}
+      description={step === 0 && draft.restored ? "작성하던 내용을 불러왔어요." : last && resumed && busy ? "로그인했어요. 바로 등록하고 있어요." : current.description}
       error={error}
       busy={busy}
       nextLabel={last ? (profileOnly ? "프로필 저장하기" : edit ? "수정 내용 저장" : "실종 신고 등록하기") : "다음"}

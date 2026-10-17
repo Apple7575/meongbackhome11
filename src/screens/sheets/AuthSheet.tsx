@@ -7,6 +7,7 @@ import { toast } from "../../app/toast.ts";
 import s from "./sheets.module.css";
 import type { FormEvent, InputHTMLAttributes } from "react";
 import { errorText } from "../../errors.ts";
+import { markResume } from "../../resume.ts";
 type Field = "name" | "email" | "password" | "passwordConfirm";
 // 로그인·회원가입. after가 있으면 로그인 뒤 이어서 할 일(예: 작성한 신고 등록)을 실행한다.
 // 테스트가 쓰는 id·class(account-form, auth-intro, data-auth-mode)는 옛 팝업과 같게 둔다.
@@ -81,7 +82,8 @@ export default function AuthSheet({ after, onClose }: { after?: () => void; onCl
         </div>
         {kakao && (
           <>
-            <a className={s.kakao} href={`/api/auth/kakao?next=${encodeURIComponent(location.hash.slice(1) || "/my")}`}>
+            <a className={s.kakao} href={`/api/auth/kakao?next=${encodeURIComponent(location.hash.slice(1) || "/my")}`}
+              onClick={() => { if (after) markResume(location.hash.slice(1)); }}>
               <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="#000" d="M12 3C6.5 3 2 6.6 2 11c0 2.8 1.8 5.3 4.6 6.7l-1 3.6c-.1.3.3.6.6.4l4.3-2.8c.5.1 1 .1 1.5.1 5.5 0 10-3.6 10-8S17.5 3 12 3z"/></svg>
               카카오로 3초 만에 시작하기
             </a>
