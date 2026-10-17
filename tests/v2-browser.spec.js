@@ -7,7 +7,7 @@ async function submitDog(page, name) {
     .getByRole("button", { name: "실종 신고 등록하기", exact: true })
     .click();
   await expect(page.locator(".success-next")).toBeVisible();
-  await expect(page.getByRole("button", { name: "새 목격 제보 알림 받기" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "목격 알림 받기" })).toBeVisible();
   await page.getByRole("button", { name: "신고 내용 먼저 확인하기" }).click();
   await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
   return page.url().split("/dog/")[1];

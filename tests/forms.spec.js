@@ -70,7 +70,7 @@ test("a report can carry two extra photos and the detail page switches between t
   await nextStep(page);
   await page.getByRole("button", { name: "실종 신고 등록하기" }).click();
   // 등록 완료 시트가 뜬 뒤에 닫는다.
-  await expect(page.getByRole("dialog", { name: "이웃과 함께 찾을 준비가 됐어요" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "실종 신고를 올렸어요" })).toBeVisible();
   await page.keyboard.press("Escape");
   const gallery = page.getByRole("group", { name: "사진 고르기" });
   await expect(gallery.getByRole("button")).toHaveCount(3);

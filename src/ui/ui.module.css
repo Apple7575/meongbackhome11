@@ -64,18 +64,26 @@
   .skeleton span { animation: pulse 1.2s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: 0.5; } }
 }
-.sheetBackdrop { position: fixed; inset: 0; z-index: 900; background: rgba(0, 0, 0, 0.4);
+.sheetBackdrop { position: fixed; inset: 0; z-index: 900; background: var(--scrim);
   display: flex; align-items: flex-end; justify-content: center; }
-.sheet { width: min(100%, var(--column)); max-height: 85dvh; overflow: auto; background: var(--bg);
+/* 시트는 화면보다 한 단계 밝은 면이라, 다크 모드에서도 뒤 화면과 구분된다. */
+.sheet { width: min(100%, var(--column)); max-height: 85dvh; overflow: auto; background: var(--sheet-bg);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12);
   border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
   padding-bottom: calc(16px + var(--safe-bottom)); }
 .handle { height: 28px; display: flex; align-items: center; justify-content: center; touch-action: none; }
 .handle::before { content: ""; width: 40px; height: 4px; border-radius: 2px; background: var(--grey-300); }
 .sheetTitle { margin: 0; padding: 4px var(--gutter) 8px; font-size: var(--t4); line-height: var(--t4-lh);
   font-weight: 700; color: var(--grey-900); outline: none; letter-spacing: -0.01em; }
+/* 아래에서 끝까지 올라오고 뒤는 서서히 어두워져, 화면 위에 덧뜬 시트라는 걸 알 수 있게 한다. 닫을 때는 반대로. */
 @media (prefers-reduced-motion: no-preference) {
-  .sheet { animation: rise 0.22s ease-out; }
-  @keyframes rise { from { transform: translateY(24px); opacity: 0.6; } }
+  .sheetBackdrop { animation: dim 0.24s ease-out; }
+  .sheet { animation: rise 0.32s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .closing { animation: dim 0.2s ease-in reverse forwards; }
+  .closing .sheet { animation: sink 0.2s ease-in forwards; }
+  @keyframes dim { from { background: transparent; } }
+  @keyframes rise { from { transform: translateY(100%); } }
+  @keyframes sink { to { transform: translateY(100%); } }
 }
 .chip[aria-pressed="true"] { border-color: var(--grey-900); background: var(--grey-50); color: var(--grey-900); font-weight: 700; }
 /* 두세 갈래 중 하나를 고르는 칸: 칸을 똑같이 나눠 글자가 잘리지 않게 한다. */

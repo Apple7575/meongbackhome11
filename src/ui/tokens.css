@@ -3,6 +3,7 @@
   /* 앱이 밝은·어두운 화면을 직접 제공한다. 그래서 휴대폰 브라우저가 색을 자동으로 뒤집지 않는다. */
   color-scheme: light dark;
   --bg: #ffffff; --bg-rgb: 255, 255, 255; --toast: #333d4b;
+  --sheet-bg: #ffffff; --scrim: rgba(0, 0, 0, 0.45);
   --grey-50: #f9fafb; --grey-100: #f2f4f6; --grey-200: #e5e8eb; --grey-300: #d1d6db;
   --grey-400: #b0b8c1; --grey-500: #8b95a1; --grey-600: #636d7a; --grey-700: #4e5968;
   --grey-800: #333d4b; --grey-900: #191f28;
@@ -25,6 +26,7 @@ body { background: var(--grey-50); }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #17171c; --bg-rgb: 23, 23, 28; --toast: #3c3c47;
+    --sheet-bg: #22222a; --scrim: rgba(0, 0, 0, 0.6);
     --grey-50: #202027; --grey-100: #2c2c35; --grey-200: #3c3c47; --grey-300: #4d4d59;
     --grey-400: #62626d; --grey-500: #8a8a94; --grey-600: #a4a4ab; --grey-700: #c3c3c6;
     --grey-800: #e4e4e5; --grey-900: #ffffff;
@@ -33,6 +35,7 @@ body { background: var(--grey-50); }
 }
 :root[data-theme="dark"] {
   --bg: #17171c; --bg-rgb: 23, 23, 28; --toast: #3c3c47;
+  --sheet-bg: #22222a; --scrim: rgba(0, 0, 0, 0.6);
   --grey-50: #202027; --grey-100: #2c2c35; --grey-200: #3c3c47; --grey-300: #4d4d59;
   --grey-400: #62626d; --grey-500: #8a8a94; --grey-600: #a4a4ab; --grey-700: #c3c3c6;
   --grey-800: #e4e4e5; --grey-900: #ffffff;

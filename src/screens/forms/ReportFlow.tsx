@@ -183,7 +183,8 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
     draft.finish();
     // 다 쓴 작성 화면으로 뒤로 가지 않도록 방문 기록을 바꿔치기한다(뒤로 가면 신고 전 화면).
     location.replace(`#/dog/${entry.id}`);
-    if (!target) setTimeout(() => openSheet("success", { dogId: entry.id }), 80);
+    // 방금 올린 신고 화면을 먼저 보여준 뒤 시트를 올린다(무엇이 등록됐는지 보이고, 시트가 덧뜬 것도 알 수 있게).
+    if (!target) setTimeout(() => location.hash === `#/dog/${entry.id}` && openSheet("success", { dogId: entry.id }), 700);
     toast(target ? "신고를 고쳤어요." : "신고가 등록됐어요. 이제 이웃에게 알려주세요.");
   };
   const run = async () => {

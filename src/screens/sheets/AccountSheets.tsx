@@ -1,7 +1,7 @@
 // 이 휴대폰에서 기능 확인 · 계정 삭제 · 신고 등록 완료 안내.
 import { useState } from "react";
 import type { FormEvent } from "react";
-import BottomSheet from "../../ui/BottomSheet.tsx";
+import BottomSheet, { useSheetDismiss } from "../../ui/BottomSheet.tsx";
 import { Button } from "../../ui/index.tsx";
 import { useStore } from "../../app/useStore.ts";
 import { toast } from "../../app/toast.ts";
@@ -103,24 +103,28 @@ export function DeleteAccountSheet({ onClose }: { onClose: () => void }) {
     </BottomSheet>
   );
 }
-// 신고를 등록한 직후: 공유를 가장 먼저 권하고(코랄 하나), 전단·알림은 연한 버튼으로.
+// 신고를 등록한 직후: 방금 올린 신고가 뒤에 보이도록 낮게 띄우고, 공유를 가장 먼저 권한다(코랄 하나).
 export function SuccessSheet({ dogId, onClose }: { dogId: string; onClose: () => void }) {
   const dog = useStore().dogs.find((d) => d.id === dogId);
   if (!dog) return null;
   return (
-    <BottomSheet open title="이웃과 함께 찾을 준비가 됐어요" onClose={onClose}>
+    <BottomSheet open title="실종 신고를 올렸어요" onClose={onClose}>
       <div className={`${s.body} success-next`}>
-        <div className={s.center}>
+        <div className={s.done}>
           <img src="/assets/mascot-alert.webp" alt="" />
-          <h3>{dog.name}의 소식을 알려주세요</h3>
-          <p className={s.intro}>공유한 링크 하나가 목격 제보로 이어질 수 있어요.</p>
+          <p className={s.intro}>{dog.name}의 링크를 공유하면 목격 제보가 더 빨리 모여요.</p>
         </div>
         <Button size="lg" full data-action="share" data-id={dogId}>신고 링크 공유하기</Button>
-        <Button variant="weak" full data-action="poster" data-id={dogId}>QR 전단 만들기</Button>
-        <Button variant="weak" full data-action="push">새 목격 제보 알림 받기</Button>
-        <p className={s.intro}>{dog.name} 목격 제보가 오면 바로 알려드려요. 나중에 설정에서 켜도 돼요.</p>
-        <button type="button" className={s.link} onClick={onClose}>신고 내용 먼저 확인하기</button>
+        <div className={s.pair}>
+          <Button variant="weak" full data-action="poster" data-id={dogId}>QR 전단 만들기</Button>
+          <Button variant="weak" full data-action="push">목격 알림 받기</Button>
+        </div>
+        <CloseLink>신고 내용 먼저 확인하기</CloseLink>
       </div>
     </BottomSheet>
   );
+}
+function CloseLink({ children }: { children: string }) {
+  const dismiss = useSheetDismiss();
+  return <button type="button" className={s.link} onClick={dismiss}>{children}</button>;
 }
