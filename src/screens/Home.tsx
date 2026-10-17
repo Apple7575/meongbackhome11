@@ -1,11 +1,12 @@
-import { useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useStore } from "../app/useStore.ts";
 import { ListHeader, ListRow, ButtonLink, Divider, Chip, IconCircle, EmptyState, Button, SkeletonRows, Thumb } from "../ui/index.tsx";
-import { DogRow, RegionSheet } from "./shared.tsx";
-import { filterDogs, chronologicalSightings } from "../domain.js";
+import { RegionSheet } from "./shared.tsx";
+import { PublicDogRow } from "./Shelter.tsx";
+import { chronologicalSightings } from "../domain.js";
 import { relativeTime, objectParticle } from "../format.ts";
 import s from "./screens.module.css";
-import type { Dog, Store } from "../types.ts";
+import type { Dog, PublicDog, Store } from "../types.ts";
 function OwnerCard({ dog, db }: { dog: Dog; db: Store }) {
   const reports = chronologicalSightings(db.reports.filter((r) => r.dogId === dog.id));
   const last = reports.at(-1);
@@ -28,8 +29,23 @@ export default function Home() {
   const close = useCallback(() => setSheet(false), []);
   const region = picked ?? db.areas?.[0] ?? "전국";
   const mine = db.dogs.find((d) => d.canManage && d.status === "missing");
-  const missing = filterDogs(db.dogs, { region, status: "missing" });
+  const [shelterItems, setShelterItems] = useState<PublicDog[] | null>(null);
+  const [shelterFailed, setShelterFailed] = useState(false);
+  const [shelterAttempt, setShelterAttempt] = useState(0);
   const reunited = db.dogs.filter((d) => d.status === "reunited").length;
+  useEffect(() => {
+    let alive = true;
+    setShelterItems(null);
+    setShelterFailed(false);
+    fetch(`/api/public/shelter?region=${encodeURIComponent(region)}&offset=0&limit=5`)
+      .then((response) => {
+        if (!response.ok) throw new Error(String(response.status));
+        return response.json() as Promise<{ items: PublicDog[] }>;
+      })
+      .then((payload) => alive && setShelterItems(payload.items || []))
+      .catch(() => alive && setShelterFailed(true));
+    return () => { alive = false; };
+  }, [region, shelterAttempt]);
   return (
     <div className={s.screen}>
       {mine ? <OwnerCard dog={mine} db={db} /> : (
@@ -38,19 +54,19 @@ export default function Home() {
       <ListRow as="button" data-action="sighting" left={<IconCircle name="MapPin" />} title="강아지를 봤어요" description="로그인 없이 알려줄 수 있어요" />
       <Divider />
       <ListHeader
-        title={`${region}에서 찾고 있어요 ${missing.length}`}
+        title="보호소에 들어온 아이"
         action={<Chip onClick={() => setSheet(true)} expanded={sheet}>{region}</Chip>}
       />
-      {db.connection === "loading" ? (
-        <SkeletonRows />
-      ) : missing.length ? (
-        missing.slice(0, 5).map((d) => <DogRow key={d.id} dog={d} />)
+      {shelterFailed ? (
+        <EmptyState title="보호소 공고를 불러오지 못했어요" description="잠시 후 다시 시도해주세요" action={<Button variant="weak" onClick={() => setShelterAttempt((value) => value + 1)}>다시 시도</Button>} />
+      ) : shelterItems === null ? (
+        <SkeletonRows count={3} />
+      ) : shelterItems.length ? (
+        <>{shelterItems.map((item) => <PublicDogRow key={item.id} item={item} />)}<ListRow href="#/shelter" title="보호소 공고 전체 보기" /></>
       ) : (
-        <EmptyState title="지금 이 지역에서 찾고 있는 강아지가 없어요" description="다른 지역도 살펴볼 수 있어요" action={<Button variant="weak" onClick={() => setSheet(true)}>지역 바꾸기</Button>} />
+        <EmptyState image="/assets/mascot-search.webp" title="현재 보호소 공고가 없어요" description="다른 지역도 살펴보세요" action={<ButtonLink href="#/shelter">보호소 공고 보기</ButtonLink>} />
       )}
-      {missing.length > 5 && <ListRow href="#/explore" title="전체 보기" />}
       <Divider />
-      <ListRow href="#/shelter" left={<IconCircle name="Building2" />} title="보호소에 들어온 아이" description="전국 보호소 공고와 다른 곳의 분실 신고를 매일 받아와요" />
       <ListRow href="#/stories" left={<IconCircle name="Heart" />} title={reunited ? `집에 돌아온 아이들 ${reunited}마리` : "집에 돌아온 아이들"} description="함께 찾아서 다시 만났어요" />
       <RegionSheet open={sheet} value={region} onSelect={setPicked} onClose={close} />
     </div>

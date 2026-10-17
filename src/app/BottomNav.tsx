@@ -4,10 +4,10 @@ import s from "./Frame.module.css";
 import { isSubPage } from "./TopBar.tsx";
 const ITEMS: ([string, IconName, string] | null)[] = [
   ["/", "House", "홈"],
-  ["/explore", "Search", "찾기"],
+  ["/explore", "Search", "유실공고"],
   null,
   ["/sightings", "MapPin", "목격 소식"],
-  ["/my", "UserRound", "마이홈"],
+  ["/my", "UserRound", "마이"],
 ];
 // 보호소·재회 이야기는 홈에서 들어가는 화면이라 홈을 켜 둔다.
 const isCurrent = (route: string, path: string) =>

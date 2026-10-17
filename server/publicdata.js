@@ -102,7 +102,12 @@ export const publicView = rec => ({
 export function installPublicData({ app, db, rows, notify, defer = p => p.catch(() => {}), fetchImpl = fetch, key = () => process.env.DATA_GO_KR_KEY }) {
   const config = async k => (await db.prepare('SELECT value FROM config WHERE key=?').get(k))?.value;
   const setConfig = (k, v) => db.prepare('INSERT INTO config(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run(k, String(v));
-  const load = async (collection, region) => (await db.prepare('SELECT id,json FROM docs WHERE collection=? AND owner=?').all(collection, `public:${region}`)).map(r => JSON.parse(r.json));
+  const load = async (collection, region) => {
+    const rows = region && region !== '전국'
+      ? await db.prepare('SELECT id,json FROM docs WHERE collection=? AND owner=?').all(collection, `public:${region}`)
+      : await db.prepare('SELECT id,json FROM docs WHERE collection=?').all(collection);
+    return rows.map(r => JSON.parse(r.json));
+  };
   const save = async (collection, records, stamp) => {
     for (let i = 0; i < records.length; i += 100) {
       const chunk = records.slice(i, i + 100);
@@ -151,13 +156,22 @@ export function installPublicData({ app, db, rows, notify, defer = p => p.catch(
   }
   // 조회할 때 오래됐으면 뒤에서 한 번 새로 받는다(응답은 기다리지 않는다).
   const refresh = () => defer(sync().catch(() => {}));
+  const loadReady = async (collection, region) => {
+    let list = await load(collection, region);
+    // 첫 요청이 동기화보다 먼저 도착하면 빈 결과가 캐시될 수 있으므로 한 번 기다린다.
+    if (!list.length && key()) {
+      await sync().catch(() => {});
+      list = await load(collection, region);
+    }
+    return list;
+  };
   const json = res => { res.set('Cache-Control', 'public, max-age=300'); return res; };
 
   // 지역별 보호소에 있는 개(최근 구조 순)
   app.get('/api/public/shelter', async (req, res) => {
     refresh();
     const region = s(req.query.region);
-    const list = (await load(SHELTER, region)).sort((a, b) => String(b.happenedAt).localeCompare(String(a.happenedAt)));
+    const list = (await loadReady(SHELTER, region)).sort((a, b) => String(b.happenedAt).localeCompare(String(a.happenedAt)));
     const offset = Math.max(0, Number(req.query.offset) || 0), limit = Math.min(50, Number(req.query.limit) || 20);
     json(res).json({ total: list.length, items: list.slice(offset, offset + limit).map(publicView), syncedAt: Number(await config('public-sync-at')) || null });
   });
@@ -165,7 +179,7 @@ export function installPublicData({ app, db, rows, notify, defer = p => p.catch(
   app.get('/api/public/lost', async (req, res) => {
     refresh();
     const region = s(req.query.region);
-    const list = (await load(LOSTEXT, region)).sort((a, b) => String(b.happenedAt).localeCompare(String(a.happenedAt)));
+    const list = (await loadReady(LOSTEXT, region)).sort((a, b) => String(b.happenedAt).localeCompare(String(a.happenedAt)));
     const offset = Math.max(0, Number(req.query.offset) || 0), limit = Math.min(50, Number(req.query.limit) || 20);
     json(res).json({ total: list.length, items: list.slice(offset, offset + limit).map(publicView) });
   });

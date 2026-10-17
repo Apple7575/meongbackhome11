@@ -58,6 +58,8 @@ test('sync stores shelter dogs and outside lost reports, serves them by region, 
     assert.equal(list.items[0].care.name, '송파구 동물보호센터');
     assert.equal(list.items[0].rfid, undefined);
     assert.equal(list.items[0].photos[0], '/api/public/photo/s-10/0');
+    const nationwide = await (await fetch(`${origin}/api/public/shelter?region=전국`)).json();
+    assert.equal(nationwide.total, 2);
     const similar = await (await fetch(`${origin}/api/public/similar/dog-1`)).json();
     assert.deepEqual(similar.items.map(i => i.id), ['s-10']);
     const notices = service.db.prepare("SELECT json FROM notices WHERE user_id='owner-1'").all().map(r => JSON.parse(r.json));
