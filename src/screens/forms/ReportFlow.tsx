@@ -80,7 +80,7 @@ function ReportForm({ mode, edit, profile }: { mode: Mode; edit?: Dog | null; pr
       description: "얼굴과 털 색이 잘 보이면 이웃이 알아보기 쉬워요.",
       body: (<>
         {loggedOut && <p className={s.loginNote} data-login-note="">{kakao ? "등록할 때 카카오로 3초 만에 로그인해요" : "등록할 때 로그인해요"} · 쓰던 내용은 저장돼요</p>}
-        <PhotoPicker value={image} onChange={(img) => draft.update({ image: img })} onError={setError} onBusy={setPhotoBusy} label="강아지 사진 올리기" />
+        <PhotoPicker value={image} onChange={(img) => draft.update({ image: img })} onError={setError} onBusy={setPhotoBusy} label="강아지 사진 올리기" guide />
         {image && <ExtraPhotos values={extra.images || []} onChange={(images) => draft.update({ extra: { images } })} onError={setError} onBusy={setPhotoBusy} />}
       </>),
       check: () => {

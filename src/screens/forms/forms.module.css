@@ -39,6 +39,35 @@ textarea.input { padding: 14px 16px; min-height: 120px; resize: vertical; line-h
   font-size: var(--t6); }
 .photo input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* 공고 화면과 같이: 사진 전체(contain) + 뒤를 흐린 같은 사진으로 채움. 미리보기 칸들도 같이 쓴다. */
+.photoFill { object-fit: cover; filter: blur(16px) brightness(0.9); transform: scale(1.15); }
+.photo .photoMain, .photoMain { object-fit: contain; }
+/* 카카오 프로필처럼 목록에 보일 정사각형만 밝게 두고 바깥은 어둡게 덮는다. */
+.squareGuide { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none;
+  border: 2px solid #fff; border-radius: 8px; box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.35); }
+.squareGuide span { position: absolute; left: 8px; top: 8px; padding: 2px 8px; border-radius: 999px; background: rgba(0, 0, 0, 0.55);
+  color: #fff; font-size: var(--t7); line-height: var(--t7-lh); white-space: nowrap; }
+.previews { display: flex; flex-direction: column; gap: 10px; }
+.previewTitle { margin: 0; font-size: var(--t6); font-weight: 600; color: var(--grey-800); }
+.previewRow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-items: end; }
+.previewRow figure { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.previewRow figcaption { font-size: var(--t7); line-height: var(--t7-lh); color: var(--grey-600); text-align: center; }
+.previewRow img { display: block; }
+.previewList { display: flex; align-items: center; gap: 6px; padding: 8px; border-radius: 12px; background: var(--grey-50); border: 1px solid var(--grey-200); }
+.previewList img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+.previewList span, .previewPoster span { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.previewList i, .previewPoster i { display: block; height: 5px; border-radius: 3px; background: var(--grey-300); }
+.previewList i + i { width: 60%; background: var(--grey-200); }
+.previewShare { position: relative; aspect-ratio: 1200 / 630; border-radius: 8px; overflow: hidden; background: var(--grey-100); }
+.previewShare img, .previewPoster div img { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* 전단(1000×1000)의 사진 칸은 840×340이라 세로 사진은 작게 들어간다. 비율을 그대로 줄여 보여준다. */
+.previewPoster { aspect-ratio: 1; padding: 8%; border-radius: 8px; background: #fff; border: 1px solid var(--grey-200);
+  display: flex; flex-direction: column; gap: 6%; }
+.previewPoster b { align-self: flex-start; padding: 0 5px; border-radius: 999px; background: #fdeee8; color: #c4532f; font-size: 8px; line-height: 13px; }
+.previewPoster div { position: relative; aspect-ratio: 840 / 340; border-radius: 4px; overflow: hidden; background: #f2f4f6; }
+.previewPoster span { flex-direction: row; align-items: flex-end; gap: 6%; }
+.previewPoster i { flex: 1; background: #d1d6db; }
+.previewPoster em { width: 22%; aspect-ratio: 1; background: #333d4b; border-radius: 2px; }
 .photoBusy::after { content: "사진을 준비하고 있어요"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   background: rgba(var(--bg-rgb),0.8); color: var(--grey-800); }
 .quick { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -52,7 +81,7 @@ textarea.input { padding: 14px 16px; min-height: 120px; resize: vertical; line-h
 .heading { font-size: var(--t4); font-weight: 700; color: var(--grey-900); }
 .range { width: 100%; min-height: 44px; accent-color: var(--brand); }
 .review { display: flex; flex-direction: column; gap: 0; border-radius: 16px; background: var(--grey-50); overflow: hidden; }
-.review img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.review img { width: 100%; aspect-ratio: 4 / 3; object-fit: contain; background: var(--grey-100); }
 .review dl { margin: 0; padding: 8px 16px 12px; }
 .review dl > div { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--grey-200); }
 .review dl > div:last-child { border-bottom: 0; }
@@ -122,3 +151,20 @@ textarea.input { padding: 14px 16px; min-height: 120px; resize: vertical; line-h
 .extraPhoto button svg { width: 24px; height: 24px; padding: 4px; border-radius: 50%; background: rgba(0,0,0,0.55); }
 .extraAdd { display: flex; align-items: center; justify-content: center; color: var(--grey-700); cursor: pointer; }
 .extraAdd input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+/* 사진 위치·크기 맞추기: 정사각형 틀 + 3×3 안내선, 아래 크기 슬라이더 */
+.crop { padding: 0 var(--gutter) 8px; display: flex; flex-direction: column; gap: 14px; }
+.cropBox { position: relative; width: min(100%, 52dvh); aspect-ratio: 1; align-self: center; overflow: hidden; border-radius: 16px;
+  background: #000; touch-action: none; cursor: grab; user-select: none; }
+.cropBox:active { cursor: grabbing; }
+.cropBox:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.cropBox img { position: absolute; left: 0; top: 0; max-width: none; transform-origin: 0 0; pointer-events: none; }
+.cropGrid { position: absolute; inset: 0; pointer-events: none; border: 2px solid rgba(255, 255, 255, 0.9); border-radius: 16px;
+  background:
+    linear-gradient(to right, transparent calc(33.33% - 0.5px), rgba(255,255,255,0.5) calc(33.33% - 0.5px), rgba(255,255,255,0.5) calc(33.33% + 0.5px), transparent calc(33.33% + 0.5px),
+      transparent calc(66.66% - 0.5px), rgba(255,255,255,0.5) calc(66.66% - 0.5px), rgba(255,255,255,0.5) calc(66.66% + 0.5px), transparent calc(66.66% + 0.5px)),
+    linear-gradient(to bottom, transparent calc(33.33% - 0.5px), rgba(255,255,255,0.5) calc(33.33% - 0.5px), rgba(255,255,255,0.5) calc(33.33% + 0.5px), transparent calc(33.33% + 0.5px),
+      transparent calc(66.66% - 0.5px), rgba(255,255,255,0.5) calc(66.66% - 0.5px), rgba(255,255,255,0.5) calc(66.66% + 0.5px), transparent calc(66.66% + 0.5px)); }
+.cropZoom { display: flex; align-items: center; gap: 12px; font-size: var(--t6); color: var(--grey-700); }
+.cropZoom input { flex: 1; accent-color: var(--brand); }
+.pairButtons { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }

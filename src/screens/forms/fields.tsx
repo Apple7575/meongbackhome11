@@ -11,6 +11,7 @@ import { reverseGeocode } from "../../geocode.ts";
 import type { Place } from "../../geocode.ts";
 import type { Coords } from "../../types.ts";
 import { errorText } from "../../errors.ts";
+import PhotoCrop from "./PhotoCrop.tsx";
 import s from "./forms.module.css";
 export const toLocalInput = (date: string | number | Date = new Date()) => {
   const d = new Date(date);
@@ -146,21 +147,30 @@ export function AgeField({ value, onChange }: { value: string; onChange: (v: str
   );
 }
 interface PhotoPickerProps {
+  // 목록에 보일 정사각형 자리와 공유·전단 미리보기를 함께 보여준다(실종 신고·프로필 사진).
+  guide?: boolean;
   value: string;
   onChange: (dataUrl: string) => void;
   onError?: (message: string) => void;
   onBusy?: (busy: boolean) => void;
   label?: string;
 }
-export function PhotoPicker({ value, onChange, onError, onBusy, label = "사진 올리기" }: PhotoPickerProps) {
+export function PhotoPicker({ value, onChange, onError, onBusy, label = "사진 올리기", guide = false }: PhotoPickerProps) {
   const [busy, setBusy] = useState(false);
+  // 고른 사진의 원래 크기: 목록에서 잘려 보일 정사각형 자리를 사진 위에 그리는 데 쓴다.
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+  // 위치·크기를 여러 번 고쳐도 화질이 떨어지지 않게, 처음 고른 사진을 기준으로 다시 자른다.
+  const [original, setOriginal] = useState("");
+  const [cropping, setCropping] = useState(false);
   const pick = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setBusy(true);
     onBusy?.(true);
     try {
-      onChange(await readPhoto(file));
+      const photo = await readPhoto(file);
+      setOriginal(photo);
+      onChange(photo);
       onError?.("");
     } catch (err) {
       onError?.(errorText(err));
@@ -170,10 +180,54 @@ export function PhotoPicker({ value, onChange, onError, onBusy, label = "사진 
     }
   };
   return (
-    <label className={`${s.photo} ${busy ? s.photoBusy : ""}`}>
-      <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" onChange={pick} aria-label={label} />
-      {value ? <img src={value} alt="고른 사진" /> : (<><Icon name="Camera" size={32} /><span>{label}</span></>)}
-    </label>
+    <>
+      <label className={`${s.photo} ${busy ? s.photoBusy : ""}`}>
+        <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" onChange={pick} aria-label={label} />
+        {/* 공고 화면과 똑같이 사진 전체를 보여주고, 남는 곳은 같은 사진을 흐리게 채운다. */}
+        {value ? (<>
+          <img className={s.photoFill} src={value} alt="" aria-hidden="true" />
+          <img className={s.photoMain} src={value} alt="고른 사진" onLoad={(e) => setSize({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })} />
+          {guide && size && Math.abs(size.w - size.h) > 2 && <SquareGuide {...size} />}
+        </>) : (<><Icon name="Camera" size={32} /><span>{label}</span></>)}
+      </label>
+      {guide && value && <Button variant="weak" full onClick={() => setCropping(true)}><Icon name="Crop" size={18} />위치·크기 맞추기</Button>}
+      {guide && value && <PhotoPreviews src={value} />}
+      {cropping && <PhotoCrop src={original || value} onApply={onChange} onClose={() => setCropping(false)} />}
+    </>
+  );
+}
+// 4:3 칸에 사진 전체를 맞춰 넣었을 때, 목록 썸네일로 쓰이는 가운데 정사각형이 차지하는 자리.
+function SquareGuide({ w, h }: { w: number; h: number }) {
+  const scale = Math.min(4 / w, 3 / h);
+  const side = Math.min(w, h) * scale;
+  return (
+    <span className={s.squareGuide} style={{ width: `${(side / 4) * 100}%`, height: `${(side / 3) * 100}%` }} aria-hidden="true">
+      <span>목록에 보이는 부분</span>
+    </span>
+  );
+}
+// 올린 사진이 이웃에게 어떻게 보이는지: 홈 목록(정사각형으로 잘림), 카톡·SNS 공유, QR 전단(잘리지 않음).
+function PhotoPreviews({ src }: { src: string }) {
+  const whole = (<><img className={s.photoFill} src={src} alt="" /><img className={s.photoMain} src={src} alt="" /></>);
+  return (
+    <div className={s.previews} aria-label="이웃에게 보이는 모습">
+      <p className={s.previewTitle}>이웃에게 이렇게 보여요</p>
+      <div className={s.previewRow} aria-hidden="true">
+        <figure>
+          <div className={s.previewList}><img src={src} alt="" /><span><i /><i /></span></div>
+          <figcaption>홈 목록</figcaption>
+        </figure>
+        <figure>
+          <div className={s.previewShare}>{whole}</div>
+          <figcaption>카톡·SNS 공유</figcaption>
+        </figure>
+        <figure>
+          <div className={s.previewPoster}><b>실종</b><div>{whole}</div><span><i /><em /></span></div>
+          <figcaption>QR 전단</figcaption>
+        </figure>
+      </div>
+      <p className={s.hint}>목록에서는 가운데가 정사각형으로 잘려요. 강아지가 사진 가운데에 크게 나오면 알아보기 쉬워요.</p>
+    </div>
   );
 }
 // 대표 사진 말고 옆모습·무늬 사진을 최대 2장 더 올린다.

@@ -142,3 +142,26 @@ test("cancelling kakao login keeps the report on the confirm step instead of ste
   await expect(page.getByText("취소보리")).toBeVisible();
   await expect(page.getByRole("button", { name: "실종 신고 등록하기" })).toBeVisible();
 });
+
+// 사진을 고르면 목록에 보일 정사각형 자리와 공유·전단 미리보기가 보이고, 위치·크기를 맞추면 그 정사각형으로 바뀐다.
+test("report photo shows how neighbours see it and can be framed into a square", async ({ page }) => {
+  await page.goto("/#/report/new");
+  await page.locator("input[name=photo]").setInputFiles("public/assets/hero-home.png");
+  await expect(page.getByAltText("고른 사진")).toBeVisible();
+  await expect(page.getByText("목록에 보이는 부분")).toBeVisible();
+  await expect(page.getByText("이웃에게 이렇게 보여요")).toBeVisible();
+  const ratio = () => page.getByAltText("고른 사진").evaluate((img) => img.naturalWidth / img.naturalHeight);
+  expect(await ratio()).not.toBeCloseTo(1, 2);
+  await page.getByRole("button", { name: "위치·크기 맞추기" }).click();
+  const sheet = page.getByRole("dialog", { name: "사진 위치와 크기 맞추기" });
+  await sheet.getByLabel("사진 크기").fill("2");
+  const frame = sheet.getByRole("application");
+  const b = await frame.boundingBox();
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(b.x + b.width / 2 + 60, b.y + b.height / 2 + 30, { steps: 5 });
+  await page.mouse.up();
+  await sheet.getByRole("button", { name: "이대로 쓰기" }).click();
+  await expect(sheet).toBeHidden();
+  await expect.poll(ratio).toBeCloseTo(1, 2);
+});
