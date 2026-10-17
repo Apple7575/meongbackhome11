@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "388708998822",
+    "project_id": "meongbackhome",
+    "storage_bucket": "meongbackhome.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:388708998822:android:f8a2980ce00ac9fb8e5e67",
+        "android_client_info": {
+          "package_name": "com.meongbackhome.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBtzR4X3jHmjT4c71WbDS3TiH1KdVyRDEg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

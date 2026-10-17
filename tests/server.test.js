@@ -348,6 +348,39 @@ test("push jobs survive retry and expired endpoints are removed without leaking 
     await f.stop();
   }
 });
+// 앱 기기(FCM 토큰)도 같은 발송 큐로 알림을 받고, 지워진 토큰은 웹 푸시처럼 정리된다.
+test("app devices subscribe with an FCM token and receive the same notifications", async () => {
+  const sent = [];
+  const f = await fixture({
+    pushSender: async (sub, payload) => {
+      sent.push({ sub, payload: JSON.parse(payload) });
+      if (sent.length === 2) throw Object.assign(new Error("gone"), { statusCode: 410 });
+    },
+  });
+  try {
+    const a = f.client(),
+      b = f.client();
+    await register(a);
+    const token = "dGVzdC10b2tlbg:APA91b" + "x".repeat(40);
+    assert.equal((await a.request("/api/push/native", { token, platform: "android" })).status, 200);
+    assert.equal((await a.request("/api/push/native", { token: "bad token!", platform: "android" })).status, 400);
+    assert.equal((await a.request("/api/push/native", { token, platform: "windows" })).status, 400);
+    const d = dog();
+    await change(a, "dogs", d);
+    await change(b, "reports", report(d));
+    await f.flushPush();
+    assert.equal(sent.length, 1);
+    assert.deepEqual(sent[0].sub, { type: "fcm", token, platform: "android" });
+    assert.match(sent[0].payload.url, new RegExp(`^/#/dog/${d.id}`));
+    // 앱을 지운 기기(410)는 구독과 남은 발송을 지운다.
+    await change(b, "reports", report(d));
+    await f.flushPush();
+    assert.equal(f.db.prepare("SELECT count(*) AS n FROM subscriptions").get().n, 0);
+    assert.equal(f.db.prepare("SELECT count(*) AS n FROM outbox").get().n, 0);
+  } finally {
+    await f.stop();
+  }
+});
 test("SSE signals a new witness report to the owner without polling", async () => {
   const f = await fixture();
   const abort = new AbortController();

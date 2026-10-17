@@ -113,3 +113,19 @@ test('daily maintenance asks owners of reports missing for two weeks whether the
     assert.equal((await fetch(`${f.origin}/api/maintenance`)).status,403);
   }finally{process.env.CRON_SECRET=previous;if(previous===undefined)delete process.env.CRON_SECRET;await f.stop();}
 });
+
+// 앱 기기(FCM 토큰)를 운영 서버(PostgreSQL)에도 알림 구독으로 저장하고, 같은 발송 큐로 보낸다.
+test('PostgreSQL: an app device registers its FCM token and receives the test notification',async()=>{
+  const sent=[];
+  const f=await fixture({pushSender:async(sub,payload)=>{sent.push({sub,payload:JSON.parse(payload)});}});
+  const device=f.client();
+  const fcm='ios-token:APA91b'+'y'.repeat(40);
+  try{
+    assert.equal((await device('/api/push/native',{token:fcm,platform:'ios'})).status,200);
+    assert.equal((await device('/api/push/native',{token:fcm})).status,400);
+    assert.equal((await device('/api/push/test',{})).status,200);
+  }finally{await f.stop();}
+  assert.equal(sent.length,1);
+  assert.deepEqual(sent[0].sub,{type:'fcm',token:fcm,platform:'ios'});
+  assert.equal(sent[0].payload.title,'멍백홈 알림이 연결됐어요');
+});

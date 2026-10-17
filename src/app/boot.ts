@@ -3,7 +3,7 @@ import { initialize, refresh } from "../client-store.js";
 import { toast } from "./toast.ts";
 import { errorText } from "../errors.ts";
 import { installActions } from "./dispatch.ts";
-import "./install.ts";
+import { isApp } from "./install.ts";
 
 if (isSecureContext && "serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
 
@@ -30,3 +30,5 @@ document.querySelector(".skip-link")?.addEventListener("click", (e) => {
 
 installActions();
 void initialize();
+// 앱 안: 알림을 눌러 들어온 화면 이동, 토큰 갱신(웹 화면 묶음에는 넣지 않으려고 동적으로 불러온다).
+if (isApp()) import("./nativePush.ts").then((m) => m.listenNativePush()).catch(() => {});

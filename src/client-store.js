@@ -182,6 +182,8 @@ export async function authenticate(mode, values) {
   return result;
 }
 export async function enablePush() {
+  // 앱 안에서는 기기 알림(FCM)으로 켠다.
+  if (navigator.userAgent.includes("MeongbackApp")) return (await import("./app/nativePush.ts")).enableNativePush();
   const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   if(ios&&!navigator.standalone&&!matchMedia('(display-mode: standalone)').matches) throw new Error('아이폰은 Safari 공유 메뉴에서 홈 화면에 추가한 뒤, 추가된 멍백홈을 열어 알림을 켜주세요.');
   if (

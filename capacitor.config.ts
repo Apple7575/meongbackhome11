@@ -1,3 +1,4 @@
+/// <reference types="@capacitor-firebase/messaging" />
 import type { CapacitorConfig } from "@capacitor/cli";
 
 // 1단계: 앱은 운영 사이트를 그대로 띄운다(로그인 쿠키·카카오 로그인·공유 링크가 웹과 똑같이 동작하고,
@@ -16,6 +17,12 @@ const config: CapacitorConfig = {
     // 카카오 로그인 화면은 앱 밖(브라우저)으로 내보내지 않고 앱 안에서 연다(돌아오면 로그인 쿠키가 앱에 남도록).
     allowNavigation: ["meongbackhome.com", "*.kakao.com"],
   },
+  plugins: {
+    // 앱을 보고 있을 때 온 알림도 iOS 알림으로 보여준다.
+    FirebaseMessaging: { presentationOptions: ["alert", "badge", "sound"] },
+  },
+  // Firebase 플러그인 안내: SwiftPM 패키지 이름 충돌을 피한다.
+  experimental: { ios: { spm: { packageOptions: { "@capacitor-firebase/messaging": { symlink: true } } } } },
   android: {
     // 운영 사이트가 https라 섞인 콘텐츠는 막아 둔다.
     allowMixedContent: false,

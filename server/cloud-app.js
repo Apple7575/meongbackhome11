@@ -1,3 +1,4 @@
+import { fcmConfigured, createFcmSender, nativeSubscription, pushVia } from './push.js';
 import express from "express";
 import { createPostgres } from "./postgres.js";
 import { randomUUID, randomBytes, scryptSync, timingSafeEqual, createHash } from "node:crypto";
@@ -302,7 +303,7 @@ export async function createApp({
   installKakao({ app, db, session, secure, fetchImpl: oauthFetch });
   app.post('/api/push/test', async (req, res) => {
     await rate(`push-test:${who(req)}`, 2);
-    if (!process.env.PUSH_SUBJECT && !pushSender) fail(503, '서버의 알림 발신 설정이 필요해요.');
+    if (!process.env.PUSH_SUBJECT && !pushSender && !fcmConfigured()) fail(503, '서버의 알림 발신 설정이 필요해요.');
     if (!(await db.prepare('SELECT 1 FROM subscriptions WHERE user_id=?').get(req.user.id))) fail(400, '먼저 이 기기에서 알림을 켜주세요.');
     await notify(req.user.id, '멍백홈 알림이 연결됐어요', '이 알림이 휴대폰에 도착했다면 알림 설정이 완료됐어요.');
 
@@ -594,7 +595,8 @@ export async function createApp({
   });
   app.get("/api/push/key", (req, res) => res.json({
     publicKey: keys.publicKey,
-    configured: !!process.env.PUSH_SUBJECT
+    configured: !!process.env.PUSH_SUBJECT,
+    native: fcmConfigured()
   }));
   app.post("/api/push/subscribe", async (req, res) => {
     const s = req.body;
@@ -613,6 +615,15 @@ export async function createApp({
       ok: true
     });
   });
+  // 앱(Android·iOS)의 FCM 기기 토큰을 알림 구독으로 저장한다. 발송은 flushPush가 FCM으로 한다.
+  const sendFcm = createFcmSender();
+  app.post("/api/push/native", async (req, res) => {
+    const sub = nativeSubscription(req.body);
+    if (!sub) fail(400, "잘못된 기기 알림 정보예요.");
+    await identify(req, res);
+    await db.prepare("INSERT INTO subscriptions VALUES(?,?,?) ON CONFLICT(endpoint) DO UPDATE SET user_id=excluded.user_id,json=excluded.json").run(sub.endpoint, req.user.id, JSON.stringify(sub.json));
+    res.json({ ok: true, endpoint: sub.endpoint });
+  });
   app.post("/api/push/unsubscribe", async (req, res) => {
     await db.prepare("DELETE FROM subscriptions WHERE user_id=? AND endpoint=?").run(req.user.id, text(req.body.endpoint, 2000, true));
     res.json({
@@ -621,7 +632,7 @@ export async function createApp({
   });
   let processing = false;
   async function flushPush() {
-    if (processing || !pushSender && !process.env.PUSH_SUBJECT) return;
+    if (processing || !pushSender && !process.env.PUSH_SUBJECT && !fcmConfigured()) return;
     processing = true;
     try {
       const deadline=Date.now()+40000;
@@ -635,14 +646,14 @@ export async function createApp({
           return;
         }
         try {
-          await (pushSender || ((sub, payload) => webpush.sendNotification(sub, payload, {
+          await (pushSender || pushVia({ fcm: sendFcm, web: (sub, payload) => webpush.sendNotification(sub, payload, {
             vapidDetails: {
               subject: process.env.PUSH_SUBJECT,
               ...keys
             },
             TTL: 3600,
             timeout: 8000
-          })))(JSON.parse(s.json), job.payload);
+          }) }))(JSON.parse(s.json), job.payload);
           await db.prepare("DELETE FROM outbox WHERE id=?").run(job.id);
         } catch (e) {
           if ([404, 410].includes(e.statusCode)) {

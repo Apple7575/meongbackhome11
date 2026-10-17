@@ -1,5 +1,6 @@
 import { useStore } from "../app/useStore.ts";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { isApp } from "../app/install.ts";
 import { OptionSheet } from "./shared.tsx";
 import { THEMES, getTheme, setTheme } from "../app/theme.ts";
 import type { Theme } from "../app/theme.ts";
@@ -12,7 +13,18 @@ export default function Settings() {
   const db = useStore();
   const user = db.user;
   // 이 휴대폰에서 알림을 허용했는지(허용했으면 서버 구독도 함께 켜 둔다)
-  const pushOn = typeof Notification !== "undefined" && Notification.permission === "granted";
+  const webPushOn = typeof Notification !== "undefined" && Notification.permission === "granted";
+  // 앱 안에서는 기기 알림 권한을 본다(웹뷰에는 Notification이 없다). 알림을 켜고 돌아오면 다시 확인한다.
+  const [nativeOn, setNativeOn] = useState(false);
+  useEffect(() => {
+    if (!isApp()) return;
+    const check = () => void import("../app/nativePush.ts").then((m) => m.nativePushGranted()).then(setNativeOn);
+    check();
+    addEventListener("focus", check);
+    addEventListener("native-push-changed", check);
+    return () => { removeEventListener("focus", check); removeEventListener("native-push-changed", check); };
+  }, []);
+  const pushOn = isApp() ? nativeOn : webPushOn;
   return (
     <div className={s.screen}>
       <Top title="설정" />
@@ -26,7 +38,7 @@ export default function Settings() {
       <Divider />
       <ListHeader title="이 휴대폰" />
       <ListRow as="button" data-action="device-check" left={<IconCircle name="Smartphone" />} title="이 휴대폰에서 기능 확인" description="위치와 알림이 잘 되는지 확인해요" />
-      <ListRow as="button" data-action="install-app" left={<IconCircle name="Download" />} title="홈 화면에 추가하기" description="앱처럼 바로 열 수 있어요" />
+      {!isApp() && <ListRow as="button" data-action="install-app" left={<IconCircle name="Download" />} title="홈 화면에 추가하기" description="앱처럼 바로 열 수 있어요" />}
       <Divider />
       <ListHeader title="안내" />
       <ListRow as="button" data-action="about" left={<IconCircle name="Info" />} title="서비스 안내" />
